@@ -1,7 +1,7 @@
 {
-  "name": "western-up",
-  "version": "1.0.0-alpha.5",
-  "description": "Global theme for Western University of Pennsylvania",
+  "name": "emulsify-wordpress-theme",
+  "version": "1.0.0-alpha",
+  "description": "Emulsify is a Design System that works with WordPress, Drupal, React, and more.",
   "author": "Brian Lewis <brian@fourkitchens.com>",
   "license": "MIT",
   "dependencies": {
