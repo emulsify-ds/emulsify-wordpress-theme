@@ -66,7 +66,7 @@
     "**/twig": "~1.13.3"
   },
   "scripts": {
-    "setup": "git clone git@github.com:emulsify-ds/western-up-twig.git && git clone git@github.com:emulsify-ds/western-up-scss.git && yarn",
+    "setup": "composer install && git clone git@github.com:emulsify-ds/western-up-twig.git && git clone git@github.com:emulsify-ds/western-up-scss.git && yarn",
     "styleguide": "gatsby develop",
     "build-styleguide": "gatsby build",
     "deploy-styleguide": "gatsby build --prefix-paths && gh-pages -d public",
