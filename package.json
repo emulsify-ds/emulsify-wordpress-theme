@@ -2,7 +2,7 @@
   "name": "emulsify-wordpress-theme",
   "version": "1.0.0-alpha",
   "description": "Emulsify is a Design System that works with WordPress, Drupal, React, and more.",
-  "author": "Brian Lewis <brian@fourkitchens.com>",
+  "author": "Dean Oest <randy@fourkitchens.com>",
   "license": "MIT",
   "dependencies": {
     "@babel/cli": "^7.6.4",
@@ -35,8 +35,6 @@
     "eslint-plugin-react": "^7.16.0",
     "file-loader": "^4.2.0",
     "fs": "^0.0.1-security",
-    "gatsby": "^2.13.15",
-    "gatsby-theme-emulsify": "^1.0.0-alpha.5",
     "glob": "^7.1.4",
     "imagemin-webpack-plugin": "^2.4.2",
     "js-yaml-loader": "^1.2.2",
@@ -54,25 +52,19 @@
     "stylelint-webpack-plugin": "^1.0.2",
     "svg-sprite-loader": "^4.1.6",
     "twig": "~1.13.3",
-    "twig-drupal-filters": "^2.0.0",
     "twig-loader": "https://github.com/AmazeeLabs/twig-loader",
     "webpack": "^4.41.1",
     "webpack-cli": "^3.3.6",
-    "webpack-merge": "^4.2.2",
-    "western-up-scss": "^0.0.29",
-    "western-up-twig": "^0.0.32"
+    "webpack-merge": "^4.2.2"
   },
   "resolutions": {
     "**/twig": "~1.13.3"
   },
   "scripts": {
-    "setup": "composer install && git clone git@github.com:emulsify-ds/western-up-twig.git && git clone git@github.com:emulsify-ds/western-up-scss.git && yarn",
-    "styleguide": "gatsby develop",
-    "build-styleguide": "gatsby build",
-    "deploy-styleguide": "gatsby build --prefix-paths && gh-pages -d public",
+    "setup": "composer install && yarn",
     "lint": "eslint ./components",
-    "storybook": "start-storybook -s ./dist, ./western-up-twig/images -p 6006",
-    "build-storybook": "build-storybook -s ./dist, ./western-up-twig/images -o .out",
+    "storybook": "start-storybook -s ./dist, ./images -p 6006",
+    "build-storybook": "build-storybook -s ./dist, ./images -o .out",
     "deploy-storybook": "storybook-to-ghpages -o .out",
     "babel": "npx babel components -w -d dist/js --ignore 'components/**/*.component.js','components/**/*.stories.js','components/**/*.min.js'",
     "build-babel": "npx babel components -d dist/js --ignore 'components/**/*.component.js','components/**/*.stories.js'",
@@ -81,11 +73,6 @@
     "build": "npm run build-babel & npm run build-webpack",
     "develop": "concurrently --raw \"npm run webpack\" \"npm run babel\" \"npm run storybook\""
   },
-  "private": true,
-  "workspaces": [
-    "western-up-twig",
-    "western-up-scss"
-  ],
   "devDependencies": {
     "@storybook/addon-viewport": "^5.3.13"
   }
