@@ -103,6 +103,9 @@ module.exports = async ({ config }) => {
     loader: 'eslint-loader',
     options: {
       cache: true,
+      global: [
+        'Attach'
+      ]
     },
   });
 

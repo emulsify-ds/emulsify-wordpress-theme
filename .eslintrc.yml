@@ -11,6 +11,7 @@ globals:
   expect: true
   it: true
   describe: true
+  Attach: true
 parser: babel-eslint
 rules:
   strict: 0
