@@ -1,6 +1,10 @@
 <article class="tease tease-{{post.post_type}}" id="tease-{{post.ID}}">
 	{% block content %}
-		<h2 class="h2"><a href="{{post.link}}">{{post.title}}</a></h2>
+    {% include "@atoms/text/headings/_heading.twig" with {
+      heading_level: 2,
+      heading: post.title,
+      heading_url: post.link,
+    } %}
 		<p>{{post.preview}}</p>
 		{% if post.get_thumbnail %}
 			<img src="{{post.thumbnail.src}}" />

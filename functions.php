@@ -145,7 +145,6 @@ class StarterSite extends Timber\Site {
 
 	/** BEM function to pass in bem style classes.
 	 *
-	 * @param string $text being 'foo', then returned 'foo bar!'.
 	 */
   public function bem($context, $base_class, $modifiers = array(), $blockname = '', $extra = array()) {
     $classes = [];
@@ -229,7 +228,55 @@ class StarterSite extends Timber\Site {
     }
   }
 
-  
+  /** Add Attributes function to pass in multiple attributes including bem style classes.
+	 *
+	 */
+  public function add_attributes($context, $additional_attributes = []) {
+    $attributes = new Attribute();
+
+    if (!empty($additional_attributes)) {
+      foreach ($additional_attributes as $key => $value) {
+        if (is_array($value)) {
+          foreach ($value as $index => $item) {
+            // Handle bem() output.
+            if ($item instanceof Attribute) {
+              // Remove the item.
+              unset($value[$index]);
+              $value = array_merge($value, $item->toArray()[$key]);
+            }
+          }
+        }
+        else {
+          // Handle bem() output.
+          if ($value instanceof Attribute) {
+            $value = $value->toArray()[$key];
+          }
+          elseif (is_string($value)) {
+            $value = [$value];
+          }
+          else {
+            continue;
+          }
+        }
+        // Merge additional attribute values with existing ones.
+        if ($context['attributes']->offsetExists($key)) {
+          $existing_attribute = $context['attributes']->offsetGet($key)->value();
+          $value = array_merge($existing_attribute, $value);
+        }
+        $context['attributes']->setAttribute($key, $value);
+      }
+    }
+
+    // Set all attributes.
+    foreach($context['attributes'] as $key => $value) {
+      $attributes->setAttribute($key, $value);
+      // Remove this attribute from context so it doesn't filter down to child
+      // elements.
+      $context['attributes']->removeAttribute($key);
+    }
+    
+    return $attributes;
+  }
   
 
 	/** This is where you can add your own functions to twig.
@@ -238,7 +285,8 @@ class StarterSite extends Timber\Site {
 	 */
 	public function add_to_twig( $twig ) {
 		$twig->addExtension( new Twig\Extension\StringLoaderExtension() );
-		$twig->addFunction( new \Twig_SimpleFunction('bem', array($this, 'bem'), array('needs_context' => true), array('is_safe' => array('html'))) );
+    $twig->addFunction( new \Twig_SimpleFunction('bem', array($this, 'bem'), array('needs_context' => true), array('is_safe' => array('html'))) );
+    $twig->addFunction( new \Twig_SimpleFunction('add_attributes', array($this, 'add_attributes'), array('needs_context' => true), array('is_safe' => array('html'))) );
 		return $twig;
 	}
 

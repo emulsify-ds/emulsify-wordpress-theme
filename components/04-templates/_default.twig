@@ -13,7 +13,7 @@
 
 {% block html_head_container %}
 
-{% include 'html-header.twig' %}
+{% include '@templates/_html-header.twig' %}
 	{% block head %}
 	{% endblock %}
 	</head>
@@ -26,7 +26,7 @@
     {% endblock %}
 
 		<div {{ bem(main_base_class, main_modifiers, main_blockname) }}>
-      <a id="main-content" tabindex="-1"></a>{# link is in html.html.twig #}
+      <a id="main-content" tabindex="-1"></a>
       {% if sidebar %}
         <aside class="main-sidebar" role="complementary">
           {% block page_sidebar %}{% endblock %}

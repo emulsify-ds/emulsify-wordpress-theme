@@ -1,9 +1,13 @@
 {% extends "tease.twig" %}
 
 {% block content %}
-	<h2 class="h2"><a href="{{post.link}}">{{post.title}}</a></h2>
-		<p>{{post.preview.length(25)}}</p>
-		{% if post.thumbnail.src %}
-			<img src="{{post.thumbnail.src}}" />
-		{% endif %}
+	{% include "@atoms/text/headings/_heading.twig" with {
+    heading_level: 2,
+    heading: post.title,
+    heading_url: post.link,
+  } %}
+  <p>{{post.preview.length(25)}}</p>
+  {% if post.thumbnail.src %}
+    <img src="{{post.thumbnail.src}}" />
+  {% endif %}
 {% endblock %}
