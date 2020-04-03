@@ -17,16 +17,17 @@
   }
 }
 
-.pager__link,
-.pager__link:link,
-.pager__link:visited {
+.pager__link {
   color: $gray;
   font-weight: 600;
   text-decoration: none;
 
-  &.is-active,
   &:hover {
-    color: $gray-dark;
+    color: $gray-light;
+  }
+
+  &--current {
+    color: $gray-light;
   }
 }
 

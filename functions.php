@@ -202,30 +202,8 @@ class StarterSite extends Timber\Site {
         $classes[] = $extra_class;
       };
     }
-    if (class_exists('Drupal')) {
-      $attributes = new Attribute();
-      // Iterate the attributes available in context.
-      foreach($context['attributes'] as $key => $value) {
-        // If there are classes, add them to the classes array.
-        if ($key === 'class') {
-          foreach ($value as $class) {
-            $classes[] = $class;
-          }
-        }
-        // Otherwise add the attribute straightaway.
-        else {
-          $attributes->setAttribute($key, $value);
-        }
-        // Remove the attribute from context so it doesn't trickle down to
-        // includes.
-        $context['attributes']->removeAttribute($key);
-      }
-      // Add class attribute.
-      if (!empty($classes)) {
-        $attributes->setAttribute('class', $classes);
-      }
-      return $attributes;
-    }
+    $attributes = 'class="' . implode(' ', $classes) . '"';
+    return $attributes;
   }
 
   /** Add Attributes function to pass in multiple attributes including bem style classes.
@@ -285,8 +263,8 @@ class StarterSite extends Timber\Site {
 	 */
 	public function add_to_twig( $twig ) {
 		$twig->addExtension( new Twig\Extension\StringLoaderExtension() );
-    $twig->addFunction( new \Twig_SimpleFunction('bem', array($this, 'bem'), array('needs_context' => true), array('is_safe' => array('html'))) );
-    $twig->addFunction( new \Twig_SimpleFunction('add_attributes', array($this, 'add_attributes'), array('needs_context' => true), array('is_safe' => array('html'))) );
+    $twig->addFunction( new Twig_SimpleFunction('bem', array($this, 'bem'), array('needs_context' => true), array('is_safe' => array('html'))) );
+    $twig->addFunction( new Twig_SimpleFunction('add_attributes', array($this, 'add_attributes'), array('needs_context' => true), array('is_safe' => array('html'))) );
 		return $twig;
 	}
 
