@@ -1,12 +1,1 @@
-/*!
-Theme Name: Emulsify WordPress
-Theme URI: ...
-Author: Four Kitchens
-Author URI: https://fourkitchens.com
-Description: Emulsify is a Design System that works with WordPress, Drupal, React, and more.
-Version: 1.0
-License: ...
-License URI: ...
-Text Domain: emulsify
-*/
-@import 'dist/style.css';
+// Must be here for Wordpress.

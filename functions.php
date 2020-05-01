@@ -143,14 +143,119 @@ class StarterSite extends Timber\Site {
 		add_theme_support( 'menus' );
 	}
 
-	/** This Would return 'foo bar!'.
+	/** BEM function to pass in bem style classes.
 	 *
-	 * @param string $text being 'foo', then returned 'foo bar!'.
 	 */
-	public function myfoo( $text ) {
-		$text .= ' bar!';
-		return $text;
-	}
+  public function bem($context, $base_class, $modifiers = array(), $blockname = '', $extra = array()) {
+    $classes = [];
+
+    // Add the ability to pass an object as the one and only argument.
+    if (is_object($base_class) || is_array($base_class)) {
+      $object = (object) $base_class;
+      unset($base_class);
+      $map = [
+        'block' => 'base_class',
+        'element' => 'blockname',
+        'modifiers' => 'modifiers',
+        'extra' => 'extra',
+      ];
+      foreach ($map as $object_key => $arg_key) {
+        if (isset($object->$object_key)) {
+          $$arg_key = $object->$object_key;
+        }
+      }
+    }
+
+    // Ensure array arguments.
+    if (!is_array($modifiers)) {
+      $modifiers = [$modifiers];
+    }
+    if (!is_array($extra)) {
+      $extra = [$extra];
+    }
+
+    // If using a blockname to override default class.
+    if ($blockname) {
+      // Set blockname class.
+      $classes[] = $blockname . '__' . $base_class;
+      // Set blockname--modifier classes for each modifier.
+      if (isset($modifiers) && is_array($modifiers)) {
+        foreach ($modifiers as $modifier) {
+          $classes[] = $blockname . '__' . $base_class . '--' . $modifier;
+        };
+      }
+    }
+    // If not overriding base class.
+    else {
+      // Set base class.
+      $classes[] = $base_class;
+      // Set base--modifier class for each modifier.
+      if (isset($modifiers) && is_array($modifiers)) {
+        foreach ($modifiers as $modifier) {
+          $classes[] = $base_class . '--' . $modifier;
+        };
+      }
+    }
+    // If extra non-BEM classes are added.
+    if (isset($extra) && is_array($extra)) {
+      foreach ($extra as $extra_class) {
+        $classes[] = $extra_class;
+      };
+    }
+    $attributes = 'class="' . implode(' ', $classes) . '"';
+    return $attributes;
+  }
+
+  /** Add Attributes function to pass in multiple attributes including bem style classes.
+	 *
+	 */
+  public function add_attributes($context, $additional_attributes = []) {
+    $attributes = new Attribute();
+
+    if (!empty($additional_attributes)) {
+      foreach ($additional_attributes as $key => $value) {
+        if (is_array($value)) {
+          foreach ($value as $index => $item) {
+            // Handle bem() output.
+            if ($item instanceof Attribute) {
+              // Remove the item.
+              unset($value[$index]);
+              $value = array_merge($value, $item->toArray()[$key]);
+            }
+          }
+        }
+        else {
+          // Handle bem() output.
+          if ($value instanceof Attribute) {
+            $value = $value->toArray()[$key];
+          }
+          elseif (is_string($value)) {
+            $value = [$value];
+          }
+          else {
+            continue;
+          }
+        }
+        // Merge additional attribute values with existing ones.
+        if ($context['attributes']->offsetExists($key)) {
+          $existing_attribute = $context['attributes']->offsetGet($key)->value();
+          $value = array_merge($existing_attribute, $value);
+        }
+        $context['attributes']->setAttribute($key, $value);
+      }
+    }
+
+    // Set all attributes.
+    foreach($context['attributes'] as $key => $value) {
+      $attributes->setAttribute($key, $value);
+      // Remove this attribute from context so it doesn't filter down to child
+      // elements.
+      $context['attributes']->removeAttribute($key);
+    }
+    
+    return $attributes;
+  }
+  
 
 	/** This is where you can add your own functions to twig.
 	 *
@@ -158,10 +263,20 @@ class StarterSite extends Timber\Site {
 	 */
 	public function add_to_twig( $twig ) {
 		$twig->addExtension( new Twig\Extension\StringLoaderExtension() );
-		$twig->addFilter( new Twig\TwigFilter( 'myfoo', array( $this, 'myfoo' ) ) );
+    $twig->addFunction( new Twig_SimpleFunction('bem', array($this, 'bem'), array('needs_context' => true), array('is_safe' => array('html'))) );
+    $twig->addFunction( new Twig_SimpleFunction('add_attributes', array($this, 'add_attributes'), array('needs_context' => true), array('is_safe' => array('html'))) );
 		return $twig;
 	}
 
 }
 
 new StarterSite();
+
+// Namespaces
+add_filter('timber/loader/loader', function($loader){
+  $loader->addPath(__DIR__ . "/components/01-atoms", "atoms");
+  $loader->addPath(__DIR__ . "/components/02-molecules", "molecules");
+  $loader->addPath(__DIR__ . "/components/03-organisms", "organisms");
+  $loader->addPath(__DIR__ . "/components/04-templates", "templates");
+	return $loader;
+});

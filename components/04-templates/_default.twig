@@ -11,24 +11,34 @@
   {% set main_content_modifiers = main_content_modifiers|merge(['with-sidebar']) %}
 {% endif %}
 
-<div {{ bem('layout-container', layout_modifiers) }}>
-  {% block page_header %}
-    {% include "@organisms/site/site-header/site-header.twig" %}
-  {% endblock %}
-  {% block page_system %}
-  {% endblock %}
-  <div {{ bem(main_base_class, main_modifiers, main_blockname) }}>
-    <a id="main-content" tabindex="-1"></a>{# link is in html.html.twig #}
-    {% if sidebar %}
-      <aside class="main-sidebar" role="complementary">
-        {% block page_sidebar %}{% endblock %}
-      </aside>
-    {% endif %}
-    <main role="main" {{ bem(main_content_base_class, main_content_modifiers, main_content_blockname) }}>
-      {% block page_content %}{% endblock %}
-    </main>
-  </div>
-  {% block page_footer %}
-    {% include "@organisms/site/site-footer/site-footer.twig" %}
-  {% endblock %}
-</div>
+{% block html_head_container %}
+
+{% include '@templates/_html-header.twig' %}
+	{% block head %}
+	{% endblock %}
+	</head>
+{% endblock %}
+
+	<body class="{{body_class}}" data-template="base.twig">
+		<a class="skip-link screen-reader-text visually-hidden" href="#content">{{ _e( 'Skip to content') }}</a>
+		{% block page_header %}
+      {% include "@organisms/site/site-header/site-header.twig" %}
+    {% endblock %}
+
+		<div {{ bem(main_base_class, main_modifiers, main_blockname) }}>
+      <a id="main-content" tabindex="-1"></a>
+      {% if sidebar %}
+        <aside class="main-sidebar" role="complementary">
+          {% block page_sidebar %}{% endblock %}
+        </aside>
+      {% endif %}
+      <main role="main" {{ bem(main_content_base_class, main_content_modifiers, main_content_blockname) }}>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+		{% block page_footer %}
+      {% include "@organisms/site/site-footer/site-footer.twig" %}
+    {% endblock %}
+	</body>
+</html>
