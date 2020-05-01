@@ -1,5 +1,6 @@
 {# {{ attach_library('emulsify/main-menu') }} #}
 
+{% if menu %}
 <nav >
   <a href="#" id="toggle-expand" class="toggle-expand">
     <span class="toggle-expand__open">
@@ -17,7 +18,8 @@
   <div id="main-nav" class="main-nav">
     {% include "@molecules/menus/_menu.twig" with {
       menu_class: "main-menu",
-      items: menu_items,
+      items: menu.get_items,
     } %}
 </div>
 </nav>
+{% endif %}
