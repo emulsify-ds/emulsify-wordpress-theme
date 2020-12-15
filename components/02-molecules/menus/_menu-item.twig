@@ -24,17 +24,12 @@
 
 {% extends "@atoms/lists/_list-item.twig" %}
   {% block list_item_content %}
-    {# if drupal #}
-    {% if directory %}
-      {{ link(item.title, item.url, bem(item_base_class|default(menu_class ~ '__link'), item_modifiers)) }}
-    {% else %}
       {% include "@atoms/links/link/link.twig" with {
         link_content: item.title,
         link_url: item.url,
         link_base_class: item_base_class|default(menu_class ~ '__link'),
         link_modifiers: item_modifiers,
       } %}
-    {% endif %}
     {% if item.children %}
       <span class="expand-sub"></span>
       {{ menus.menu_links(item.children, attributes, menu_level + 1, menu_class, menu_modifiers, menu_blockname, item_base_class, original_item_modifiers, item_blockname, directory) }}
