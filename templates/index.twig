@@ -7,8 +7,3 @@
 	
 	{% include 'partial/pagination.twig' with { pagination: posts.pagination({show_all: false, mid_size: 3, end_size: 2}) } %}
 {% endblock %}
-
-{% block page_footer %}
-  {% include "@organisms/site/site-footer/site-footer.twig" %}
-  {{ function('wp_footer') }}
-{% endblock %}
