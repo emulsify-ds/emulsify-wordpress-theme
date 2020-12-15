@@ -9,7 +9,7 @@
 {% if menu_level > 0 %}
   {% set item_modifiers = item_modifiers|merge(['sub', 'sub-' ~ menu_level]) %}
 {% endif %}
-{% if item.below %}
+{% if item.children %}
   {% set item_modifiers = item_modifiers|merge(['with-sub']) %}
 {% endif %}
 {# below could maybe be done without a loop? #}
@@ -35,8 +35,8 @@
         link_modifiers: item_modifiers,
       } %}
     {% endif %}
-    {% if item.below %}
+    {% if item.children %}
       <span class="expand-sub"></span>
-      {{ menus.menu_links(item.below, attributes, menu_level + 1, menu_class, menu_modifiers, menu_blockname, item_base_class, original_item_modifiers, item_blockname, directory) }}
+      {{ menus.menu_links(item.children, attributes, menu_level + 1, menu_class, menu_modifiers, menu_blockname, item_base_class, original_item_modifiers, item_blockname, directory) }}
     {% endif %}
   {% endblock %}
