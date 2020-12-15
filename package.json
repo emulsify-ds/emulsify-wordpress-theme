@@ -59,6 +59,7 @@
     "webpack-merge": "^5.7.0"
   },
   "scripts": {
+    "a11y": "npm run build-storybook && ./scripts/a11y.js -r",
     "setup": "composer install && yarn",
     "lint": "eslint ./components",
     "storybook": "start-storybook -s ./dist, ./images -p 6006",
