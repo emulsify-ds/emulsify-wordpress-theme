@@ -7,11 +7,11 @@ import { setupTwig } from './setupTwig';
 import '../components/style.scss';
 
 // If in a Drupal project, it's recommended to import a symlinked version of drupal.js.
-import './_drupal.js';
+import './_attach.js';
 
 // addDecorator deprecated, but not sure how to use this otherwise.
 addDecorator((storyFn) => {
-  useEffect(() => Drupal.attachBehaviors(), []);
+  useEffect(() => Attach.attachBehaviors(), []);
   return storyFn();
 });
 
