@@ -7,7 +7,7 @@ menu:
           url: '#'
         - title: 'Menu Item 1 Sub 2'
           url: '#'
-          below:
+          children:
             - title: 'Menu Item 1 Sub Sub 1'
               url: '#'
             - title: 'Menu Item 1 Sub Sub 2'

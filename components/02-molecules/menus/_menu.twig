@@ -24,7 +24,7 @@
   @see http://twig.sensiolabs.org/doc/tags/macro.html
 #}
 
-{% macro menu_links(items, attributes, menu_level, menu_class, menu_modifiers, menu_blockname, item_base_class, item_modifiers, item_blockname) %}
+{% macro menu_links(items, attributes, menu_level, menu_class, menu_modifiers, menu_blockname, item_base_class, item_modifiers, item_blockname, directory) %}
   {% import _self as menus %}
   {% if items %}
 
@@ -37,25 +37,10 @@
       {% set menu_modifiers = menu_modifiers|merge(['sub', 'sub-' ~ menu_level]) %}
     {% endif %}
 
-    {# List #}
-    {% embed "@atoms/lists/ul.twig" with {
-      ul_base_class: menu_class,
-      ul_modifiers: menu_modifiers,
-      ul_blockname: menu_blockname
-    } %}
-      {% block list_content %}
-        {% for item in items %}
-          {% include "@molecules/menus/_menu-item.twig" with {
-            li_base_class: item_base_class,
-            li_modifiers: item_modifiers,
-            li_blockname: item_blockname,
-          } %}
-        {% endfor %}
-      {% endblock %}
-    {% endembed %}
+    {% include "@molecules/menus/_menu-list.twig" %}
   {% endif %}
 {% endmacro %}
 
 {% import _self as menus %}
 
-{{ menus.menu_links(items, attributes, 0, menu_class, menu_modifiers, menu_blockname, item_base_class, item_modifiers, item_blockname) }}
+{{ menus.menu_links(items, attributes, 0, menu_class, menu_modifiers, menu_blockname, item_base_class, item_modifiers, item_blockname, directory) }}
