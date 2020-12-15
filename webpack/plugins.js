@@ -11,6 +11,7 @@ const imagePath = path.resolve(__dirname, '../images');
 
 const MiniCssExtractPlugin = new _MiniCssExtractPlugin({
   filename: 'style.css',
+  chunkFilename: '[id].css',
 });
 
 const ImageminPlugin = new _ImageminPlugin({
@@ -34,7 +35,7 @@ module.exports = {
   ImageminPlugin,
   SpriteLoaderPlugin,
   CleanWebpackPlugin: new CleanWebpackPlugin({
-    cleanOnceBeforeBuildPatterns: [],
-    cleanAfterEveryBuildPatterns: ['remove/**', '!js'],
+    cleanOnceBeforeBuildPatterns: ['!*.{png,jpg,gif,svg}'],
+    cleanAfterEveryBuildPatterns: ['remove/**', '!js', '!*.{png,jpg,gif,svg}'],
   }),
 };

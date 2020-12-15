@@ -1,5 +1,8 @@
 {
-  "extends": "stylelint-config-standard",
+  "extends": [
+    "stylelint-config-standard",
+    "stylelint-config-prettier"
+  ],
   "rules": {
     "at-rule-no-unknown": [ true, {
       "ignoreAtRules": [
@@ -7,9 +10,12 @@
         "mixin",
         "extend",
         "if",
+        "else",
         "each",
         "content",
-        "import"
+        "import",
+        "function",
+        "return"
       ]
     }],
     "no-descending-specificity": null,
