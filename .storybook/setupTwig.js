@@ -18,6 +18,12 @@ module.exports.namespaces = {
  */
 module.exports.setupTwig = function setupTwig(twig) {
   twig.cache();
+  twig.extendFunction("function", function() {
+    return "";
+  });
+  twig.extendFunction("_e", function() {
+    return "";
+  });
   twigBEM(twig);
   twigAddAttributes(twig);
   return twig;

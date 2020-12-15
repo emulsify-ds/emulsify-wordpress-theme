@@ -23,7 +23,7 @@
 #}
 {% set status__base_class = 'status' %}
 {% for type, messages in message_list %}
-  <div role="contentinfo" aria-label="{{ type }}"{{ attributes|without('role', 'aria-label') }}>
+  <div role="contentinfo" aria-label="{{ type }}">
     {% if type == 'error' %}
       <div role="alert">
     {% endif %}
