@@ -1,0 +1,109 @@
+Arguments: 
+  /Users/evan/.nvm/versions/node/v12.10.0/bin/node /usr/local/Cellar/yarn/1.22.5/libexec/bin/yarn.js
+
+PATH: 
+  /Users/evan/.nvm/versions/node/v12.10.0/bin:/Users/evan/.composer/vendor/bin:/usr/local/git/bin:/sw/bin/:/usr/local/bin:/usr/local/:/usr/local/sbin:/usr/local/mysql/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin/
+
+Yarn version: 
+  1.22.5
+
+Node version: 
+  12.10.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  SyntaxError: /Users/evan/Sites/wp/emulsify-wordpress-theme/package.json: Unexpected token } in JSON at position 2771
+      at JSON.parse (<anonymous>)
+      at /usr/local/Cellar/yarn/1.22.5/libexec/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/Cellar/yarn/1.22.5/libexec/lib/cli.js:310:30)
+      at /usr/local/Cellar/yarn/1.22.5/libexec/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "emulsify-wordpress-theme",
+    "version": "1.0.0-alpha",
+    "description": "Emulsify is a Design System that works with WordPress, Drupal, React, and more.",
+    "author": "Dean Oest <randy@fourkitchens.com>",
+    "license": "MIT",
+    "dependencies": {
+      "@babel/core": "^7.12.10",
+      "@babel/preset-env": "^7.12.10",
+      "@storybook/addon-a11y": "6.1.11",
+      "@storybook/addon-actions": "6.1.11",
+      "@storybook/addon-links": "6.1.11",
+      "@storybook/addon-viewport": "^6.1.11",
+      "@storybook/addons": "6.1.11",
+      "@storybook/react": "6.1.11",
+      "@storybook/storybook-deployer": "^2.8.7",
+      "add-attributes-twig-extension": "^0.1.0",
+      "autoprefixer": "^10.1.0",
+      "babel-eslint": "^10.0.3",
+      "babel-loader": "^8.2.2",
+      "babel-preset-minify": "^0.5.0",
+      "bem-twig-extension": "^0.1.1",
+      "breakpoint-sass": "^2.7.1",
+      "clean-webpack-plugin": "^3.0.0",
+      "concurrently": "^5.3.0",
+      "css-loader": "^5.0.1",
+      "eslint": "^7.15.0",
+      "eslint-config-airbnb": "^18.2.1",
+      "eslint-config-prettier": "^7.0.0",
+      "eslint-loader": "^4.0.2",
+      "eslint-plugin-import": "^2.22.1",
+      "eslint-plugin-jsx-a11y": "^6.4.1",
+      "eslint-plugin-react": "^7.21.5",
+      "file-loader": "^6.2.0",
+      "fs": "^0.0.1-security",
+      "glob": "^7.1.4",
+      "imagemin-webpack-plugin": "^2.4.2",
+      "js-yaml-loader": "^1.2.2",
+      "mini-css-extract-plugin": "^1.3.3",
+      "node-sass": "^5.0.0",
+      "node-sass-glob-importer": "^5.3.2",
+      "normalize.css": "^8.0.1",
+      "postcss": "^8.1.7",
+      "postcss-custom-properties": "^10.0.0",
+      "postcss-loader": "^4.1.0",
+      "ramda": "^0.27.1",
+      "react": "^16.10.2",
+      "react-dom": "^16.10.2",
+      "sass-loader": "^10.1.0",
+      "style-loader": "^2.0.0",
+      "stylelint": "^13.8.0",
+      "stylelint-config-prettier": "^8.0.2",
+      "stylelint-config-standard": "^20.0.0",
+      "stylelint-webpack-plugin": "^2.1.1",
+      "svg-sprite-loader": "^5.2.1",
+      "twig": "~1.15.4",
+      "twig-loader": "https://github.com/AmazeeLabs/twig-loader",
+      "webpack": "^5.10.2",
+      "webpack-cli": "^4.2.0",
+      "webpack-merge": "^5.7.0"
+    },
+    "scripts": {
+      "setup": "composer install && yarn",
+      "lint": "eslint ./components",
+      "storybook": "start-storybook -s ./dist, ./images -p 6006",
+      "build-storybook": "build-storybook -s ./dist, ./images -o .out",
+      "deploy-storybook": "storybook-to-ghpages -o .out",
+      "webpack": "webpack --watch --config ./webpack/webpack.dev.js",
+      "build": "webpack --config ./webpack/webpack.prod.js",
+      "develop": "concurrently --raw \"npm run webpack\" \"npm run storybook\""
+    },
+    "devDependencies": {
+      "core-js": "3.7.0",
+      "eslint-config-prettier": "^6.15.0",
+      "eslint-plugin-prettier": "^3.1.3",
+      "open-cli": "^6.0.1",
+      "pa11y": "^5.3.0",
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

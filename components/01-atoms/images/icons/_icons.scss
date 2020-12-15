@@ -6,10 +6,14 @@
     height: 100px;
     padding: $space;
     width: 100px;
+
+    @media (prefers-color-scheme: dark) {
+      fill: clr(accent-high);
+    }
   }
 
   pre {
-    background-color: $near-white;
+    background-color: clr(muted);
     font-size: 0.8rem;
     margin: 0;
     text-align: center;
@@ -17,6 +21,6 @@
 }
 
 .icons-demo__item {
-  border: 1px solid $near-white;
+  border: 1px solid clr(muted);
   margin: $space-one-fourth;
 }

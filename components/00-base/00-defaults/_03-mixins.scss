@@ -7,6 +7,12 @@
  * use example =   @include cleafix
 */
 
+@mixin body-copy {
+  font-family: $font-body;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
 @mixin clearfix {
   &::after {
     clear: both;
@@ -37,14 +43,12 @@ $outer-container-break: $small;
   }
 
   @include breakpoint($container-max-width) {
-    padding-left:
-      calc(
-        #{$h-padding-large} + calc(-50vw + calc(#{$container-max-width} / 2))
-      );
-    padding-right:
-      calc(
-        #{$h-padding-large} + calc(-50vw + calc(#{$container-max-width} / 2))
-      );
+    padding-left: calc(
+      #{$h-padding-large} + calc(-50vw + calc(#{$container-max-width} / 2))
+    );
+    padding-right: calc(
+      #{$h-padding-large} + calc(-50vw + calc(#{$container-max-width} / 2))
+    );
   }
 }
 
