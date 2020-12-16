@@ -1,7 +1,7 @@
 {
   "name": "emulsify-wordpress-theme",
   "version": "1.0.0-alpha.5",
-  "description": "Emulsify is a Design System that works with WordPress, Drupal, React, and more.",
+  "description": "Storybook development + Webpack Build + Wordpress theme",
   "author": "Dean Oest <randy@fourkitchens.com>",
   "license": "GPL-2.0-only",
   "dependencies": {
