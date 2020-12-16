@@ -1,7 +1,7 @@
 {% set header__base_class = 'header' %}
-{# If `directory` is defined, set the path relative for Drupal.
+{# If `site` is defined, set the path relative for Wordpress.
  # Otherwise, set the path relative to the Component Library. #}
-{% set header__logo_src = '/images/logo.png' %}
+{% set header__logo_src = site ? './wp-content/themes/emulsify-wordpress-theme/images/logo.png' : 'images/logo.png' %}
 
 <header {{ bem(header__base_class) }}>
   <div {{ bem('inner', [], header__base_class) }}>

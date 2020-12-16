@@ -6,7 +6,7 @@ import { setupTwig } from './setupTwig';
 // GLOBAL CSS
 import '../components/style.scss';
 
-// If in a Drupal project, it's recommended to import a symlinked version of drupal.js.
+// Attaches Javascript to components.
 import './_attach.js';
 
 // addDecorator deprecated, but not sure how to use this otherwise.
