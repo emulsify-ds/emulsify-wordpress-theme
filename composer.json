@@ -1,6 +1,6 @@
 {
-  "name": "emulsify-wordpress-theme",
-  "description": "Emulsify is a Design System that works with WordPress, Drupal, React, and more.",
+  "name": "emulsify-ds/emulsify-wordpress-theme",
+  "description": "Storybook development + Webpack Build + Wordpress theme",
   "type": "wordpress-theme",
   "minimum-stability": "stable",
   "authors": [
