@@ -7,6 +7,14 @@
     {
       "email": "randy@fourkitchens.com",
       "name": "Dean Oest"
+    },
+    {
+      "email": "evan@fourkitchens.com",
+      "name": "Evan Willhite"
+    },
+    {
+      "email": "brian@fourkitchens.com",
+      "name": "Brian Lewis"
     }
   ],
   "repositories": [
