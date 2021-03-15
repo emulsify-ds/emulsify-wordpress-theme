@@ -53,7 +53,7 @@
     "a11y": "npm run build-storybook && ./scripts/a11y.js -r",
     "setup": "composer install && yarn",
     "lint": "eslint ./components",
-    "storybook": "start-storybook --ci -s ./dist,./images -p 6006",
+    "storybook": "start-storybook --ci -s ./dist,./images -p 6006 --no-manager-cache",
     "build-storybook": "npm run build && build-storybook -s ./dist,./images -o .out",
     "deploy-storybook": "storybook-to-ghpages -o .out",
     "webpack": "webpack --watch --config ./webpack/webpack.dev.js",

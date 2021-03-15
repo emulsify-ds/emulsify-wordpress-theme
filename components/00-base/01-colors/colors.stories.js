@@ -4,10 +4,7 @@ import colorsData from './colors.yml';
 
 import colorsDocs from './colors.mdx';
 
-/**
- * Storybook Definition.
- */
- export default {
+export default {
   title: 'Base/Colors',
   parameters: {
     docs: {

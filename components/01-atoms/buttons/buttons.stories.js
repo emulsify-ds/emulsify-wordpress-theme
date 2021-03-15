@@ -9,6 +9,6 @@ import buttonAlt2Data from './button-alt2.yml';
  */
 export default { title: 'Atoms/Button' };
 
-export const twig = () => button(buttonData);
-export const twigAlt = () => button(buttonAltData);
-export const twigAlt2 = () => button(buttonAlt2Data);
+export const example = () => button(buttonData);
+export const alt = () => button(buttonAltData);
+export const alt2 = () => button(buttonAlt2Data);

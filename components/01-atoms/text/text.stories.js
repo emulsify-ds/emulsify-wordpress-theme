@@ -10,7 +10,7 @@ import blockquoteData from './text/blockquote.yml';
  */
 export default { title: 'Atoms/Text' };
 
-export const headingsExamples = () => headings;
+export const headingsExamples = () => headings();
 
 export const blockquoteExample = () => blockquote(blockquoteData);
 
