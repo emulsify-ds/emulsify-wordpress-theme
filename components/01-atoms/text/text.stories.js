@@ -1,5 +1,3 @@
-import React from 'react';
-
 import headings from './headings/headings.twig';
 import blockquote from './text/02-blockquote.twig';
 import pre from './text/05-pre.twig';
@@ -12,15 +10,10 @@ import blockquoteData from './text/blockquote.yml';
  */
 export default { title: 'Atoms/Text' };
 
-export const headingsExamples = () => (
-  <div dangerouslySetInnerHTML={{ __html: headings({}) }} />
-);
-export const blockquoteExample = () => (
-  <div dangerouslySetInnerHTML={{ __html: blockquote(blockquoteData) }} />
-);
-export const preformatted = () => (
-  <div dangerouslySetInnerHTML={{ __html: pre({}) }} />
-);
-export const random = () => (
-  <div dangerouslySetInnerHTML={{ __html: paragraph({}) }} />
-);
+export const headingsExamples = () => headings;
+
+export const blockquoteExample = () => blockquote(blockquoteData);
+
+export const preformatted = () => pre();
+
+export const random = () => paragraph();
