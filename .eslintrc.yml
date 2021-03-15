@@ -1,7 +1,6 @@
 extends:
   - airbnb
   - prettier
-  - prettier/react
   - plugin:prettier/recommended
 plugins:
   - react
@@ -27,6 +26,8 @@ rules:
         some:
           - nesting
           - id
+ignorePatterns:
+  - '**/*.min.js'
 overrides:
   - files:
       - '*.stories.js'
