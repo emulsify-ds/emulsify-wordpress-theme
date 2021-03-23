@@ -59,7 +59,6 @@
   <div {{ bem('content', card__content__modifiers, card__base_class) }}>
     {# Heading #}
     {% if card__heading %}
-      {{ title_prefix }}
       {% include "@atoms/text/headings/_heading.twig" with {
         heading_base_class: card__heading__base_class|default('heading'),
         heading_modifiers: card__heading__modifiers,
@@ -70,7 +69,6 @@
         heading_link_base_class: card__heading__link_base_class|default('heading-link'),
         heading_link_blockname: card__base_class,
       } %}
-      {{ title_suffix }}
     {% endif %}
     {# Subheading #}
     {% if card__subheading %}

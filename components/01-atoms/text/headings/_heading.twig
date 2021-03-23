@@ -21,12 +21,12 @@
 <h{{ heading_level }} {{ bem(heading_base_class, heading_modifiers, heading_blockname) }}>
   {% if heading_url %}
     {% include "@atoms/links/link/link.twig" with {
-      "link_content": heading,
-      "link_url": heading_url,
-      "link_attributes": heading_link_attributes,
-      "link_base_class": heading_link_base_class,
-      "link_modifiers": heading_link_modifiers,
-      "link_blockname": heading_link_blockname|default(heading_base_class),
+      link_content: heading,
+      link_url: heading_url,
+      link_attributes: heading_link_attributes,
+      link_base_class: heading_link_base_class,
+      link_modifiers: heading_link_modifiers,
+      link_blockname: heading_link_blockname|default(heading_base_class),
     } %}
   {% else %}
     {{ heading }}
