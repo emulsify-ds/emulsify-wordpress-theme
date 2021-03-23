@@ -6,7 +6,13 @@
 			<img src="{{ post.thumbnail.src|resize(1200, 300) }}">
 			<section class="article-content">
 				<h1 class="article-h1">{{ post.title }}</h1>
-				<a href="{{ post.link }}">{{ _e('edit') }}</a>
+        {% if user.can('edit_posts') %}
+        {% include "@atoms/links/link/link.twig" with {
+          link_base_class: 'button',
+          link_url: site.url ~ '/wp-admin/post.php?post=' ~ post.id ~ '&action=edit',
+          link_content: "Edit Post",
+        } %}
+        {% endif %}
 				<p class="blog-author">
 					<span>By</span><a href="{{post.author.path}}"> {{ post.author.name }} </a><span>&bull;</span> <time datetime="{{ post.date|date('Y-m-d H:i:s') }}">{{ post.date }}</time>
 				</p>

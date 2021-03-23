@@ -1,7 +1,7 @@
 {% set pager__base_class = 'pager' %}
 
 {% if posts.pagination.pages is not empty %}
-    <nav  {{ bem(pager__base_class) }} role="navigation">
+    <nav {{ bem(pager__base_class) }} role="navigation">
         <ul {{ bem('items', [], pager__base_class, ['js-pager__items']) }}>
 
             {# First #}
@@ -32,9 +32,14 @@
                     <li {{ bem('item', [], pager__base_class) }}>
                         <a {{ bem('link', [], pager__base_class) }} href="{{ page.link }}">{{ page.title }}</a>
                     </li>
-                {% else %}
+                {# if it is current #}
+                {% elseif page.current == true %}
                     <li {{ bem('item', ['current'], pager__base_class) }}>
                         <span {{ bem('link', ['current'], pager__base_class) }}>{{ page.title }}</span>
+                    </li>
+                {% else %}
+                    <li {{ bem('item', [], pager__base_class) }}>
+                      {{ page.title }}
                     </li>
                 {% endif %}
             {% endfor %}

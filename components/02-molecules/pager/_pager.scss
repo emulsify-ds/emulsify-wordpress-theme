@@ -30,6 +30,10 @@
   }
 }
 
+.pager__link--current {
+  color: $black;
+}
+
 .pager__link--next,
 .pager__link--prev {
   display: block;
