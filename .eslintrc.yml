@@ -3,7 +3,6 @@ extends:
   - prettier
   - plugin:prettier/recommended
 plugins:
-  - react
   - prettier
 env:
   es6: true
@@ -13,23 +12,10 @@ globals:
   it: true
   describe: true
   Attach: true
-parser: babel-eslint
+parser: '@babel/eslint-parser'
 rules:
   strict: 0
-  react/jsx-filename-extension: [1, { 'extensions': ['.js', '.jsx'] }]
   import/no-extraneous-dependencies: 0
-  react/prefer-stateless-function: 0
   prettier/prettier: error
-  jsx-a11y/label-has-for:
-    - 2
-    - required:
-        some:
-          - nesting
-          - id
 ignorePatterns:
   - '**/*.min.js'
-overrides:
-  - files:
-      - '*.stories.js'
-    rules:
-      react/no-danger: 0

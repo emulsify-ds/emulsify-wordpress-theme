@@ -1,14 +1,16 @@
-import React from 'react';
-
 import colors from './colors.twig';
 
 import colorsData from './colors.yml';
 
-/**
- * Storybook Definition.
- */
-export default { title: 'Base/Colors' };
+import colorsDocs from './colors.mdx';
 
-export const Palettes = () => (
-  <div dangerouslySetInnerHTML={{ __html: colors(colorsData) }} />
-);
+export default {
+  title: 'Base/Colors',
+  parameters: {
+    docs: {
+      page: colorsDocs,
+    },
+  },
+};
+
+export const Palettes = () => colors(colorsData);

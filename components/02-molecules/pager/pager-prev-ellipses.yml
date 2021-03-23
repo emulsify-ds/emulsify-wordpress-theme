@@ -1,0 +1,13 @@
+posts:
+  pagination:
+    prev:
+      - link: '#'
+    pages:
+      - link: '#'
+        title: "1"
+      - link: '#'
+        title: "2"
+      - current: 1
+        title: "3"
+      - link: '#'
+        title: "4"
