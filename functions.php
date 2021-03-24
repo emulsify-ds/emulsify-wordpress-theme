@@ -167,7 +167,7 @@ class StarterSite extends Timber\Site {
     }
 
     // Ensure array arguments.
-    if (!is_array($modifiers)) {
+    if (!empty($modifiers) && !is_array($modifiers)) {
       $modifiers = [$modifiers];
     }
     if (!is_array($extra)) {
@@ -206,54 +206,29 @@ class StarterSite extends Timber\Site {
     return $attributes;
   }
 
-  /** Add Attributes function to pass in multiple attributes including bem style classes.
-	 *
+  /**
+   * Add Attributes function to pass in multiple attributes including bem style classes.
 	 */
   public function add_attributes($context, $additional_attributes = []) {
-    $attributes = new Attribute();
+    $attributes = [];
 
     if (!empty($additional_attributes)) {
       foreach ($additional_attributes as $key => $value) {
+        // If there are multiple items in $value as array (e.g., class: ['one', 'two']).
         if (is_array($value)) {
-          foreach ($value as $index => $item) {
-            // Handle bem() output.
-            if ($item instanceof Attribute) {
-              // Remove the item.
-              unset($value[$index]);
-              $value = array_merge($value, $item->toArray()[$key]);
-            }
+          $attributes[] = ($key . '="' . implode(' ', $value) . '"');
+        } else {
+          // Handle bem() output (pass in exactly the result).
+          if (strpos($value, '=') !== false) {
+            $attributes[] = $value;
+          } else {
+            $attributes[] = ($key . '="' . $value . '"');
           }
         }
-        else {
-          // Handle bem() output.
-          if ($value instanceof Attribute) {
-            $value = $value->toArray()[$key];
-          }
-          elseif (is_string($value)) {
-            $value = [$value];
-          }
-          else {
-            continue;
-          }
-        }
-        // Merge additional attribute values with existing ones.
-        if ($context['attributes']->offsetExists($key)) {
-          $existing_attribute = $context['attributes']->offsetGet($key)->value();
-          $value = array_merge($existing_attribute, $value);
-        }
-        $context['attributes']->setAttribute($key, $value);
       }
     }
 
-    // Set all attributes.
-    foreach($context['attributes'] as $key => $value) {
-      $attributes->setAttribute($key, $value);
-      // Remove this attribute from context so it doesn't filter down to child
-      // elements.
-      $context['attributes']->removeAttribute($key);
-    }
-    
-    return $attributes;
+    return implode(' ', $attributes);
   }
   
 
