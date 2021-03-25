@@ -209,26 +209,26 @@ class StarterSite extends Timber\Site {
   /**
    * Add Attributes function to pass in multiple attributes including bem style classes.
 	 */
-  public function add_attributes($context, $additional_attributes = []) {
+  public function add_attributes( $context, $additional_attributes = [] ) {
     $attributes = [];
 
-    if (!empty($additional_attributes)) {
-      foreach ($additional_attributes as $key => $value) {
+    if ( ! empty( $additional_attributes ) ) {
+      foreach ( $additional_attributes as $key => $value ) {
         // If there are multiple items in $value as array (e.g., class: ['one', 'two']).
-        if (is_array($value)) {
-          $attributes[] = ($key . '="' . implode(' ', $value) . '"');
+        if ( is_array( $value ) ) {
+          $attributes[] = ( $key . '="' . implode( ' ', $value ) . '"' );
         } else {
           // Handle bem() output (pass in exactly the result).
-          if (strpos($value, '=') !== false) {
+          if ( strpos( $value, '=' ) !== false ) {
             $attributes[] = $value;
           } else {
-            $attributes[] = ($key . '="' . $value . '"');
+            $attributes[] = ( $key . '="' . $value . '"' );
           }
         }
       }
     }
 
-    return implode(' ', $attributes);
+    return implode( ' ', $attributes );
   }
   
 
