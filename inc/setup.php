@@ -249,9 +249,9 @@ new StarterSite();
 
 // Namespaces
 add_filter('timber/loader/loader', function($loader){
-  $loader->addPath(__DIR__ . "/components/01-atoms", "atoms");
-  $loader->addPath(__DIR__ . "/components/02-molecules", "molecules");
-  $loader->addPath(__DIR__ . "/components/03-organisms", "organisms");
-  $loader->addPath(__DIR__ . "/components/04-templates", "templates");
+  $loader->addPath(__DIR__ . "/../components/01-atoms", "atoms");
+  $loader->addPath(__DIR__ . "/../components/02-molecules", "molecules");
+  $loader->addPath(__DIR__ . "/../components/03-organisms", "organisms");
+  $loader->addPath(__DIR__ . "/../components/04-templates", "templates");
   return $loader;
 });
