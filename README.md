@@ -1,5 +1,8 @@
 [![Emulsify Design System](https://user-images.githubusercontent.com/409903/170579210-327abcdd-2c98-4922-87bb-36446a4cc013.svg)](https://www.emulsify.info/)
 
+> [!WARNING]  
+> Emulsify for WordPress is no longer supported. If you'd like to be a contributor and bring it back to life, [reach out](https://www.emulsify.info/).
+
 # Emulsify Starter Theme
 
 ## Installation
