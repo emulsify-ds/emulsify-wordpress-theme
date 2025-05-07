@@ -1,0 +1,20 @@
+# Ignore compiled files.
+dist
+
+# npm
+node_modules
+
+# System
+.DS_Store
+.idea
+.vscode
+
+# Git deploy
+.publish
+
+# Composer
+composer.lock
+vendor
+
+# Jest
+.coverage

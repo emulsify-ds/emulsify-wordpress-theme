@@ -1,0 +1,10 @@
+{
+  "project": {
+    "platform": "wordpress",
+    "name": "whisk",
+    "machineName": "whisk"
+  },
+  "starter": {
+    "repository": "https://github.com/emulsify-ds/emulsify-wordpress-theme/"
+  }
+}

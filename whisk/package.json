@@ -1,0 +1,45 @@
+{
+  "name": "whisk",
+  "version": "1.0.0",
+  "description": "Storybook development + Webpack Build",
+  "keywords": [
+    "component library",
+    "design system",
+    "wordpress",
+    "emulsify",
+    "storybook",
+    "styleguide"
+  ],
+  "author": "Four Kitchens <shout@fourkitchens.com>",
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "a11y": "npm run storybook-build && node_modules/@emulsify/core/scripts/a11y.js -r",
+    "build": "webpack --config node_modules/@emulsify/core/config/webpack/webpack.prod.js",
+    "build-dev": "webpack --config node_modules/@emulsify/core/config/webpack/webpack.dev.js",
+    "coverage": "npm run test && open-cli .coverage/lcov-report/index.html",
+    "develop": "concurrently --raw \"npm run webpack\" \"npm run storybook\"",
+    "format": "npm run lint-fix; npm run prettier-fix",
+    "husky:commit-msg": "commitlint --edit $1",
+    "husky:pre-commit": "lint-staged",
+    "lint": "npm run lint-js; npm run lint-styles",
+    "lint-fix": "npm run lint-js -- --fix; npm run lint-styles -- --fix",
+    "lint-js": "eslint --config ./config/emulsify-core/eslintrc.config.json --no-eslintrc --no-error-on-unmatched-pattern ./src",
+    "lint-staged": "lint-staged",
+    "lint-styles": "stylelint --config ./config/emulsify-core/stylelintrc.config.json './src/**/*.scss'",
+    "prettier": "prettier --config ./config/emulsify-core/prettierrc.config.json --ignore-path ./config/emulsify-core/.prettierignore --ignore-unknown \"./src/**/*.{js,yml,scss,md}\"",
+    "prettier-fix": "prettier --config ./config/emulsify-core/prettierrc.config.json --ignore-path ./config/emulsify-core/.prettierignore --write --ignore-unknown \"./src/**/*.{js,yml,scss,md}\"",
+    "storybook": "storybook dev -c node_modules/@emulsify/core/.storybook --ci -p 6006",
+    "storybook-build": "npm run build && storybook build -c node_modules/@emulsify/core/.storybook -o .out",
+    "storybook-deploy": "storybook-to-ghpages -o .out",
+    "style-dictionary:build": "style-dictionary build --config ./config/sd.config.json",
+    "test": "jest --coverage  --config ./config/jest.config.js",
+    "tokens:build": "npm run tokens:transform && npm run style-dictionary:build",
+    "tokens:transform": "node ./src/util/tokensTransform.js -- './src/tokens/figma-export/**/*.json' './dist/tokens'",
+    "twatch": "jest --no-coverage --watch --verbose",
+    "webpack": "webpack --watch --config node_modules/@emulsify/core/config/webpack/webpack.dev.js"
+  },
+  "dependencies": {
+    "@emulsify/core": "^2.7.1",
+  }
+}

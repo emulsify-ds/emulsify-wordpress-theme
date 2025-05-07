@@ -1,0 +1,29 @@
+{
+  "name": "emulsify-ds/emulsify-wordpress",
+  "description": "The official Wordpress base theme for Emulsify that generates custom themes with Storybook development + Webpack Build",
+  "type": "wordpress-theme",
+  "homepage": "http://emulsify.info",
+  "license": "GPL-2.0-only",
+  "authors": [
+      {
+          "name": "Callin Mullaney",
+          "email": "callin@fourkitchens.com"
+      },
+      {
+        "name": "Mike Goulding",
+        "email": "mike.goulding@fourkitchens.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+      "timber/timber": "^2.3"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/installers": true
+    }
+  }
+}

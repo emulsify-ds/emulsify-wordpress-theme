@@ -1,0 +1,50 @@
+{
+  "name": "emulsify-wordpress",
+  "version": "1.0.0",
+  "description": "Storybook development + Webpack Build + Wordpress theme",
+  "keywords": [
+    "component library",
+    "design system",
+    "wordpress",
+    "pattern library",
+    "storybook",
+    "styleguide"
+  ],
+  "author": "Four Kitchens <shout@fourkitchens.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emulsify-ds/emulsify-wordpress.git"
+  },
+  "bugs": {
+    "url": "https://github.com/emulsify-ds/emulsify-wordpress/issues"
+  },
+  "homepage": "https://www.emulsify.info",
+  "scripts": {
+    "prepare": "husky install",
+    "husky:commit-msg": "commitlint --edit $1",
+    "husky:pre-commit": "npm run lint",
+    "lint": "npm run lint:php",
+    "lint:php": "find ./ -name '*.php' -exec php -l {} \\;",
+    "lint-staged": "lint-staged",
+    "prepare": "[ -d '.git' ] && (husky install) || true",
+    "publish": "semantic-release --tag-format '${version}'",
+    "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
+    "semantic-release": "semantic-release"
+  },
+  "dependencies": {
+    "graceful-fs": "^4.2.11"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.4.1",
+    "@commitlint/config-conventional": "^19.4.1",
+    "@semantic-release/changelog": "^6.0.2",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.2",
+    "@semantic-release/release-notes-generator": "^14.0.0",
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.9",
+    "semantic-release": "^24.1.0"
+  }
+}
