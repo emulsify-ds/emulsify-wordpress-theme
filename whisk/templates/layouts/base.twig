@@ -7,14 +7,14 @@
     <body class="{{ body_class }}">
         {{ function('wp_body_open') }}
         <a class="skip-link screen-reader-text" href="#content">{{ _e('Skip to content') }}</a>
-        <header>
+        <header class="header">
             {% block header %}
                 <div class="wrapper">
                     <h1 class="hdr-logo">
                         <a class="hdr-logo-link" href="{{ site.url }}">{{ site.name }}</a>
                     </h1>
                     <nav id="nav-main" class="nav-main">
-                        {% include '@emulsify-tpl/partials/menu.twig' with {
+                        {% include 'templates/partials/menu.twig' with {
                             items: menu.get_items
                         } %}
                     </nav>
@@ -23,7 +23,7 @@
             {% endblock %}
         </header>
 
-        <main id="content" class="content-wrapper">
+        <section id="content" class="content-wrapper">
             {% if title %}
                 <h1>{{ title }}</h1>
             {% endif %}
@@ -32,7 +32,7 @@
                     Sorry, no content
                 {% endblock %}
             </div>
-        </main>
+        </section>
 
         {% block footer %}
             {% include 'templates/partials/footer.twig' %}

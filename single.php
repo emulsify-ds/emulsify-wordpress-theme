@@ -1,8 +1,8 @@
 <?php
 /**
- * The Template for displaying all single posts
+ * The Template for displaying all single posts.
  *
- * @link https://developer.wordpress.org/themes/basics/template-hierarchy/
+ * @package Emulsify
  */
 
 namespace App;
@@ -10,10 +10,10 @@ namespace App;
 use Timber\Timber;
 
 $context   = Timber::context();
-$post      = $context['post'];
-$templates = [ 'templates/single-' . $post->post_type . '.twig', 'templates/single.twig' ];
+$wp_post   = $context['post'];
+$templates = array( 'templates/single-' . $wp_post->post_type . '.twig', 'templates/single.twig' );
 
-if ( post_password_required( $post->ID ) ) {
+if ( post_password_required( $wp_post->ID ) ) {
 	$templates = 'templates/single-password.twig';
 }
 

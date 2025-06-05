@@ -1,12 +1,12 @@
 ![Emulsify Design System](https://github.com/emulsify-ds/.github/blob/6bd435be881bd820bddfa05d88905efe29176a0a/assets/images/header.png)
 
-# Emulsify wordpress
+# Emulsify Wordpress
 
 ## Emulsify is an open-source toolset for creating and implementing design systems on your website
 
-### Storybook development, Webpack build, and wordpress 11 theme
+### Storybook development, Webpack build, and Wordpress 11 theme
 
-**Emulsify wordpress** provides a [Storybook](https://storybook.js.org/) component library, a [Webpack](https://webpack.js.org/) development environment, and a wordpress 11 starter kit theme.
+**Emulsify Wordpress** provides a [Storybook](https://storybook.js.org/) component library, a [Webpack](https://webpack.js.org/) development environment, and a Wordpress 11 starter kit theme.
 
 ## Documentation
 

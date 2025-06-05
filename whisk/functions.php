@@ -1,18 +1,14 @@
 <?php
 /**
- * whisk
- * Emulsify subtheme
- * https://github.com/emulsify-ds/emulsify-wordpress-theme/
+ * Functions
+ *
+ * Main functions file for the theme.
+ *
+ * @category   Theme
+ * @package    Emulsify
+ * @subpackage whisk
+ * @author     Callin Mullaney <callin@fourkitchens.com>
+ * @since      1.0.0
  */
 
-// Load Composer dependencies.
-require_once dirname(__DIR__, 4) . '/vendor/autoload.php';
-
-require_once __DIR__ . '/includes/site.php';
-
-Timber\Timber::init();
-
-// Sets the directories (inside your theme) to find .twig files.
-Timber::$dirname = [ 'templates' ];
-
-new whiskSite();
+require 'includes/twig-namespaces.php';

@@ -2,6 +2,8 @@
 /**
  * The main template file
  *
+ * @package Emulsify
+ *
  * This is the most generic template file in a WordPress theme
  * and one of the two required files for a theme (the other being style.css).
  * It is used to display a page when nothing more specific matches a query.
@@ -12,16 +14,16 @@
 
 use Timber\Timber;
 
-$templates = [ 'templates/index.twig' ];
+$templates = array( 'templates/index.twig' );
 
 if ( is_home() ) {
 	array_unshift( $templates, 'templates/front-page.twig', 'templates/home.twig' );
 }
 
 $context = Timber::context(
-	[
+	array(
 		'foo' => 'bar',
-	]
+	)
 );
 
 Timber::render( $templates, $context );

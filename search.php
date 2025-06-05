@@ -1,18 +1,18 @@
 <?php
 /**
- * Search results page
+ * Search results template.
  *
- * @link https://developer.wordpress.org/themes/basics/template-hierarchy/
+ * @package Emulsify
  */
 
 use Timber\Timber;
 
-$templates = [ 'templates/search.twig', 'templates/archive.twig', 'templates/index.twig' ];
+$templates = array( 'templates/search.twig', 'templates/archive.twig', 'templates/index.twig' );
 
 $context = Timber::context(
-	[
+	array(
 		'title' => 'Search results for ' . get_search_query(),
-	]
+	)
 );
 
 Timber::render( $templates, $context );

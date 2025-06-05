@@ -1,6 +1,8 @@
 <?php
 /**
- * The template for the 404 page
+ * Page 404 template.
+ *
+ * @package Emulsify
  */
 
 namespace App;
