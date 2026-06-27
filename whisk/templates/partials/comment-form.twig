@@ -1,32 +1,37 @@
-<div class="comment-form">
-    <h3>Add comment</h3>
-    <form class="comment-form" method="post" action="{{ site.link ~ '/wp-comments-post.php' }}">
-        {% if user %}
-            <input type="hidden" name="email" value="{{ user.email }}" />
-            <input type="hidden" name="author" value="{{ user.name }}" />
-            <input type="hidden" name="url" value="{{ user.link }}" />
-        {% else %}
-            <label>
-                Email<br />
-                <input required name="email" type="email" id="email" />
-            </label>
-            <label>
-                Name<br />
-                <input required name="author" type="text" />
-            </label>
-            <label>
-                Website<br />
-                <input name="url" type="url" />
-            </label>
-        {% endif %}
-        <label>
-            Comment<br />
-            <textarea placeholder="Leave a comment..." name="comment" cols="60" rows="3"></textarea>
-        </label>
-        <input name="comment_post_ID" value="{{ post.id }}" type="hidden" />
-        <input name="comment_parent" value="{{ comment.id|default('0') }}" type="hidden" />
-        <button type="submit" name="Submit" class="btn">Send</button>
-        <button type="reset">Cancel</button>
-        <p>Your comment will be revised by the site if needed.</p>
-    </form>
-</div>
+{% if post|default(null) and post.id|default(null) %}
+    {% set current_user = user|default(null) %}
+
+    <div class="comment-form">
+        <h2 class="comment-form__title">Leave a comment</h2>
+
+        <form class="comment-form__form" method="post" action="{{ site.link|default('') }}/wp-comments-post.php">
+            {% if current_user %}
+                <input type="hidden" name="email" value="{{ current_user.email|default('') }}" />
+                <input type="hidden" name="author" value="{{ current_user.name|default('') }}" />
+                <input type="hidden" name="url" value="{{ current_user.link|default('') }}" />
+            {% else %}
+                <p class="comment-form__field">
+                    <label for="comment-email">Email</label>
+                    <input required name="email" type="email" id="comment-email" />
+                </p>
+                <p class="comment-form__field">
+                    <label for="comment-author">Name</label>
+                    <input required name="author" type="text" id="comment-author" />
+                </p>
+                <p class="comment-form__field">
+                    <label for="comment-url">Website</label>
+                    <input name="url" type="url" id="comment-url" />
+                </p>
+            {% endif %}
+
+            <p class="comment-form__field">
+                <label for="comment-message">Comment</label>
+                <textarea required name="comment" id="comment-message" rows="5"></textarea>
+            </p>
+
+            <input name="comment_post_ID" value="{{ post.id }}" type="hidden" />
+            <input name="comment_parent" value="{{ comment.id|default('0') }}" type="hidden" />
+            <button type="submit" name="Submit" class="comment-form__submit">Submit</button>
+        </form>
+    </div>
+{% endif %}

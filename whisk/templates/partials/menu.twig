@@ -1,11 +1,25 @@
-{% if menu %}
-    <ul>
-        {% for item in items %}
-            <li class="{{ item.classes|join(' ') }}">
-                <a target="{{ item.target }}" href="{{ item.link }}">{{ item.title }}</a>
-                {% include 'templates/partials/menu.twig' with {
-                    items: item.children
-                } %}
+{% set menu_items = items|default([]) %}
+{% if menu_items is not empty %}
+    <ul class="{{ menu_class|default('menu') }}">
+        {% for item in menu_items %}
+            {% set children = item.children|default([]) %}
+            <li {{ add_attributes({
+                class: [
+                    'menu__item',
+                    item.classes|default([]),
+                    children is not empty ? 'menu__item--has-children' : ''
+                ]
+            }) }}>
+                <a class="menu__link" href="{{ item.link|default('#') }}"{% if item.target|default(null) %} target="{{ item.target }}" rel="noopener"{% endif %}>
+                    {{ item.title|default('') }}
+                </a>
+
+                {% if children is not empty %}
+                    {% include '@templates/partials/menu.twig' with {
+                        items: children,
+                        menu_class: 'menu menu--sub'
+                    } only %}
+                {% endif %}
             </li>
         {% endfor %}
     </ul>

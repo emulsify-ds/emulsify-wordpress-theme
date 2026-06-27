@@ -1,7 +1,17 @@
-{% extends 'templates/layouts/base.twig' %}
+{% extends '@templates/layouts/base.twig' %}
 
 {% block content %}
-    {% for post in posts %}
-        {% include ['templates/partials/tease-' ~ post.type ~ '.twig', 'templates/partials/tease.twig'] %}
-    {% endfor %}
+    {% set entries = posts|default([]) %}
+
+    {% if entries is not empty %}
+        <div class="entry-list">
+            {% for post in entries %}
+                {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
+                    post: post
+                } only %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No posts were found for this author.</p>
+    {% endif %}
 {% endblock %}

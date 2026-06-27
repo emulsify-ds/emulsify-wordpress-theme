@@ -189,7 +189,7 @@ final class Twig {
 	 * @return array Timber context.
 	 */
 	private function shift_twig_context( array &$arguments ): array {
-		if ( count( $arguments ) > 1 && is_array( $arguments[0] ) && ( empty( $arguments[0] ) || $this->is_twig_context( $arguments[0] ) ) ) {
+		if ( count( $arguments ) > 1 && is_array( $arguments[0] ) ) {
 			return array_shift( $arguments );
 		}
 

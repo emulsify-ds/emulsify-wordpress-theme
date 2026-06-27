@@ -7,7 +7,7 @@
 
 use Timber\Timber;
 
-$templates = array( 'templates/search.twig', 'templates/archive.twig', 'templates/index.twig' );
+$templates = array( '@templates/search.twig', '@templates/archive.twig', '@templates/index.twig' );
 
 $context = Timber::context(
 	array(

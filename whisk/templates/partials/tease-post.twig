@@ -1,16 +1,14 @@
-{% extends 'templates/partials/tease.twig' %}
+{% extends '@templates/partials/tease.twig' %}
 
-{% block content %}
-    <h2 class="h2"><a href="{{ post.link }}">{{ post.title }}</a></h2>
-    <p>
-        {{
-            post.excerpt({
-                words: 5,
-                read_more: 'Keep reading'
-            })
-        }}
-    </p>
-    {% if post.thumbnail.src %}
-        <img src="{{ post.thumbnail.src }}" />
+{% block summary %}
+    {% if post.excerpt|default(null) %}
+        <div class="teaser__summary">
+            {{
+                post.excerpt({
+                    words: 20,
+                    read_more: 'Continue reading'
+                })
+            }}
+        </div>
     {% endif %}
 {% endblock %}

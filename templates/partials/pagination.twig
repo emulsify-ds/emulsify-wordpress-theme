@@ -1,43 +1,27 @@
-{% if posts.pagination.pages is not empty %}
-    <nav class="pagination-block">
-        <ul class="pagination">
-            {# First #}
-            {% if (posts.pagination.pages|first) and posts.pagination.pages|first.current != true %}
-                <li class="first btn">
-                    <a href="{{ posts.pagination.pages|first.link }}">First</a>
+{% set pages = pagination.pages|default([]) %}
+{% if pages is not empty %}
+    <nav class="pagination" aria-label="Pagination">
+        <ul class="pagination__items">
+            {% if pagination.prev|default(null) %}
+                <li class="pagination__item pagination__item--previous">
+                    <a class="pagination__link" href="{{ pagination.prev.link }}">Previous</a>
                 </li>
-            {% else %}
-                <li class="first btn disabled"><button disabled>First</button></li>
             {% endif %}
 
-            {# Previous #}
-            {% if posts.pagination.prev %}
-                <li class="prev btn"><a href="{{ posts.pagination.prev.link }}">Previous</a></li>
-            {% else %}
-                <li class="prev btn disabled"><button disabled>Previous</button></li>
-            {% endif %}
-
-            {# Pages #}
-            {% for page in posts.pagination.pages %}
-                {% if page.link %}
-                    <li><a href="{{ page.link }}" class="{{ page.class }}">{{ page.title }}</a></li>
-                {% else %}
-                    <li class="current"><span class="{{ page.class }}">{{ page.title }}</span></li>
-                {% endif %}
+            {% for page in pages %}
+                <li class="pagination__item{% if page.current|default(false) %} pagination__item--current{% endif %}">
+                    {% if page.link|default(null) %}
+                        <a class="pagination__link {{ page.class|default('') }}" href="{{ page.link }}">{{ page.title }}</a>
+                    {% else %}
+                        <span class="pagination__link {{ page.class|default('') }}" aria-current="page">{{ page.title }}</span>
+                    {% endif %}
+                </li>
             {% endfor %}
 
-            {# Next #}
-            {% if posts.pagination.next %}
-                <li class="next btn"><a href="{{ posts.pagination.next.link }}">Next</a></li>
-            {% else %}
-                <li class="next btn disabled"><button disabled>Next</button></li>
-            {% endif %}
-
-            {# Last #}
-            {% if (posts.pagination.pages|last) and posts.pagination.pages|last.current != true %}
-                <li class="last btn"><a href="{{ posts.pagination.pages|last.link }}">Last</a></li>
-            {% else %}
-                <li class="last btn disabled"><button disabled>Last</button></li>
+            {% if pagination.next|default(null) %}
+                <li class="pagination__item pagination__item--next">
+                    <a class="pagination__link" href="{{ pagination.next.link }}">Next</a>
+                </li>
             {% endif %}
         </ul>
     </nav>

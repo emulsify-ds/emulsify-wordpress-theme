@@ -1,12 +1,20 @@
-{% extends 'templates/layouts/base.twig' %}
+{% extends '@templates/layouts/base.twig' %}
 
 {% block content %}
-    <div class="content-wrapper">
-        <article class="post-type-{{ post.type }}" id="post-{{ post.id }}">
-            <section class="article-content">
-                <h1 class="article-h1">{{ post.title }}</h1>
-                <div class="article-body">{{ post.content }}</div>
-            </section>
+    {% if post|default(null) %}
+        <article {{ add_attributes({
+            class: ['entry', 'entry--' ~ post.type|default('page')],
+            id: post.id|default(null) ? 'post-' ~ post.id : null
+        }) }}>
+            <header class="entry__header">
+                <h1 class="entry__title">{{ post.title }}</h1>
+            </header>
+
+            <div class="entry__content">
+                {{ post.content }}
+            </div>
         </article>
-    </div>
+    {% else %}
+        <p>No page content was found.</p>
+    {% endif %}
 {% endblock %}

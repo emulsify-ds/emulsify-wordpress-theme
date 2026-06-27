@@ -1,9 +1,26 @@
-<article class="tease tease-{{ post.type }}" id="tease-{{ post.id }}">
-    {% block content %}
-        <h2 class="h2"><a href="{{ post.link }}">{{ post.title }}</a></h2>
-        <p>{{ post.excerpt }}</p>
-        {% if post.thumbnail %}
-            <img src="{{ post.thumbnail.src }}" />
-        {% endif %}
-    {% endblock %}
-</article>
+{% if post|default(null) %}
+    <article {{ add_attributes({
+        class: ['teaser', 'teaser--' ~ post.type|default('post')],
+        id: post.id|default(null) ? 'teaser-' ~ post.id : null
+    }) }}>
+        {% block media %}
+            {% if post.thumbnail|default(null) and post.thumbnail.src|default(null) %}
+                <div class="teaser__media">
+                    <img src="{{ post.thumbnail.src }}" alt="{{ post.thumbnail.alt|default(post.title) }}" />
+                </div>
+            {% endif %}
+        {% endblock %}
+
+        {% block title %}
+            <h2 class="teaser__title">
+                <a href="{{ post.link|default('#') }}">{{ post.title|default('Untitled') }}</a>
+            </h2>
+        {% endblock %}
+
+        {% block summary %}
+            {% if post.excerpt|default(null) %}
+                <div class="teaser__summary">{{ post.excerpt }}</div>
+            {% endif %}
+        {% endblock %}
+    </article>
+{% endif %}

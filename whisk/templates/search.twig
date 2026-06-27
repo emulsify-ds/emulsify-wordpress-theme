@@ -1,18 +1,25 @@
-{# see `templates/archive.twig` for an alternative strategy of extending templates #}
-{% extends 'templates/layouts/base.twig' %}
+{% extends '@templates/layouts/base.twig' %}
 
 {% block content %}
-    <div class="content-wrapper">
-        {% for post in posts %}
-            {% include ['templates/partials/tease-' ~ post.type ~ '.twig', 'templates/partials/tease.twig'] %}
-        {% endfor %}
+    {% set entries = posts|default([]) %}
 
-        {% include 'templates/partials/pagination.twig' with {
+    {% if entries is not empty %}
+        <div class="entry-list">
+            {% for post in entries %}
+                {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
+                    post: post
+                } only %}
+            {% endfor %}
+        </div>
+
+        {% include '@templates/partials/pagination.twig' with {
             pagination: posts.pagination({
                 show_all: false,
                 mid_size: 3,
                 end_size: 2
             })
-        } %}
-    </div>
+        } only %}
+    {% else %}
+        <p>No results were found.</p>
+    {% endif %}
 {% endblock %}
