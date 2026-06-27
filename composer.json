@@ -1,6 +1,6 @@
 {
-  "name": "emulsify-ds/emulsify-wordpress",
-  "description": "The official Wordpress base theme for Emulsify that generates custom themes with Storybook development + Webpack Build",
+  "name": "emulsify-ds/emulsify-wordpress-theme",
+  "description": "The official WordPress base theme for Emulsify that generates custom themes with Storybook development + Webpack Build",
   "type": "wordpress-theme",
   "homepage": "http://emulsify.info",
   "license": "GPL-2.0-only",

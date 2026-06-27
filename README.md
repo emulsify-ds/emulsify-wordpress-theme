@@ -1,12 +1,12 @@
 ![Emulsify Design System](https://github.com/emulsify-ds/.github/blob/6bd435be881bd820bddfa05d88905efe29176a0a/assets/images/header.png)
 
-# Emulsify Wordpress
+# Emulsify WordPress
 
 ## Emulsify is an open-source toolset for creating and implementing design systems on your website
 
-### Storybook development, Webpack build, and Wordpress 11 theme
+### Storybook development, Webpack build, and WordPress theme
 
-**Emulsify Wordpress** provides a [Storybook](https://storybook.js.org/) component library, a [Webpack](https://webpack.js.org/) development environment, and a Wordpress 11 starter kit theme.
+**Emulsify WordPress** provides a [Storybook](https://storybook.js.org/) component library, a [Webpack](https://webpack.js.org/) development environment, and a WordPress starter kit theme.
 
 ## Documentation
 
@@ -23,7 +23,7 @@
 
 ## Contributing
 
-### [Code of Conduct](https://github.com/emulsify-ds/emulsify-wordpress/blob/main/CODE_OF_CONDUCT.md)
+### [Code of Conduct](https://github.com/emulsify-ds/emulsify-wordpress-theme/blob/main/CODE_OF_CONDUCT.md)
 
 The project maintainers have adopted a Code of Conduct that we expect project participants to adhere to. Please read the full text so that you can understand what actions will and will not be tolerated.
 
@@ -31,7 +31,7 @@ The project maintainers have adopted a Code of Conduct that we expect project pa
 
 Please also follow the issue template and pull request templates provided. See below for the correct places to post issues:
 
-1. [Emulsify wordpress](https://github.com/emulsify-ds/emulsify-wordpress)
+1. [Emulsify WordPress](https://github.com/emulsify-ds/emulsify-wordpress-theme)
 2. [Emulsify Twig Extensions](https://github.com/emulsify-ds/emulsify-twig-extensions/issues)
 
 ### Committing Changes
