@@ -28,35 +28,92 @@ final class Setup {
 	 * @return void
 	 */
 	public function theme_supports(): void {
-		load_theme_textdomain( 'emulsify', get_template_directory() . '/languages' );
-
-		add_theme_support( 'automatic-feed-links' );
-		add_theme_support( 'title-tag' );
-		add_theme_support( 'post-thumbnails' );
-		add_theme_support( 'custom-logo', array( 'flex-height' => true, 'flex-width' => true ) );
-
-		add_image_size( 'emulsify-wide', 1600, 900, true );
-		add_image_size( 'emulsify-card', 768, 432, true );
-
-		add_theme_support(
-			'html5',
-			array(
-				'caption',
-				'comment-form',
-				'comment-list',
-				'gallery',
-				'navigation-widgets',
-				'script',
-				'search-form',
-				'style',
-			)
+		$options = array(
+			'image_sizes'    => array(
+				'emulsify-wide' => array(
+					'width'  => 1600,
+					'height' => 900,
+					'crop'   => true,
+				),
+				'emulsify-card' => array(
+					'width'  => 768,
+					'height' => 432,
+					'crop'   => true,
+				),
+			),
+			'textdomain'     => array(
+				'domain' => 'emulsify',
+				'path'   => get_template_directory() . '/languages',
+			),
+			'theme_supports' => array(
+				'automatic-feed-links' => true,
+				'title-tag'            => true,
+				'post-thumbnails'      => true,
+				'custom-logo'          => array(
+					'flex-height' => true,
+					'flex-width'  => true,
+				),
+				'html5'                => array(
+					'caption',
+					'comment-form',
+					'comment-list',
+					'gallery',
+					'navigation-widgets',
+					'script',
+					'search-form',
+					'style',
+				),
+				'align-wide'           => true,
+				'responsive-embeds'    => true,
+				'wp-block-styles'      => true,
+				'editor-styles'        => true,
+				'appearance-tools'     => true,
+			),
 		);
 
-		add_theme_support( 'align-wide' );
-		add_theme_support( 'responsive-embeds' );
-		add_theme_support( 'wp-block-styles' );
-		add_theme_support( 'editor-styles' );
-		add_theme_support( 'appearance-tools' );
+		/**
+		 * Filters parent theme setup options before they are registered.
+		 *
+		 * Options include textdomain, image_sizes, and theme_supports keys.
+		 * Set a theme support value to false to skip registering that support.
+		 *
+		 * @param array $options Parent theme setup options.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_setup_options', $options );
+
+		if ( is_array( $filtered ) ) {
+			$options = $filtered;
+		}
+
+		if ( ! empty( $options['textdomain']['domain'] ) && ! empty( $options['textdomain']['path'] ) ) {
+			load_theme_textdomain( (string) $options['textdomain']['domain'], (string) $options['textdomain']['path'] );
+		}
+
+		foreach ( $options['theme_supports'] ?? array() as $feature => $support_options ) {
+			if ( false === $support_options ) {
+				continue;
+			}
+
+			if ( true === $support_options ) {
+				add_theme_support( (string) $feature );
+				continue;
+			}
+
+			add_theme_support( (string) $feature, $support_options );
+		}
+
+		foreach ( $options['image_sizes'] ?? array() as $name => $image_size ) {
+			if ( ! is_array( $image_size ) ) {
+				continue;
+			}
+
+			add_image_size(
+				(string) $name,
+				isset( $image_size['width'] ) ? (int) $image_size['width'] : 0,
+				isset( $image_size['height'] ) ? (int) $image_size['height'] : 0,
+				$image_size['crop'] ?? false
+			);
+		}
 	}
 
 	/**

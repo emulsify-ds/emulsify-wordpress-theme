@@ -33,18 +33,58 @@ final class Twig {
 			return $loader;
 		}
 
-		$paths = array(
-			array( get_stylesheet_directory() . '/templates', 'templates' ),
-			array( get_template_directory() . '/templates', 'templates' ),
-			array( get_template_directory() . '/templates', 'emulsify-tpl' ),
-			array( get_stylesheet_directory() . '/src/components', 'components' ),
-			array( get_template_directory() . '/src/components', 'components' ),
-			array( get_stylesheet_directory() . '/components', 'components' ),
-			array( get_template_directory() . '/components', 'components' ),
+		$namespaces = array(
+			array(
+				'namespace' => 'templates',
+				'path'      => get_stylesheet_directory() . '/templates',
+			),
+			array(
+				'namespace' => 'templates',
+				'path'      => get_template_directory() . '/templates',
+			),
+			array(
+				'namespace' => 'emulsify-tpl',
+				'path'      => get_template_directory() . '/templates',
+			),
+			array(
+				'namespace' => 'components',
+				'path'      => get_stylesheet_directory() . '/src/components',
+			),
+			array(
+				'namespace' => 'components',
+				'path'      => get_stylesheet_directory() . '/components',
+			),
+			array(
+				'namespace' => 'components',
+				'path'      => get_template_directory() . '/src/components',
+			),
+			array(
+				'namespace' => 'components',
+				'path'      => get_template_directory() . '/components',
+			),
 		);
 
-		foreach ( $paths as $path ) {
-			$this->add_path( $loader, $path[0], $path[1] );
+		/**
+		 * Filters Twig namespace paths before they are added to Timber.
+		 *
+		 * Namespace records should include path and namespace keys. Existing
+		 * child-first order is preserved unless a filter intentionally changes it.
+		 *
+		 * @param array $namespaces Twig namespace path records.
+		 * @param mixed $loader     Timber loader instance.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_twig_namespaces', $namespaces, $loader );
+
+		if ( is_array( $filtered ) ) {
+			$namespaces = $filtered;
+		}
+
+		foreach ( $namespaces as $namespace ) {
+			if ( ! is_array( $namespace ) || empty( $namespace['path'] ) || empty( $namespace['namespace'] ) ) {
+				continue;
+			}
+
+			$this->add_path( $loader, (string) $namespace['path'], (string) $namespace['namespace'] );
 		}
 
 		return $loader;

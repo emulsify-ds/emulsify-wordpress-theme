@@ -141,7 +141,19 @@ final class Assets {
 			}
 		);
 
-		return $assets;
+		/**
+		 * Filters built asset files before they are enqueued.
+		 *
+		 * Child themes and project plugins can add, remove, or reorder records.
+		 * Asset records should include path, relative, uri, and version keys.
+		 *
+		 * @param array  $assets     Built asset records.
+		 * @param string $directory  Theme-relative asset directory being scanned.
+		 * @param array  $extensions Allowed file extensions for the current enqueue pass.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_asset_files', $assets, $directory, $extensions );
+
+		return is_array( $filtered ) ? $filtered : $assets;
 	}
 
 	/**
@@ -153,20 +165,44 @@ final class Assets {
 	private function asset_roots( string $directory ): array {
 		$roots      = array();
 		$seen_paths = array();
-		$candidates = array(
+		$directories = array(
 			array(
-				'base_path' => get_stylesheet_directory(),
-				'base_uri'  => get_stylesheet_directory_uri(),
+				'path'     => rtrim( get_stylesheet_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
+				'priority' => 0,
+				'source'   => 'child',
+				'uri'      => rtrim( get_stylesheet_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
 			),
 			array(
-				'base_path' => get_template_directory(),
-				'base_uri'  => get_template_directory_uri(),
+				'path'     => rtrim( get_template_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
+				'priority' => 1,
+				'source'   => 'parent',
+				'uri'      => rtrim( get_template_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
 			),
 		);
 
-		foreach ( $candidates as $priority => $candidate ) {
-			$path = rtrim( $candidate['base_path'], '/\\' ) . '/' . ltrim( $directory, '/\\' );
-			$uri  = rtrim( $candidate['base_uri'], '/' ) . '/' . trim( $directory, '/' );
+		/**
+		 * Filters built asset directories before files are discovered.
+		 *
+		 * Root records should include absolute path, public uri, and priority
+		 * keys. Lower priority values are enqueued first after duplicate relative
+		 * paths are resolved child-first.
+		 *
+		 * @param array  $directories Built asset directory records.
+		 * @param string $directory   Theme-relative asset directory being scanned.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_asset_directories', $directories, $directory );
+
+		if ( is_array( $filtered ) ) {
+			$directories = $filtered;
+		}
+
+		foreach ( $directories as $priority => $candidate ) {
+			if ( ! is_array( $candidate ) || empty( $candidate['path'] ) || empty( $candidate['uri'] ) ) {
+				continue;
+			}
+
+			$path = rtrim( (string) $candidate['path'], '/\\' );
+			$uri  = rtrim( (string) $candidate['uri'], '/' );
 			$key  = realpath( $path );
 
 			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
@@ -176,7 +212,7 @@ final class Assets {
 			$seen_paths[ $key ] = true;
 			$roots[]           = array(
 				'path'     => rtrim( $path, '/\\' ),
-				'priority' => $priority,
+				'priority' => isset( $candidate['priority'] ) ? (int) $candidate['priority'] : (int) $priority,
 				'uri'      => $uri,
 			);
 		}

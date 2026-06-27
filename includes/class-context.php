@@ -38,7 +38,17 @@ final class Context {
 		$context['wp']         = $this->wordpress_helpers();
 		$context['body_class'] = $context['body_class'] ?? implode( ' ', get_body_class() );
 
-		return $context;
+		/**
+		 * Filters global Timber context values added by the parent theme.
+		 *
+		 * Child themes and project plugins can add project-wide values here
+		 * without replacing the parent Context service.
+		 *
+		 * @param array $context Timber context values.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_context', $context );
+
+		return is_array( $filtered ) ? $filtered : $context;
 	}
 
 	/**
