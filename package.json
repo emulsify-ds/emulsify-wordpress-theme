@@ -42,9 +42,6 @@
     "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"
   },
-  "dependencies": {
-    "graceful-fs": "^4.2.11"
-  },
   "devDependencies": {
     "@commitlint/cli": "^19.4.1",
     "@commitlint/config-conventional": "^19.4.1",
@@ -57,5 +54,10 @@
     "husky": "^9.1.5",
     "lint-staged": "^15.2.9",
     "semantic-release": "^25.0.5"
+  },
+  "overrides": {
+    "@semantic-release/npm": {
+      "npm": "npm:cmd-shim@8.0.0"
+    }
   }
 }
