@@ -186,6 +186,7 @@ function runStaticChecks() {
   const composer = readJson('composer.json');
   const rootThemeHeader = parseWordPressThemeHeader('style.css');
   const whiskThemeHeader = parseWordPressThemeHeader('whisk/style.css');
+  const whiskProject = readJson('whisk/project.emulsify.json');
   const releaseConfig = require(path.join(repoRoot, 'release.config.js'));
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
 
@@ -261,6 +262,14 @@ function runStaticChecks() {
     ensure(whiskPackage.license === 'GPL-2.0-only', 'whisk/package.json license should align with the WordPress theme.');
     ensure(whiskPackage.engines && whiskPackage.engines.node === '>=24', 'whisk/package.json engines.node should be >=24.');
     ensure(whiskPackage.type === 'module', 'whisk/package.json should remain an ES module package.');
+    ensure(whiskProject.project.platform === 'none', 'whisk/project.emulsify.json should use platform "none" until Core ships a WordPress adapter.');
+    ensure(whiskProject.project.name === 'whisk', 'whisk/project.emulsify.json project.name should remain whisk.');
+    ensure(whiskProject.project.machineName === 'whisk', 'whisk/project.emulsify.json project.machineName should remain whisk.');
+    ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components')), 'whisk/src/components should be the primary component source.');
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/components')), 'whisk/components should not remain as an unused starter placeholder.');
+    for (const entryFile of ['foundation.scss', 'layout.scss', 'tokens.scss']) {
+      ensure(fs.existsSync(path.join(repoRoot, 'whisk/src', entryFile)), `whisk/src/${entryFile} should exist for Core 4 Vite global entries.`);
+    }
     ensure(whiskPackage.dependencies && whiskPackage.dependencies['@emulsify/core'], 'whisk/package.json must declare @emulsify/core.');
     ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.1.0', 'whisk/package.json should target Emulsify Core ^4.1.0.');
     ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config.');
@@ -276,6 +285,23 @@ function runStaticChecks() {
     ensure(!/\bstyle-dictionary\b/.test(scriptText), 'whisk/package.json scripts should not reference Style Dictionary.');
     ensure(!String(whiskPackage.dependencies['@emulsify/core']).startsWith('^3.'), 'whisk/package.json should not target Emulsify Core 3.');
     return `Whisk targets ${whiskPackage.dependencies['@emulsify/core']} with Vite scripts.`;
+  });
+
+  runStaticCheck('Starter asset placeholders', () => {
+    const iconFiles = listFilesRecursive('whisk/assets/icons', (file) => path.basename(file) !== '.gitkeep');
+    const expectedPlaceholders = [
+      'whisk/assets/fonts/.gitkeep',
+      'whisk/assets/icons/.gitkeep',
+      'whisk/assets/images/.gitkeep',
+    ];
+
+    ensure(iconFiles.length === 0, `Remove client-specific starter icons: ${iconFiles.join(', ')}.`);
+    for (const placeholder of expectedPlaceholders) {
+      ensure(fs.existsSync(path.join(repoRoot, placeholder)), `${placeholder} should keep the starter asset directory.`);
+    }
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/assets/audio')), 'whisk/assets/audio should not ship as a default starter directory.');
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/assets/video')), 'whisk/assets/video should not ship as a default starter directory.');
+    return 'Whisk keeps only generic starter asset placeholders.';
   });
 
   runStaticCheck('Duplicate package scripts', () => {
