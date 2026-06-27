@@ -1,4 +1,4 @@
-emulsify version (see [releases](https://github.com/emulsify-ds/emulsify-drupal/releases)):
+Emulsify WordPress version (see [releases](https://github.com/emulsify-ds/emulsify-wordpress-theme/releases)):
 
 **What you did:**
 
