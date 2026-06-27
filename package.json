@@ -1,7 +1,7 @@
 {
   "name": "emulsify-wordpress-theme",
-  "version": "1.0.0",
-  "description": "Storybook, Emulsify Core 4, and a Vite-based build workflow for WordPress child themes",
+  "version": "2.0.0",
+  "description": "Timber-first WordPress parent theme that generates child themes with Emulsify Core 4, Vite, Storybook, and Twig",
   "engines": {
     "node": ">=24.10"
   },
@@ -27,10 +27,17 @@
     "husky:commit-msg": "commitlint --edit $1",
     "husky:pre-commit": "npm run lint",
     "lint": "npm run lint:php",
-    "lint:php": "find ./ -name '*.php' -exec php -l {} \\;",
+    "lint:php": "find . \\( -path './.git' -o -path './node_modules' -o -path './vendor' -o -path './whisk/node_modules' \\) -prune -o -type f -name '*.php' -exec php -l {} \\;",
     "lint-staged": "lint-staged",
     "prepare": "[ -d '.git' ] && (husky install) || true",
+    "pr:check": "node .github/scripts/pr-validation.cjs",
     "release:check": "node .github/scripts/release-check.cjs",
+    "smoke:attributes": "php .github/scripts/attribute-helper-smoke.php",
+    "smoke:child-theme-generator": "php .github/scripts/child-theme-generator-smoke.php",
+    "smoke:component-locator": "php .github/scripts/component-locator-smoke.php",
+    "smoke:theme-filters": "php .github/scripts/theme-filters-smoke.php",
+    "whisk:build": "npm --prefix whisk run build",
+    "whisk:install": "npm --prefix whisk install --package-lock=false --ignore-scripts",
     "publish": "semantic-release --tag-format '${version}'",
     "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"

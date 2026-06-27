@@ -18,3 +18,6 @@ vendor
 
 # Jest
 .coverage
+
+# Storybook
+.out

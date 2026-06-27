@@ -1,6 +1,6 @@
 {
   "name": "emulsify-ds/emulsify-wordpress-theme",
-  "description": "The official WordPress base theme for Emulsify that generates child themes with Storybook, Emulsify Core 4, and a Vite-based build workflow",
+  "description": "Timber-first WordPress parent theme for Emulsify that generates child themes with Emulsify Core 4, Vite, Storybook, and Twig",
   "type": "wordpress-theme",
   "homepage": "https://www.emulsify.info",
   "license": "GPL-2.0-only",
