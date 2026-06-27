@@ -82,6 +82,8 @@ Run parent theme checks from the repository root:
 | `npm run release:check` | Run release-readiness checks. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
+`release:check` includes the full WordPress fixture smoke path. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.
+
 ## Core 4, Vite, and Storybook commands
 
 Run component development commands from the generated child theme:

@@ -590,6 +590,18 @@ function runStaticChecks() {
     for (const route of ['home', 'page', 'single', 'archive', 'search', 'author', '404']) {
       ensure(wordpressFixtureSmoke.includes(`name: '${route}'`), `WordPress fixture smoke should render the ${route} route.`);
     }
+    ensure(wordpressFixtureSmoke.includes("const required = process.env.WP_SMOKE_REQUIRED === '1'"), 'WordPress fixture smoke should only require local prerequisites when WP_SMOKE_REQUIRED=1.');
+    ensure(!wordpressFixtureSmoke.includes("process.env.CI === 'true'"), 'WordPress fixture smoke should not treat all CI runs as required fixture runs.');
+    ensure(wordpressFixtureSmoke.includes("['theme', 'is-installed', 'emulsify']"), 'WordPress fixture smoke should prove the parent theme is installed.');
+    ensure(wordpressFixtureSmoke.includes("['emulsify', 'Smoke Generated'"), 'WordPress fixture smoke should generate a child theme from Whisk with WP-CLI.');
+    ensure(wordpressFixtureSmoke.includes("['option', 'get', 'stylesheet']"), 'WordPress fixture smoke should verify the generated child theme is active.');
+    ensure(wordpressFixtureSmoke.includes('assertGeneratedChildTheme'), 'WordPress fixture smoke should validate generated child theme metadata and copied Whisk files.');
+    ensure(wordpressFixtureSmoke.includes('${themeSlug}-page'), 'WordPress fixture smoke should prove the generated child page template renders through Timber.');
+    ensure(wordpressFixtureSmoke.includes('checkGeneratedAssets'), 'WordPress fixture smoke should fetch generated child theme built assets.');
+    ensure(wordpressFixtureSmoke.includes('runAcfDiscoveryWithoutAcf'), 'WordPress fixture smoke should check ACF/Twig discovery when ACF is absent.');
+    ensure(wordpressFixtureSmoke.includes('installAcfStub'), 'WordPress fixture smoke should provide a fixture-only ACF stub.');
+    ensure(wordpressFixtureSmoke.includes('runAcfDiscoveryWithStub'), 'WordPress fixture smoke should check ACF/Twig registration with the ACF stub.');
+    ensure(wordpressFixtureSmoke.includes('emulsify/smoke-native'), 'WordPress fixture smoke should check native block.json discovery and registration.');
     return 'Parent owns route fallbacks and default Twig namespaces; Whisk ships only the page override example.';
   });
 
@@ -710,6 +722,7 @@ function runStaticChecks() {
     ensure(readme.includes('## Documentation'), 'README.md should link to deeper docs.');
     ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
+    ensure(readme.includes('WP_SMOKE_REQUIRED=1'), 'README.md should document required WordPress fixture smoke behavior.');
 
     for (const docLink of expectedDocLinks) {
       ensure(readme.includes(docLink), `README.md should link to ${docLink}.`);
@@ -749,6 +762,9 @@ function runStaticChecks() {
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
     ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');
     ensure(docs.release.includes('Manual and scheduled runs execute the full WordPress fixture smoke test'), 'Release process doc should explain when the full fixture runs.');
+    ensure(docs.release.includes('generates and activates a child theme from Whisk'), 'Release process doc should document generated child fixture coverage.');
+    ensure(docs.release.includes('ACF/Twig and native `block.json` discovery'), 'Release process doc should document block discovery fixture coverage.');
+    ensure(docs.release.includes('WP_SMOKE_REQUIRED=1'), 'Release process doc should document required fixture smoke behavior.');
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');

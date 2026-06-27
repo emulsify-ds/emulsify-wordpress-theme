@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '../..');
-const required = process.env.CI === 'true' || process.env.WP_SMOKE_REQUIRED === '1';
+const required = process.env.WP_SMOKE_REQUIRED === '1';
 const keepFixture = process.env.WP_SMOKE_KEEP === '1';
 const host = process.env.WP_SMOKE_HOST || '127.0.0.1';
 const wordpressVersion = process.env.WP_SMOKE_WORDPRESS_VERSION || '6.7';
@@ -182,8 +182,9 @@ function copyThemes(themesDir) {
 
   copyDirectory(repoRoot, parentTheme, (segments) => {
     const first = segments[0];
+    const second = segments[1];
 
-    return ![
+    if ([
       '.git',
       '.github',
       '.coverage',
@@ -191,8 +192,15 @@ function copyThemes(themesDir) {
       '.publish',
       'node_modules',
       'vendor',
-      'whisk',
-    ].includes(first);
+    ].includes(first)) {
+      return false;
+    }
+
+    if ('whisk' === first && ['.coverage', '.out', 'node_modules'].includes(second)) {
+      return false;
+    }
+
+    return true;
   });
 
   copyDirectory(path.join(repoRoot, 'whisk'), childTheme, (segments) => {
@@ -230,12 +238,222 @@ function ensureWhiskBuild() {
       throw new Error(`Expected built Whisk global CSS is missing: ${builtFile}`);
     }
   }
+
+  const buttonCss = path.join(whiskDir, 'dist', 'components', 'button', 'css', 'button.css');
+  if (!fs.existsSync(buttonCss)) {
+    throw new Error(`Expected built Whisk button CSS is missing: ${buttonCss}`);
+  }
 }
 
 function installThemeDependencies(parentTheme) {
   run('Install Timber with Composer', 'composer', ['install', '--no-interaction', '--no-progress', '--prefer-dist', '--no-dev'], {
     cwd: parentTheme,
   });
+}
+
+function assertGeneratedChildTheme(themePath, slug) {
+  const style = fs.readFileSync(path.join(themePath, 'style.css'), 'utf8');
+  const project = JSON.parse(fs.readFileSync(path.join(themePath, 'project.emulsify.json'), 'utf8'));
+  const packageJson = JSON.parse(fs.readFileSync(path.join(themePath, 'package.json'), 'utf8'));
+  const requiredFiles = [
+    'dist/global/foundation.css',
+    'dist/global/layout.css',
+    'dist/global/tokens.css',
+    'dist/components/button/button.component.json',
+    'dist/components/button/button.twig',
+    'dist/components/button/css/button.css',
+    'templates/page.twig',
+  ];
+
+  if (!style.includes('Theme Name: Smoke Generated') || !style.includes('Template: emulsify')) {
+    throw new Error('Generated child theme style.css headers were not updated correctly.');
+  }
+
+  if (packageJson.name !== slug) {
+    throw new Error(`Generated child theme package.json name should be ${slug}.`);
+  }
+
+  if (
+    project.project?.platform !== 'wordpress' ||
+    project.project?.name !== 'Smoke Generated' ||
+    project.project?.machineName !== slug
+  ) {
+    throw new Error('Generated child theme project.emulsify.json metadata is incorrect.');
+  }
+
+  for (const file of requiredFiles) {
+    const filePath = path.join(themePath, file);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Generated child theme is missing expected Whisk file: ${file}`);
+    }
+  }
+}
+
+function installNativeBlockFixture(themePath) {
+  const blockDirectory = path.join(themePath, 'dist', 'components', 'smoke-native');
+  const metadata = {
+    apiVersion: 3,
+    name: 'emulsify/smoke-native',
+    title: 'Smoke Native',
+    category: 'widgets',
+    textdomain: 'smoke-generated',
+  };
+
+  fs.mkdirSync(blockDirectory, { recursive: true });
+  fs.writeFileSync(
+    path.join(blockDirectory, 'block.json'),
+    JSON.stringify(metadata, null, 2) + '\n'
+  );
+}
+
+function installAcfStub(wpPath) {
+  const muPlugins = path.join(wpPath, 'wp-content', 'mu-plugins');
+  fs.mkdirSync(muPlugins, { recursive: true });
+  fs.writeFileSync(
+    path.join(muPlugins, 'emulsify-acf-smoke.php'),
+    `<?php
+/**
+ * Fixture-only ACF block API stub.
+ */
+
+if ( ! isset( $GLOBALS['emulsify_smoke_acf_registered'] ) || ! is_array( $GLOBALS['emulsify_smoke_acf_registered'] ) ) {
+\t$GLOBALS['emulsify_smoke_acf_registered'] = array();
+}
+
+if ( ! function_exists( 'acf_register_block_type' ) ) {
+\tfunction acf_register_block_type( array $args ) {
+\t\t$GLOBALS['emulsify_smoke_acf_registered'][] = $args;
+\t\treturn $args;
+\t}
+}
+
+if ( ! function_exists( 'acf_get_block_type' ) ) {
+\tfunction acf_get_block_type( $name ) {
+\t\tforeach ( $GLOBALS['emulsify_smoke_acf_registered'] as $block ) {
+\t\t\tif ( isset( $block['name'] ) && $block['name'] === $name ) {
+\t\t\t\treturn $block;
+\t\t\t}
+\t\t}
+
+\t\treturn false;
+\t}
+}
+`
+  );
+}
+
+function runAcfDiscoveryWithoutAcf(wpPath) {
+  const code = String.raw`
+function emulsify_smoke_fail( $message ) {
+  fwrite( STDERR, $message . "\n" );
+  exit( 1 );
+}
+
+if ( function_exists( 'acf_register_block_type' ) ) {
+  emulsify_smoke_fail( 'ACF block API should not be present before the fixture stub is installed.' );
+}
+
+$locator = new \Emulsify\Theme\Blocks\Component_Locator();
+$components = $locator->acf_components();
+$button = null;
+
+foreach ( $components as $component ) {
+  if ( isset( $component['relative'], $component['source'] ) && 'button' === $component['relative'] && 'child' === $component['source'] ) {
+    $button = $component;
+    break;
+  }
+}
+
+if ( null === $button ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig button component was not discovered without ACF.' );
+}
+
+if ( 'dist/components/button/button.twig' !== $button['template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig button template was not resolved.' );
+}
+
+( new \Emulsify\Theme\Blocks\Acf_Blocks( $locator ) )->register_blocks();
+`;
+
+  wp(wpPath, ['eval', code]);
+}
+
+function runAcfDiscoveryWithStub(wpPath) {
+  const code = String.raw`
+function emulsify_smoke_fail( $message ) {
+  fwrite( STDERR, $message . "\n" );
+  exit( 1 );
+}
+
+if ( ! function_exists( 'acf_register_block_type' ) ) {
+  emulsify_smoke_fail( 'ACF block API stub is not loaded.' );
+}
+
+$GLOBALS['emulsify_smoke_acf_registered'] = array();
+do_action( 'acf/init' );
+$registered = isset( $GLOBALS['emulsify_smoke_acf_registered'] ) && is_array( $GLOBALS['emulsify_smoke_acf_registered'] )
+  ? $GLOBALS['emulsify_smoke_acf_registered']
+  : array();
+$button = null;
+
+foreach ( $registered as $block ) {
+  if ( isset( $block['name'] ) && 'emulsify-example-button' === $block['name'] ) {
+    $button = $block;
+    break;
+  }
+}
+
+if ( null === $button ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig button block was not registered with the ACF stub.' );
+}
+
+if ( 'dist/components/button/button.twig' !== $button['twig_template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig block did not keep its Twig template.' );
+}
+
+if ( empty( $button['data']['twig_template'] ) || 'dist/components/button/button.twig' !== $button['data']['twig_template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig block data did not include its Twig template.' );
+}
+`;
+
+  wp(wpPath, ['eval', code]);
+}
+
+function runNativeBlockDiscovery(wpPath) {
+  const code = String.raw`
+function emulsify_smoke_fail( $message ) {
+  fwrite( STDERR, $message . "\n" );
+  exit( 1 );
+}
+
+$registry = \WP_Block_Type_Registry::get_instance();
+
+if ( ! $registry->is_registered( 'emulsify/smoke-native' ) ) {
+  emulsify_smoke_fail( 'Generated child native block.json fixture was not registered.' );
+}
+
+$locator = new \Emulsify\Theme\Blocks\Component_Locator();
+$native = $locator->native_block_directories();
+$found = false;
+
+foreach ( $native as $block ) {
+  if (
+    isset( $block['name'], $block['relative'], $block['source'] ) &&
+    'emulsify/smoke-native' === $block['name'] &&
+    'smoke-native' === $block['relative'] &&
+    'child' === $block['source']
+  ) {
+    $found = true;
+    break;
+  }
+}
+
+if ( ! $found ) {
+  emulsify_smoke_fail( 'Generated child native block.json fixture was not discovered child-first.' );
+}
+`;
+
+  wp(wpPath, ['eval', code]);
 }
 
 function configureDebugLog(wpPath) {
@@ -373,15 +591,48 @@ async function checkRoute(baseUrl, route) {
       throw new Error(`${route.name} did not include expected text: ${text}`);
     }
   }
+
+  return body;
 }
 
-async function renderRoutes(wpPath, content, baseUrl, port) {
+async function checkGeneratedAsset(baseUrl, themeSlug, relativePath, expectedText) {
+  const response = await fetch(`${baseUrl}/wp-content/themes/${themeSlug}/${relativePath}`);
+  const body = await response.text();
+
+  appendLog('http.log', `\nasset ${relativePath}\nStatus: ${response.status}\n`);
+  appendLog('http.log', body.slice(0, 1000));
+  appendLog('http.log', '\n');
+
+  if (response.status !== 200) {
+    throw new Error(`Generated child asset ${relativePath} returned ${response.status}; expected 200.`);
+  }
+
+  if (expectedText && !body.includes(expectedText)) {
+    throw new Error(`Generated child asset ${relativePath} did not include expected text: ${expectedText}`);
+  }
+}
+
+async function checkGeneratedAssets(baseUrl, themeSlug) {
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/foundation.css', 'box-sizing');
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/layout.css', 'max-width');
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/tokens.css', '--emulsify-color-text');
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/components/button/css/button.css', '.button');
+}
+
+async function renderRoutes(wpPath, content, baseUrl, port, themeSlug) {
   startServer(wpPath, port);
   await waitForServer(baseUrl);
 
+  const pageIncludes = [
+    'Smoke Page',
+    'Smoke page content',
+    `${themeSlug}-page`,
+    `/wp-content/themes/${themeSlug}/dist/global/foundation.css`,
+    `/wp-content/themes/${themeSlug}/dist/components/button/css/button.css`,
+  ];
   const routes = [
     { name: 'home', path: '/', includes: ['Emulsify Smoke', 'Smoke Post'] },
-    { name: 'page', path: `/?page_id=${content.pageId}`, includes: ['Smoke Page', 'Smoke page content'] },
+    { name: 'page', path: `/?page_id=${content.pageId}`, includes: pageIncludes },
     { name: 'single', path: `/?p=${content.postId}`, includes: ['Smoke Post', 'Smoke post content', 'Smoke comment content'] },
     { name: 'archive', path: `/?cat=${content.categoryId}`, includes: ['Smoke Category', 'Smoke Post'] },
     { name: 'search', path: '/?s=Smoke', includes: ['Search results for Smoke', 'Smoke Post'] },
@@ -392,6 +643,8 @@ async function renderRoutes(wpPath, content, baseUrl, port) {
   for (const route of routes) {
     await checkRoute(baseUrl, route);
   }
+
+  await checkGeneratedAssets(baseUrl, themeSlug);
 }
 
 function dumpLogs(wpPath) {
@@ -464,6 +717,8 @@ async function main() {
   const themesDir = path.join(wpPath, 'wp-content', 'themes');
   const { parentTheme } = copyThemes(themesDir);
   installThemeDependencies(parentTheme);
+  const generatedChildSlug = 'smoke-generated';
+  const generatedChild = path.join(themesDir, generatedChildSlug);
 
   wp(wpPath, [
     'core',
@@ -474,17 +729,33 @@ async function main() {
     '--admin_password=admin-password-123',
     '--admin_email=admin@example.test',
   ]);
+  wp(wpPath, ['theme', 'is-installed', 'emulsify']);
+  wp(wpPath, ['theme', 'is-installed', 'whisk']);
   wp(wpPath, ['theme', 'activate', 'whisk']);
+  wp(wpPath, ['emulsify', 'Smoke Generated', `--machine-name=${generatedChildSlug}`, '--activate']);
+  assertGeneratedChildTheme(generatedChild, generatedChildSlug);
+  wp(wpPath, ['theme', 'is-installed', generatedChildSlug]);
+
+  const activeStylesheet = wp(wpPath, ['option', 'get', 'stylesheet']);
+  if (activeStylesheet !== generatedChildSlug) {
+    throw new Error(`Generated child theme was not activated. Active stylesheet is "${activeStylesheet}".`);
+  }
+
+  installNativeBlockFixture(generatedChild);
+  runAcfDiscoveryWithoutAcf(wpPath);
+  runNativeBlockDiscovery(wpPath);
+  installAcfStub(wpPath);
+  runAcfDiscoveryWithStub(wpPath);
   wp(wpPath, [
     'eval',
     'if ( ! class_exists( "\\\\Timber\\\\Timber" ) ) { fwrite( STDERR, "Timber is not loaded.\\n" ); exit( 1 ); }',
   ]);
 
   const content = createFixtureContent(wpPath);
-  await renderRoutes(wpPath, content, baseUrl, port);
+  await renderRoutes(wpPath, content, baseUrl, port, generatedChildSlug);
   stopServer();
 
-  log('Rendered home, page, single, archive, search, author, and 404 routes.');
+  log('Generated and activated a child theme, checked block discovery, loaded assets, and rendered home, page, single, archive, search, author, and 404 routes.');
   dropDatabase(env);
 
   if (!keepFixture) {

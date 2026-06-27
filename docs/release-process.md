@@ -36,7 +36,7 @@ npm run publish-test -- --no-ci
 - Whisk dependency installation.
 - Whisk Core 4/Vite build.
 
-`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture requires WP-CLI and a database. If `wp` is not available locally, the fixture is skipped with a clear message.
+`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, renders frontend routes through Timber, fetches built Whisk assets, and checks ACF/Twig and native `block.json` discovery. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
 
 ## CI
 
