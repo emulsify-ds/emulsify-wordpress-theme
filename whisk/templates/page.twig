@@ -1,20 +1,7 @@
-{% extends '@templates/layouts/base.twig' %}
+{% extends '@emulsify-tpl/page.twig' %}
 
 {% block content %}
-    {% if post|default(null) %}
-        <article {{ add_attributes({
-            class: ['entry', 'entry--' ~ post.type|default('page')],
-            id: post.id|default(null) ? 'post-' ~ post.id : null
-        }) }}>
-            <header class="entry__header">
-                <h1 class="entry__title">{{ post.title }}</h1>
-            </header>
-
-            <div class="entry__content">
-                {{ post.content }}
-            </div>
-        </article>
-    {% else %}
-        <p>No page content was found.</p>
-    {% endif %}
+	<div class="whisk-page">
+		{{ parent() }}
+	</div>
 {% endblock %}

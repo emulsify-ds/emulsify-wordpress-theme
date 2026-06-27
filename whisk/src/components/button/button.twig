@@ -1,0 +1,10 @@
+{% set button_text = text|default('Read more') %}
+{% set button_url = url|default('#') %}
+{% set button_modifiers = modifiers|default([]) %}
+{% set button_attributes = attributes|default({})|merge({
+	href: button_url
+}) %}
+
+<a {{ bem('button', button_modifiers, '', [], button_attributes) }}>
+	<span class="button__text">{{ button_text }}</span>
+</a>

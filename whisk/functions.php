@@ -1,14 +1,13 @@
 <?php
 /**
- * Functions
+ * Whisk child theme hooks.
  *
- * Main functions file for the theme.
+ * The parent Emulsify theme registers the default Timber namespaces:
+ * @templates, @components, and @emulsify-tpl.
  *
- * @category   Theme
- * @package    Emulsify
- * @subpackage whisk
- * @author     Callin Mullaney <callin@fourkitchens.com>
- * @since      1.0.0
+ * @package Emulsify
  */
 
-require 'includes/twig-namespaces.php';
+if ( ! defined( 'ABSPATH' ) ) {
+	return;
+}

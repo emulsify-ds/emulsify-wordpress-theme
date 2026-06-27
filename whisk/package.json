@@ -1,7 +1,7 @@
 {
   "name": "whisk",
-  "version": "1.0.0",
-  "description": "Storybook and a Vite-based build workflow powered by Emulsify Core 4",
+  "version": "2.0.0",
+  "description": "Generated WordPress child theme powered by Emulsify Core 4, Vite, Storybook, and Twig",
   "keywords": [
     "component library",
     "design system",
