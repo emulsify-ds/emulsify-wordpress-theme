@@ -1,7 +1,7 @@
 {
   "name": "whisk",
   "version": "1.0.0",
-  "description": "Storybook development + Webpack Build",
+  "description": "Storybook and a Vite-based build workflow powered by Emulsify Core 4",
   "keywords": [
     "component library",
     "design system",
@@ -11,14 +11,18 @@
     "styleguide"
   ],
   "author": "Four Kitchens <shout@fourkitchens.com>",
-  "license": "ISC",
+  "license": "GPL-2.0-only",
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "scripts": {
     "a11y": "npm run storybook-build && node_modules/@emulsify/core/scripts/a11y.js -r",
-    "build": "npm run ensure-dist && webpack --config node_modules/@emulsify/core/config/webpack/webpack.prod.js",
-    "build-dev": "npm run ensure-dist && webpack --config node_modules/@emulsify/core/config/webpack/webpack.dev.js",
+    "audit": "node_modules/@emulsify/core/scripts/audit.js",
+    "audit:twig-stories": "node_modules/@emulsify/core/scripts/audit-twig-stories.js",
+    "build": "npm run ensure-dist && vite build --config node_modules/@emulsify/core/config/vite/vite.config.js",
     "coverage": "npm run test && open-cli .coverage/lcov-report/index.html",
-    "develop": "npm run ensure-dist && concurrently --raw --no-shell npm:webpack npm:storybook",
+    "develop": "npm run ensure-dist && concurrently --raw --no-shell npm:vite npm:storybook",
     "ensure-dist": "mkdir -p dist",
     "format": "npm run lint-fix; npm run prettier-fix",
     "lint": "npm run lint-js; npm run lint-styles",
@@ -32,13 +36,13 @@
     "storybook-build": "npm run build && storybook build -c node_modules/@emulsify/core/.storybook -o .out",
     "storybook-deploy": "storybook-to-ghpages -o .out",
     "style-dictionary:build": "node ./src/tokens/tokensTransform.mjs",
-    "test": "jest --coverage  --config ./config/jest.config.js",
+    "test": "jest --coverage --passWithNoTests --config ./config/jest.config.js",
     "tokens:build": "npm run tokens:transform && npm run style-dictionary:build",
     "tokens:transform": "token-transformer ./src/tokens/figma.tokens.json ./src/tokens/transformed.tokens.json",
-    "twatch": "jest --no-coverage --watch --verbose",
-    "webpack": "webpack --watch --config node_modules/@emulsify/core/config/webpack/webpack.dev.js"
+    "twatch": "jest --no-coverage --watch --verbose --passWithNoTests --config ./config/jest.config.js",
+    "vite": "vite build --watch --config node_modules/@emulsify/core/config/vite/vite.config.js"
   },
   "dependencies": {
-    "@emulsify/core": "^3.0.2"
+    "@emulsify/core": "^4.0.0"
   }
 }

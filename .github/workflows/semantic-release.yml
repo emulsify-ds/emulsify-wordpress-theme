@@ -55,6 +55,9 @@ jobs:
       - name: Check release config syntax
         run: node --check release.config.js
 
+      - name: Run release readiness checks
+        run: npm run release:check
+
       - name: Run release dry run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

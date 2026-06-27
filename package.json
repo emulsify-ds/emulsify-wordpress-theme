@@ -1,7 +1,7 @@
 {
   "name": "emulsify-wordpress-theme",
   "version": "1.0.0",
-  "description": "Storybook development + Webpack Build + WordPress theme",
+  "description": "Storybook, Emulsify Core 4, and a Vite-based build workflow for WordPress child themes",
   "engines": {
     "node": ">=24.10"
   },
@@ -30,6 +30,7 @@
     "lint:php": "find ./ -name '*.php' -exec php -l {} \\;",
     "lint-staged": "lint-staged",
     "prepare": "[ -d '.git' ] && (husky install) || true",
+    "release:check": "node .github/scripts/release-check.cjs",
     "publish": "semantic-release --tag-format '${version}'",
     "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"
