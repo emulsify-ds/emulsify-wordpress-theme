@@ -1,0 +1,151 @@
+name: WordPress Theme Readiness
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release-2.x
+      - emulsify-core-integration
+  workflow_dispatch:
+    inputs:
+      wordpress_fixture:
+        description: Run the WordPress fixture smoke test with WP-CLI and MySQL.
+        required: false
+        type: boolean
+        default: true
+      extended_checks:
+        description: Run the Whisk Storybook build and accessibility audit.
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 11 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: theme-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  practical:
+    name: Practical theme readiness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Clean npm install
+        run: npm ci --ignore-scripts
+
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish --strict
+
+      - name: Run runtime npm audit
+        run: npm audit --omit=dev
+
+      - name: Run full npm audit
+        run: npm audit
+
+      - name: Run PHP lint
+        run: npm run lint:php
+
+      - name: Run PR validation checks
+        run: npm run pr:check
+
+      - name: Run release readiness checks
+        run: npm run release:check
+
+  wordpress-fixture:
+    name: WordPress fixture smoke
+    if: >-
+      github.event_name != 'pull_request' &&
+      (
+        github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)
+      )
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_smoke
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mysqli
+          tools: composer:v2, wp-cli
+          coverage: none
+
+      - name: Clean npm install
+        run: npm ci --ignore-scripts
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist
+
+      - name: Run WordPress fixture smoke
+        env:
+          WP_SMOKE_REQUIRED: '1'
+          WP_SMOKE_DB_HOST: 127.0.0.1
+          WP_SMOKE_DB_PORT: '3306'
+          WP_SMOKE_DB_NAME: wordpress_smoke
+          WP_SMOKE_DB_USER: root
+          WP_SMOKE_DB_PASSWORD: root
+        run: npm run release:check
+
+  extended-whisk:
+    name: Extended Whisk Storybook and a11y
+    if: github.event_name == 'workflow_dispatch' && inputs.extended_checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Clean npm install
+        run: npm ci --ignore-scripts
+
+      - name: Install Whisk dependencies
+        run: npm run whisk:install
+
+      - name: Build Storybook and run a11y
+        run: npm --prefix whisk run a11y

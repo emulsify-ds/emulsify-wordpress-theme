@@ -238,7 +238,7 @@ function runStaticChecks() {
   const whiskProject = readJson('whisk/project.emulsify.json');
   const releaseConfig = require(path.join(repoRoot, 'release.config.js'));
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
-  const pullRequestWorkflow = readFile('.github/workflows/pull-request.yml');
+  const themeReadinessWorkflow = readFile('.github/workflows/theme-readiness.yml');
   const wordpressFixtureSmoke = readFile('.github/scripts/wordpress-fixture-smoke.cjs');
   const readme = readFile('README.md');
   const docs = {
@@ -279,7 +279,7 @@ function runStaticChecks() {
       '.github/scripts/release-check.cjs',
       '.github/scripts/pr-validation.cjs',
       '.github/workflows/semantic-release.yml',
-      '.github/workflows/pull-request.yml',
+      '.github/workflows/theme-readiness.yml',
       '.gitignore',
       '.nvmrc',
       'README.md',
@@ -650,14 +650,29 @@ function runStaticChecks() {
     return 'Semantic release is configured for non-prefixed tags, main-only publishing, and a guarded 2.0.0 stable release.';
   });
 
-  runStaticCheck('Pull request validation workflow', () => {
+  runStaticCheck('Theme readiness workflow', () => {
     const prValidationScript = readFile('.github/scripts/pr-validation.cjs');
 
-    ensure(pullRequestWorkflow.includes('pull_request:'), 'pull-request.yml should run for pull_request events.');
-    ensure(pullRequestWorkflow.includes('node-version-file: .nvmrc'), 'pull-request.yml should set up Node from .nvmrc.');
-    ensure(pullRequestWorkflow.includes("php-version: '8.3'"), 'pull-request.yml should set up PHP 8.3.');
-    ensure(pullRequestWorkflow.includes('npm ci --ignore-scripts'), 'pull-request.yml should install root npm dependencies cleanly.');
-    ensure(pullRequestWorkflow.includes('npm run pr:check'), 'pull-request.yml should delegate checks to npm run pr:check.');
+    ensure(themeReadinessWorkflow.includes('name: WordPress Theme Readiness'), 'theme-readiness.yml should identify the WordPress theme readiness workflow.');
+    ensure(themeReadinessWorkflow.includes('pull_request:'), 'theme-readiness.yml should run for pull_request events.');
+    ensure(themeReadinessWorkflow.includes('workflow_dispatch:'), 'theme-readiness.yml should support manual dispatch.');
+    ensure(themeReadinessWorkflow.includes('schedule:'), 'theme-readiness.yml should run on a schedule.');
+    ensure(themeReadinessWorkflow.includes('release-2.x'), 'theme-readiness.yml should cover the release-2.x branch.');
+    ensure(themeReadinessWorkflow.includes('node-version-file: .nvmrc'), 'theme-readiness.yml should set up Node from .nvmrc.');
+    ensure(themeReadinessWorkflow.includes("php-version: '8.3'"), 'theme-readiness.yml should set up PHP 8.3.');
+    ensure(themeReadinessWorkflow.includes('npm ci --ignore-scripts'), 'theme-readiness.yml should install root npm dependencies cleanly.');
+    ensure(themeReadinessWorkflow.includes('composer validate --no-check-publish --strict'), 'theme-readiness.yml should validate Composer metadata.');
+    ensure(themeReadinessWorkflow.includes('npm audit --omit=dev'), 'theme-readiness.yml should run runtime npm audit.');
+    ensure(themeReadinessWorkflow.includes('npm audit'), 'theme-readiness.yml should run full npm audit.');
+    ensure(themeReadinessWorkflow.includes('npm run lint:php'), 'theme-readiness.yml should run PHP lint.');
+    ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke and Whisk build checks to npm run pr:check.');
+    ensure(themeReadinessWorkflow.includes('npm run release:check'), 'theme-readiness.yml should run release readiness checks.');
+    ensure(themeReadinessWorkflow.includes("github.event_name != 'pull_request'"), 'theme-readiness.yml should keep the WordPress fixture off normal pull requests.');
+    ensure(themeReadinessWorkflow.includes('mysql:'), 'theme-readiness.yml should provide MySQL for the WordPress fixture job.');
+    ensure(themeReadinessWorkflow.includes('wp-cli'), 'theme-readiness.yml should install WP-CLI for the WordPress fixture job.');
+    ensure(themeReadinessWorkflow.includes('WP_SMOKE_REQUIRED'), 'theme-readiness.yml should require the fixture smoke when the fixture job runs.');
+    ensure(themeReadinessWorkflow.includes('extended_checks'), 'theme-readiness.yml should expose optional extended checks.');
+    ensure(themeReadinessWorkflow.includes('npm --prefix whisk run a11y'), 'theme-readiness.yml should offer manual Storybook and accessibility checks.');
     ensure(prValidationScript.includes('composer') && prValidationScript.includes('validate'), 'PR validation should validate Composer metadata.');
     ensure(prValidationScript.includes('composer') && prValidationScript.includes('install'), 'PR validation should install Composer dependencies for Twig smoke coverage.');
     ensure(prValidationScript.includes('lint:php'), 'PR validation should run PHP lint.');
@@ -667,9 +682,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
     ensure(prValidationScript.includes('whisk:build'), 'PR validation should build Whisk with Vite.');
-    ensure(!pullRequestWorkflow.includes('mysql:'), 'pull-request.yml should keep the MySQL WordPress fixture release-only.');
-    ensure(!pullRequestWorkflow.includes('wp-cli'), 'pull-request.yml should keep the WP-CLI WordPress fixture release-only.');
-    return 'Pull requests run the practical validation subset and leave the WordPress fixture to release checks.';
+    return 'Theme readiness covers pragmatic PR checks with manual and scheduled WordPress fixture coverage.';
   });
 
   runStaticCheck('Release documentation', () => {
@@ -733,7 +746,9 @@ function runStaticChecks() {
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
-    ensure(docs.release.includes('full WordPress fixture smoke test remains release-only'), 'Release process doc should explain why the full fixture is release-only.');
+    ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');
+    ensure(docs.release.includes('Manual and scheduled runs execute the full WordPress fixture smoke test'), 'Release process doc should explain when the full fixture runs.');
+    ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');
     ensure(!/Webpack/i.test(`${readme}\n${docsText}`), 'Docs should not mention Webpack.');

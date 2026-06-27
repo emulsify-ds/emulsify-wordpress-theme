@@ -40,7 +40,22 @@ npm run publish-test -- --no-ci
 
 ## CI
 
-Pull requests run the practical validation suite without MySQL or WP-CLI. The full WordPress fixture smoke test remains release-only because it needs a heavier WordPress runtime.
+The WordPress Theme Readiness workflow runs on pull requests, manual dispatch, and a weekly schedule.
+
+Pull requests run pragmatic checks:
+
+- Clean root npm installation.
+- Composer metadata validation.
+- Runtime and full npm audits.
+- PHP linting.
+- The practical `pr:check` suite, including WP-CLI child theme generation smoke coverage, Whisk dependency installation, and the Whisk Core 4/Vite build.
+- Static release readiness checks through `release:check`.
+
+Normal pull requests do not start MySQL or run the full WordPress fixture. Manual and scheduled runs execute the full WordPress fixture smoke test with WP-CLI and MySQL so heavier runtime coverage stays available without slowing every pull request.
+
+Manual dispatch can also run the Whisk Storybook build and accessibility audit for extended frontend confidence.
+
+The semantic-release workflow remains release-gated. It still runs release readiness, the full WordPress fixture, a semantic-release dry run, and the final publish job only through the release workflow.
 
 ## License
 
