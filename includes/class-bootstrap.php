@@ -84,6 +84,7 @@ final class Bootstrap {
 	 */
 	private function load_classes(): void {
 		$files = array(
+			'class-attribute-bag.php',
 			'class-assets.php',
 			'class-blocks.php',
 			'class-cli.php',

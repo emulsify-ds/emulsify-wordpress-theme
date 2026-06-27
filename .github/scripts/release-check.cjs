@@ -199,9 +199,12 @@ function runStaticChecks() {
       'README.md',
       'composer.json',
       'functions.php',
+      'includes/class-attribute-bag.php',
+      'includes/class-twig.php',
       'package.json',
       'release.config.js',
       'style.css',
+      '.github/scripts/attribute-helper-smoke.php',
       'whisk/functions.php',
       'whisk/package.json',
       'whisk/project.emulsify.json',
@@ -250,6 +253,23 @@ function runStaticChecks() {
     ensure(whiskThemeHeader.Description.includes('child theme'), 'whisk/style.css Description should use child theme language.');
     ensureViteLanguage('whisk/style.css Description', whiskThemeHeader.Description);
     return 'Parent and Whisk WordPress theme headers are coherent with package metadata.';
+  });
+
+  runStaticCheck('Timber attribute helpers', () => {
+    const bootstrap = readFile('includes/class-bootstrap.php');
+    const twig = readFile('includes/class-twig.php');
+    const attributeBag = readFile('includes/class-attribute-bag.php');
+    const smoke = readFile('.github/scripts/attribute-helper-smoke.php');
+
+    ensure(bootstrap.includes('class-attribute-bag.php'), 'Bootstrap should load AttributeBag before Twig helpers.');
+    ensure(attributeBag.includes('implements \\Stringable'), 'AttributeBag should serialize safely in Twig string contexts.');
+    ensure(attributeBag.includes('function addClass'), 'AttributeBag should support Core-style class merging.');
+    ensure(attributeBag.includes('function toString'), 'AttributeBag should expose explicit serialization.');
+    ensure(twig.includes("'needs_context' => true"), 'Timber helper functions should accept Twig context.');
+    ensure(twig.includes('new AttributeBag'), 'Twig helpers should return AttributeBag objects.');
+    ensure(smoke.includes('{{ bem("button", ["primary"]) }}'), 'Attribute helper smoke script should render a bem() Twig fixture.');
+    ensure(smoke.includes('{{ add_attributes({ class: ["foo"] }) }}'), 'Attribute helper smoke script should render an add_attributes() Twig fixture.');
+    return 'Attribute helper runtime and smoke fixture are wired.';
   });
 
   runStaticCheck('Whisk Core 4 and Vite metadata', () => {

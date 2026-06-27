@@ -58,13 +58,15 @@ final class Twig {
 	 */
 	public function functions( array $functions ): array {
 		$functions['bem'] = array(
-			'callable' => array( $this, 'bem' ),
-			'is_safe'  => array( 'html' ),
+			'callable'      => array( $this, 'bem' ),
+			'needs_context' => true,
+			'is_safe'       => array( 'html' ),
 		);
 
 		$functions['add_attributes'] = array(
-			'callable' => array( $this, 'add_attributes' ),
-			'is_safe'  => array( 'html' ),
+			'callable'      => array( $this, 'add_attributes' ),
+			'needs_context' => true,
+			'is_safe'       => array( 'html' ),
 		);
 
 		return $functions;
@@ -73,102 +75,64 @@ final class Twig {
 	/**
 	 * Builds a BEM class attribute.
 	 *
-	 * @param mixed        $base_class Base class string or options array.
-	 * @param array|string $modifiers  Modifier suffixes.
-	 * @param string       $blockname  Optional BEM block name.
-	 * @param array|string $extra      Extra classes.
-	 * @return string HTML class attribute.
+	 * @param mixed ...$arguments Core-style BEM arguments.
+	 * @return AttributeBag HTML attributes.
 	 */
-	public function bem( $base_class, $modifiers = array(), string $blockname = '', $extra = array() ): string {
-		if ( is_object( $base_class ) || is_array( $base_class ) ) {
-			$options = (array) $base_class;
+	public function bem( ...$arguments ): AttributeBag {
+		$context = $this->shift_twig_context( $arguments );
+		$options = $this->normalize_bem_options(
+			$arguments[0] ?? '',
+			$arguments[1] ?? array(),
+			$arguments[2] ?? '',
+			$arguments[3] ?? array(),
+			$arguments[4] ?? array()
+		);
+		$base_class = trim( (string) $options['base_class'] );
+		$blockname  = trim( (string) $options['blockname'] );
+		$classes    = array();
 
-			if ( isset( $options['block'], $options['element'] ) ) {
-				$blockname  = (string) $options['block'];
-				$base_class = (string) $options['element'];
-			} else {
-				$base_class = $options['base_class'] ?? $options['block'] ?? '';
-				$blockname  = $options['blockname'] ?? $options['block_name'] ?? '';
+		if ( '' !== $base_class ) {
+			$class_prefix = '' !== $blockname ? $blockname . '__' . $base_class : $base_class;
+			$classes[]    = $class_prefix;
+
+			foreach ( $this->normalize_list( $options['modifiers'] ) as $modifier ) {
+				$classes[] = $class_prefix . '--' . $modifier;
 			}
-
-			$modifiers = $options['modifiers'] ?? array();
-			$extra     = $options['extra_classes'] ?? $options['extra'] ?? array();
 		}
 
-		$base_class = trim( (string) $base_class );
-		$blockname  = trim( $blockname );
+		$classes = array_merge( $classes, $this->normalize_list( $options['extra'] ) );
 
-		if ( '' === $base_class ) {
-			return '';
-		}
+		$attribute_bag = new AttributeBag( $options['attributes'] );
+		$attribute_bag->addClass( $classes );
+		$attribute_bag->merge( $this->attributes_from_context( $context ) );
 
-		$base      = '' !== $blockname ? $blockname . '__' . $base_class : $base_class;
-		$classes   = array( $base );
-		$modifiers = $this->normalize_list( $modifiers );
-		$extra     = $this->normalize_list( $extra );
-
-		foreach ( $modifiers as $modifier ) {
-			$classes[] = $base . '--' . $modifier;
-		}
-
-		$classes = array_merge( $classes, $extra );
-
-		return sprintf( 'class="%s"', esc_attr( implode( ' ', array_unique( $classes ) ) ) );
+		return $attribute_bag;
 	}
 
 	/**
 	 * Builds HTML attributes from an associative array.
 	 *
-	 * @param mixed $attributes            Attribute array or legacy context argument.
-	 * @param mixed $additional_attributes Optional attribute array.
-	 * @return string HTML attributes.
+	 * @param mixed ...$arguments Attribute arguments.
+	 * @return AttributeBag HTML attributes.
 	 */
-	public function add_attributes( $attributes = array(), $additional_attributes = null ): string {
-		if ( is_array( $additional_attributes ) ) {
-			$attributes = $additional_attributes;
+	public function add_attributes( ...$arguments ): AttributeBag {
+		$context        = $this->shift_twig_context( $arguments );
+		$attribute_bag  = $this->attributes_from_context( $context );
+		$additional     = $arguments[0] ?? array();
+		$legacy_context = array();
+
+		if ( $this->is_twig_context( $additional ) && isset( $arguments[1] ) ) {
+			$legacy_context = $additional;
+			$additional     = $arguments[1];
 		}
 
-		if ( ! is_array( $attributes ) ) {
-			return '';
+		if ( ! empty( $legacy_context ) ) {
+			$attribute_bag->merge( $this->attributes_from_context( $legacy_context ) );
 		}
 
-		$output = array();
+		$attribute_bag->merge( $additional );
 
-		foreach ( $attributes as $name => $value ) {
-			if ( null === $value || false === $value ) {
-				continue;
-			}
-
-			if ( is_int( $name ) ) {
-				if ( is_scalar( $value ) && '' !== trim( (string) $value ) ) {
-					$output[] = trim( (string) $value );
-				}
-				continue;
-			}
-
-			$name = sanitize_key( (string) $name );
-
-			if ( '' === $name ) {
-				continue;
-			}
-
-			if ( true === $value ) {
-				$output[] = esc_attr( $name );
-				continue;
-			}
-
-			if ( 'class' === $name ) {
-				$value = implode( ' ', $this->normalize_list( $this->normalize_class_attribute( $value ) ) );
-			} elseif ( is_array( $value ) ) {
-				$value = implode( ' ', $this->normalize_list( $value ) );
-			}
-
-			if ( is_scalar( $value ) && '' !== trim( (string) $value ) ) {
-				$output[] = sprintf( '%s="%s"', esc_attr( $name ), esc_attr( (string) $value ) );
-			}
-		}
-
-		return implode( ' ', $output );
+		return $attribute_bag;
 	}
 
 	/**
@@ -183,6 +147,112 @@ final class Twig {
 		if ( is_dir( $path ) && is_readable( $path ) ) {
 			$loader->addPath( $path, $namespace );
 		}
+	}
+
+	/**
+	 * Normalizes positional and object-style BEM arguments.
+	 *
+	 * @param mixed $base_class Base class or options object.
+	 * @param mixed $modifiers  Modifier values.
+	 * @param mixed $blockname  Block name.
+	 * @param mixed $extra      Extra classes.
+	 * @param mixed $attributes Extra attributes.
+	 * @return array Normalized BEM options.
+	 */
+	private function normalize_bem_options( $base_class, $modifiers, $blockname, $extra, $attributes ): array {
+		if ( ! is_array( $base_class ) && ! is_object( $base_class ) ) {
+			return array(
+				'base_class' => $base_class,
+				'modifiers'  => $modifiers,
+				'blockname'  => $blockname,
+				'extra'      => $extra,
+				'attributes' => $attributes,
+			);
+		}
+
+		$options              = is_array( $base_class ) ? $base_class : get_object_vars( $base_class );
+		$has_bem_object_shape = $this->has_non_empty_option( $options, 'block' ) && $this->has_non_empty_option( $options, 'element' );
+
+		return array(
+			'base_class' => $this->first_option( $options, array( 'baseClass', 'base_class', 'base' ), $has_bem_object_shape ? $options['element'] : ( $options['block'] ?? '' ) ),
+			'modifiers'  => $options['modifiers'] ?? array(),
+			'blockname'  => $this->first_option( $options, array( 'blockname', 'blockName' ), $has_bem_object_shape ? $options['block'] : ( $options['element'] ?? '' ) ),
+			'extra'      => $options['extra'] ?? array(),
+			'attributes' => $options['attributes'] ?? array(),
+		);
+	}
+
+	/**
+	 * Removes a Timber context argument from a Twig callback argument list.
+	 *
+	 * @param array $arguments Function arguments.
+	 * @return array Timber context.
+	 */
+	private function shift_twig_context( array &$arguments ): array {
+		if ( count( $arguments ) > 1 && is_array( $arguments[0] ) && ( empty( $arguments[0] ) || $this->is_twig_context( $arguments[0] ) ) ) {
+			return array_shift( $arguments );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Checks whether a value looks like a Timber context array.
+	 *
+	 * @param mixed $value Value to inspect.
+	 * @return bool TRUE when the value looks like Timber context.
+	 */
+	private function is_twig_context( $value ): bool {
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		foreach ( array( 'attributes', 'site', 'theme', 'post', 'wp' ) as $key ) {
+			if ( array_key_exists( $key, $value ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Builds an AttributeBag from Timber context attributes.
+	 *
+	 * @param array $context Timber context.
+	 * @return AttributeBag Context attributes.
+	 */
+	private function attributes_from_context( array $context ): AttributeBag {
+		return new AttributeBag( $context['attributes'] ?? array() );
+	}
+
+	/**
+	 * Gets the first non-empty option value.
+	 *
+	 * @param array $options Option map.
+	 * @param array $keys    Candidate keys.
+	 * @param mixed $default Default value.
+	 * @return mixed Option value.
+	 */
+	private function first_option( array $options, array $keys, $default = null ) {
+		foreach ( $keys as $key ) {
+			if ( $this->has_non_empty_option( $options, $key ) ) {
+				return $options[ $key ];
+			}
+		}
+
+		return $default;
+	}
+
+	/**
+	 * Checks whether an option key contains a non-empty value.
+	 *
+	 * @param array  $options Option map.
+	 * @param string $key     Option key.
+	 * @return bool TRUE when set and non-empty.
+	 */
+	private function has_non_empty_option( array $options, string $key ): bool {
+		return array_key_exists( $key, $options ) && null !== $options[ $key ] && '' !== $options[ $key ] && false !== $options[ $key ];
 	}
 
 	/**
@@ -210,19 +280,5 @@ final class Twig {
 		}
 
 		return $items;
-	}
-
-	/**
-	 * Extracts classes from a class attribute string.
-	 *
-	 * @param mixed $value Class attribute or class list.
-	 * @return mixed Normalized class value.
-	 */
-	private function normalize_class_attribute( $value ) {
-		if ( is_string( $value ) && preg_match( '/class=["\']([^"\']+)["\']/', $value, $matches ) ) {
-			return $matches[1];
-		}
-
-		return $value;
 	}
 }
