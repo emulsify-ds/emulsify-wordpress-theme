@@ -1,30 +1,93 @@
-name: Semantic Release on Merge
+name: WordPress Release
+
 on:
   push:
     branches:
-      - "main"
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
-    name: Attempt Semantic Release
+  release-readiness:
+    name: Release readiness
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-      - name: Semantic Release
-        uses: cycjimmy/semantic-release-action@v3
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Clean npm install
+        run: npm ci --ignore-scripts
+
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish --strict
+
+      - name: Run PHP lint
+        run: npm run lint:php
+
+      - name: Run runtime npm audit
+        run: npm audit --omit=dev
+
+      - name: Check release config syntax
+        run: node --check release.config.js
+
+      - name: Run release dry run
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Add remote SSH Key
-        uses: shimataro/ssh-key-action@v2
+        run: npm run publish-test -- --no-ci
+
+      - name: Run full npm audit
+        run: npm audit
+
+  semantic-release:
+    name: Semantic release
+    needs: release-readiness
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          key: ${{ secrets.DRUPAL_ORG_SSH_KEY }}
-          config: ${{ secrets.SSH_CONFIG }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-      - name: Sync release tags to Drupal.org Project
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: |
-          git remote add drupal-org '${{ secrets.DRUPAL_REPO_URL }}'
-          git push drupal-org --tags
-          git checkout main
-          git push drupal-org main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Clean npm install
+        run: npm ci --ignore-scripts
+
+      - name: Semantic release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
