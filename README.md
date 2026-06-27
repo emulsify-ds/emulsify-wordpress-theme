@@ -115,6 +115,7 @@ The generator copies `emulsify/whisk` to a sibling child theme directory, update
 ## Documentation
 
 - [Upgrading from 1.x to 2.x](docs/upgrading-1x-to-2x.md)
+- [Sister-project parity contract](docs/sister-project-parity.md)
 - [Parent and child theme architecture](docs/parent-child-architecture.md)
 - [Timber and Twig authoring](docs/timber-and-twig-authoring.md)
 - [Emulsify Core 4 and Vite workflow](docs/core-4-vite-workflow.md)

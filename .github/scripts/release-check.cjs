@@ -243,6 +243,7 @@ function runStaticChecks() {
   const readme = readFile('README.md');
   const docs = {
     upgrading: readFile('docs/upgrading-1x-to-2x.md'),
+    parity: readFile('docs/sister-project-parity.md'),
     architecture: readFile('docs/parent-child-architecture.md'),
     twig: readFile('docs/timber-and-twig-authoring.md'),
     workflow: readFile('docs/core-4-vite-workflow.md'),
@@ -288,6 +289,7 @@ function runStaticChecks() {
       'docs/native-gutenberg-blocks.md',
       'docs/parent-child-architecture.md',
       'docs/release-process.md',
+      'docs/sister-project-parity.md',
       'docs/timber-and-twig-authoring.md',
       'docs/upgrading-1x-to-2x.md',
       'docs/wp-cli-child-theme-generation.md',
@@ -673,6 +675,7 @@ function runStaticChecks() {
   runStaticCheck('Release documentation', () => {
     const expectedDocLinks = [
       'docs/upgrading-1x-to-2x.md',
+      'docs/sister-project-parity.md',
       'docs/parent-child-architecture.md',
       'docs/timber-and-twig-authoring.md',
       'docs/core-4-vite-workflow.md',
@@ -699,6 +702,24 @@ function runStaticChecks() {
     }
 
     ensure(docs.upgrading.includes('Emulsify WordPress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
+    ensure(docs.parity.includes('Emulsify WordPress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
+    ensure(docs.parity.includes('The parent theme owns reusable CMS runtime behavior'), 'Sister-project parity doc should define parent runtime ownership.');
+    ensure(docs.parity.includes('The generated child theme owns project implementation'), 'Sister-project parity doc should define child theme ownership.');
+    ensure(docs.parity.includes('Whisk is the starter'), 'Sister-project parity doc should define Whisk as the starter.');
+    ensure(docs.parity.includes('Emulsify Core 4 provides the component workflow'), 'Sister-project parity doc should document the Core 4 workflow.');
+    ensure(docs.parity.includes('Vite builds frontend assets'), 'Sister-project parity doc should document Vite.');
+    ensure(docs.parity.includes('Storybook presents component examples'), 'Sister-project parity doc should document Storybook.');
+    ensure(docs.parity.includes('Twig is the component template language'), 'Sister-project parity doc should document Twig.');
+    ensure(docs.parity.includes('Node 24 is the expected JavaScript runtime'), 'Sister-project parity doc should document Node 24.');
+    ensure(docs.parity.includes('Built global assets are emitted under `dist/global`'), 'Sister-project parity doc should document global build output.');
+    ensure(docs.parity.includes('Built component assets and block metadata are emitted under `dist/components`'), 'Sister-project parity doc should document component build output.');
+    ensure(docs.parity.includes('Frontend rendering uses Timber'), 'Sister-project parity doc should document Timber as a WordPress difference.');
+    ensure(docs.parity.includes('WordPress theme identity lives in `style.css` headers'), 'Sister-project parity doc should document WordPress theme headers.');
+    ensure(docs.parity.includes('`theme.json` is the WordPress site and editor configuration surface'), 'Sister-project parity doc should document theme.json.');
+    ensure(docs.parity.includes('ACF/Twig block registration is an optional WordPress integration'), 'Sister-project parity doc should document ACF/Twig blocks.');
+    ensure(docs.parity.includes('Native Gutenberg blocks use WordPress `block.json` metadata'), 'Sister-project parity doc should document native block.json blocks.');
+    ensure(docs.parity.includes("WordPress project generation is handled by the parent theme's WP-CLI command"), 'Sister-project parity doc should document WP-CLI generation.');
+    ensure(docs.parity.includes('`project.emulsify.json` currently uses `"platform": "none"`'), 'Sister-project parity doc should document platform none.');
     ensure(docs.architecture.includes('The parent theme owns reusable runtime behavior'), 'Architecture doc should explain parent responsibilities.');
     ensure(docs.architecture.includes('@emulsify-tpl'), 'Architecture doc should document the parent-only template namespace.');
     ensure(docs.twig.includes('@templates') && docs.twig.includes('@components'), 'Twig doc should document core namespaces.');
