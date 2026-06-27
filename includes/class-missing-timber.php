@@ -1,0 +1,94 @@
+<?php
+/**
+ * Provides clear errors when Timber is unavailable.
+ *
+ * @package Emulsify
+ */
+
+namespace Emulsify\Theme;
+
+/**
+ * Missing Timber error handling.
+ */
+final class Missing_Timber {
+
+	/**
+	 * Registers admin and runtime notices.
+	 *
+	 * @return void
+	 */
+	public function register(): void {
+		add_action( 'admin_notices', array( $this, 'admin_notice' ) );
+		add_action( 'template_redirect', array( $this, 'runtime_error' ), 0 );
+	}
+
+	/**
+	 * Displays an admin notice for users who can act on the dependency.
+	 *
+	 * @return void
+	 */
+	public function admin_notice(): void {
+		if ( ! current_user_can( 'activate_plugins' ) && ! current_user_can( 'switch_themes' ) ) {
+			return;
+		}
+
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			esc_html( $this->message() )
+		);
+	}
+
+	/**
+	 * Stops frontend rendering before Timber templates are loaded.
+	 *
+	 * @return void
+	 */
+	public function runtime_error(): void {
+		if ( is_admin() || $this->is_ajax_request() || $this->is_json_request() ) {
+			return;
+		}
+
+		wp_die(
+			wp_kses_post(
+				sprintf(
+					'<p>%s</p><p><code>%s</code></p>',
+					$this->message(),
+					'composer require timber/timber'
+				)
+			),
+			esc_html__( 'Timber is required', 'emulsify' ),
+			array( 'response' => 500 )
+		);
+	}
+
+	/**
+	 * Gets the dependency error message.
+	 *
+	 * @return string Error message.
+	 */
+	private function message(): string {
+		return __( 'Emulsify requires Timber to render WordPress templates. Install Timber with Composer or activate the Timber plugin.', 'emulsify' );
+	}
+
+	/**
+	 * Checks whether the current request is AJAX.
+	 *
+	 * @return bool TRUE for AJAX requests.
+	 */
+	private function is_ajax_request(): bool {
+		if ( function_exists( 'wp_doing_ajax' ) ) {
+			return wp_doing_ajax();
+		}
+
+		return defined( 'DOING_AJAX' ) && DOING_AJAX;
+	}
+
+	/**
+	 * Checks whether the current request is JSON.
+	 *
+	 * @return bool TRUE for JSON requests.
+	 */
+	private function is_json_request(): bool {
+		return function_exists( 'wp_is_json_request' ) && wp_is_json_request();
+	}
+}
