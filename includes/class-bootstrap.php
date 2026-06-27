@@ -50,7 +50,7 @@ final class Bootstrap {
 
 		( new Setup() )->register();
 		( new Assets() )->register();
-		( new Blocks() )->register();
+		( new Blocks\Registry() )->register();
 		( new Cli() )->register();
 
 		$timber = new Timber_Integration();
@@ -86,7 +86,10 @@ final class Bootstrap {
 		$files = array(
 			'class-attribute-bag.php',
 			'class-assets.php',
-			'class-blocks.php',
+			'Blocks/class-component-locator.php',
+			'Blocks/class-acf-blocks.php',
+			'Blocks/class-native-blocks.php',
+			'Blocks/class-registry.php',
 			'class-cli.php',
 			'class-context.php',
 			'class-missing-timber.php',

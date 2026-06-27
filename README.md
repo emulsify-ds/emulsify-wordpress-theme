@@ -4,9 +4,9 @@
 
 ## Emulsify is an open-source toolset for creating and implementing design systems on your website
 
-### Storybook development, Webpack build, and WordPress theme
+### Storybook development, Vite build, and WordPress theme
 
-**Emulsify WordPress** provides a [Storybook](https://storybook.js.org/) component library, a [Webpack](https://webpack.js.org/) development environment, and a WordPress starter kit theme.
+**Emulsify WordPress** provides a [Storybook](https://storybook.js.org/) component library, a [Vite](https://vite.dev/) development environment, and a WordPress starter kit theme.
 
 ## Documentation
 
@@ -16,6 +16,14 @@
 
 1. [Installation](https://www.emulsify.info/docs/emulsify-wordpress)
 2. [Usage](https://www.emulsify.info/docs/emulsify-wordpress/basic-usage/commands)
+
+## Block Integration
+
+Timber components are Twig templates under component source directories. They are reusable presentation components and do not become editor blocks by themselves.
+
+ACF blocks are optional Timber-rendered blocks. When ACF is active, Emulsify registers built components from `dist/components` only when a component folder includes both a `*.component.json` metadata file and a matching Twig template. ACF is not required for the base theme to run.
+
+Native Gutenberg blocks use WordPress Block API metadata. Add a `block.json` file to a component folder and build it so the folder is available under `dist/components`; WordPress registers that folder with `register_block_type()`.
 
 ## Demo
 
