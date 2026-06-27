@@ -210,6 +210,7 @@ try {
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Text Domain: acme-child' ), 'style.css should update Text Domain.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Template: emulsify' ), 'style.css should keep the parent Template slug.' );
 	emulsify_cli_smoke_assert( 'acme-child' === $package['name'], 'package.json should update name.' );
+	emulsify_cli_smoke_assert( 'wordpress' === $project['project']['platform'], 'project.emulsify.json should preserve the WordPress platform adapter.' );
 	emulsify_cli_smoke_assert( 'Acme Theme' === $project['project']['name'], 'project.emulsify.json should update project name.' );
 	emulsify_cli_smoke_assert( 'acme-child' === $project['project']['machineName'], 'project.emulsify.json should update machineName.' );
 	emulsify_cli_smoke_assert( false !== strpos( $page, 'acme-child-page' ), 'Example template should update slug class.' );

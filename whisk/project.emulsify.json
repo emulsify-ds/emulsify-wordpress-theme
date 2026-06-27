@@ -1,6 +1,6 @@
 {
   "project": {
-    "platform": "none",
+    "platform": "wordpress",
     "name": "whisk",
     "machineName": "whisk"
   },

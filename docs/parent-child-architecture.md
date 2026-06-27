@@ -65,4 +65,4 @@ Use these filters for project-specific behavior before editing a parent class. K
 
 ## Emulsify project metadata
 
-The generated child theme includes `project.emulsify.json` with `"platform": "none"`. That is intentional. WordPress runtime support currently lives in this theme, while Emulsify Core does not yet provide a native WordPress adapter.
+The generated child theme includes `project.emulsify.json` with `"platform": "wordpress"`. Emulsify Core and Emulsify CLI tooling use that adapter value for WordPress-aware project behavior, while reusable WordPress runtime support remains in this parent theme.

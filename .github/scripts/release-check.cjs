@@ -418,6 +418,7 @@ function runStaticChecks() {
     ensure(smoke.includes("'force' => true"), 'Child theme generator smoke should cover --force.');
     ensure(smoke.includes("'activate' => true"), 'Child theme generator smoke should cover --activate.');
     ensure(smoke.includes('project.emulsify.json'), 'Child theme generator smoke should validate project.emulsify.json updates.');
+    ensure(smoke.includes("'wordpress' === $project['project']['platform']"), 'Child theme generator smoke should validate the WordPress platform adapter.');
     return 'WP-CLI child theme generation uses safe options and targeted metadata updates.';
   });
 
@@ -504,7 +505,7 @@ function runStaticChecks() {
     ensure(whiskPackage.license === 'GPL-2.0-only', 'whisk/package.json license should align with the WordPress theme.');
     ensure(whiskPackage.engines && whiskPackage.engines.node === '>=24', 'whisk/package.json engines.node should be >=24.');
     ensure(whiskPackage.type === 'module', 'whisk/package.json should remain an ES module package.');
-    ensure(whiskProject.project.platform === 'none', 'whisk/project.emulsify.json should use platform "none" until Core ships a WordPress adapter.');
+    ensure(whiskProject.project.platform === 'wordpress', 'whisk/project.emulsify.json should use the WordPress platform adapter.');
     ensure(whiskProject.project.name === 'whisk', 'whisk/project.emulsify.json project.name should remain whisk.');
     ensure(whiskProject.project.machineName === 'whisk', 'whisk/project.emulsify.json project.machineName should remain whisk.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components')), 'whisk/src/components should be the primary component source.');
@@ -707,7 +708,7 @@ function runStaticChecks() {
     ensure(readme.includes('## Parent and child themes'), 'README.md should keep the parent/child overview visible.');
     ensure(readme.includes('## Basic commands'), 'README.md should keep root commands visible.');
     ensure(readme.includes('## Documentation'), 'README.md should link to deeper docs.');
-    ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "none"'), 'README.md should explain the current project.emulsify.json platform setting.');
+    ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
 
     for (const docLink of expectedDocLinks) {
@@ -732,13 +733,13 @@ function runStaticChecks() {
     ensure(docs.parity.includes('ACF/Twig block registration is an optional WordPress integration'), 'Sister-project parity doc should document ACF/Twig blocks.');
     ensure(docs.parity.includes('Native Gutenberg blocks use WordPress `block.json` metadata'), 'Sister-project parity doc should document native block.json blocks.');
     ensure(docs.parity.includes("WordPress project generation is handled by the parent theme's WP-CLI command"), 'Sister-project parity doc should document WP-CLI generation.');
-    ensure(docs.parity.includes('`project.emulsify.json` currently uses `"platform": "none"`'), 'Sister-project parity doc should document platform none.');
+    ensure(docs.parity.includes('`project.emulsify.json` uses `"platform": "wordpress"`'), 'Sister-project parity doc should document the WordPress platform adapter.');
     ensure(docs.architecture.includes('The parent theme owns reusable runtime behavior'), 'Architecture doc should explain parent responsibilities.');
     ensure(docs.architecture.includes('@emulsify-tpl'), 'Architecture doc should document the parent-only template namespace.');
     ensure(docs.twig.includes('@templates') && docs.twig.includes('@components'), 'Twig doc should document core namespaces.');
     ensure(docs.twig.includes('emulsify_theme_context'), 'Twig doc should document context extension.');
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
-    ensure(docs.workflow.includes('"platform": "none"'), 'Workflow doc should explain platform none.');
+    ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
     ensure(docs.acfBlocks.includes('The starter button includes an active example metadata file'), 'ACF/Twig blocks doc should explain the starter button metadata.');
     ensure(docs.acfBlocks.includes('emulsify_theme_acf_block_args'), 'ACF/Twig blocks doc should document the block args filter.');
     ensure(docs.nativeBlocks.includes('The starter does not include an active native block example'), 'Native blocks doc should avoid over-claiming a native example.');

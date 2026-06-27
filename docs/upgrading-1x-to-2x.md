@@ -8,7 +8,7 @@ Emulsify WordPress 2.x changes the project model. The repository is now a Timber
 - The parent theme owns minimal Timber fallback templates in `templates/`.
 - Generated child themes own project components, template overrides, source Sass and JavaScript, and built assets.
 - The starter child theme uses Emulsify Core 4, Vite, Storybook, and Twig.
-- The generated child theme keeps `project.emulsify.json` set to `"platform": "none"` until Emulsify Core has a native WordPress adapter.
+- The generated child theme keeps `project.emulsify.json` set to `"platform": "wordpress"` for Emulsify Core and Emulsify CLI WordPress adapter support.
 - Release metadata is aligned around the `2.0.0` stable release.
 
 ## Before upgrading

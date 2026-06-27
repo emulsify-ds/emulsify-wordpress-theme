@@ -4,7 +4,7 @@ The generated child theme uses Emulsify Core 4, Vite, Storybook, Twig stories, S
 
 ## Project metadata
 
-`whisk/project.emulsify.json` uses `"platform": "none"`. That is intentional for the 2.x release branch. WordPress-specific runtime support lives in this theme until Emulsify Core has a native WordPress adapter.
+`whisk/project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter while this parent theme owns the reusable WordPress runtime.
 
 ## Source directories
 

@@ -63,7 +63,7 @@ The generated `whisk` child theme owns project implementation:
 - `whisk/src/tokens.scss`, `whisk/src/foundation.scss`, and `whisk/src/layout.scss` are the Core 4 global style entry points.
 - `whisk/templates/page.twig` is a small example override.
 - `whisk/dist/global` and `whisk/dist/components` contain built assets after running Vite.
-- `whisk/project.emulsify.json` uses `"platform": "none"` until Emulsify Core has a native WordPress adapter.
+- `whisk/project.emulsify.json` uses `"platform": "wordpress"` so Core and CLI tooling can load the WordPress platform adapter.
 
 ## Bedrock and Timber
 

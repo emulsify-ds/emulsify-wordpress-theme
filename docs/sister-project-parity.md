@@ -69,7 +69,7 @@ The command copies Whisk to a sibling child theme and performs targeted metadata
 
 ### Emulsify platform metadata
 
-`project.emulsify.json` currently uses `"platform": "none"`. This is intentional until Emulsify Core has a native WordPress adapter. WordPress runtime behavior lives in this parent theme for the 2.x release line.
+`project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter. WordPress runtime behavior still lives in this parent theme for the 2.x release line.
 
 ## Parity guardrails
 
@@ -80,4 +80,4 @@ Use this contract when evaluating future changes:
 - Keep Whisk small enough to work as a starter.
 - Keep generated child theme source aligned with Emulsify Core 4 conventions.
 - Keep WordPress-specific behavior explicit rather than hiding it behind Drupal naming or assumptions.
-- Keep `project.emulsify.json` on `"platform": "none"` until Core ships WordPress adapter support.
+- Keep `project.emulsify.json` on `"platform": "wordpress"` so generated child themes advertise the WordPress platform adapter.
