@@ -1,8 +1,5 @@
 {
   "extends": [
     "../../node_modules/@emulsify/core/config/.stylelintrc.json"
-  ],
-  "rules": {
-    "no-duplicate-selectors": null
-  }
+  ]
 }
