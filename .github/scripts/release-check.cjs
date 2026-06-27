@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const childProcess = require('child_process');
 
 const repoRoot = path.resolve(__dirname, '../..');
 const results = [];
@@ -36,6 +37,28 @@ function runStaticCheck(name, callback) {
   catch (error) {
     addResult('FAIL', name, error.message);
   }
+}
+
+function runCommandCheck(name, command, args) {
+  const result = childProcess.spawnSync(command, args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: process.env,
+    maxBuffer: 1024 * 1024 * 20,
+  });
+  const output = `${result.stdout || ''}${result.stderr || ''}`.trim();
+
+  if (result.status !== 0) {
+    addResult('FAIL', name, output || `${command} ${args.join(' ')} failed with exit code ${result.status}.`);
+    return;
+  }
+
+  if (output.includes('WORDPRESS_SMOKE_SKIPPED')) {
+    addResult('SKIP', name, output.split(/\r?\n/).filter(Boolean).pop());
+    return;
+  }
+
+  addResult('PASS', name, output.split(/\r?\n/).filter(Boolean).pop() || `${command} ${args.join(' ')} passed.`);
 }
 
 function listFilesRecursive(relativePath, predicate) {
@@ -205,6 +228,7 @@ function runStaticChecks() {
       'release.config.js',
       'style.css',
       '.github/scripts/attribute-helper-smoke.php',
+      '.github/scripts/wordpress-fixture-smoke.cjs',
       'whisk/functions.php',
       'whisk/package.json',
       'whisk/project.emulsify.json',
@@ -346,6 +370,9 @@ function runStaticChecks() {
     ensure(semanticReleaseWorkflow.includes('contents: write'), 'semantic-release.yml should grant GitHub release permissions explicitly.');
     ensure(semanticReleaseWorkflow.includes('id: semantic'), 'semantic-release.yml should expose the semantic-release step as steps.semantic.');
     ensure(semanticReleaseWorkflow.includes('npm run release:check'), 'semantic-release.yml should run local release readiness checks.');
+    ensure(semanticReleaseWorkflow.includes('wp-cli'), 'semantic-release.yml should install WP-CLI for the WordPress smoke fixture.');
+    ensure(semanticReleaseWorkflow.includes('mysql:'), 'semantic-release.yml should provide a MySQL service for the WordPress smoke fixture.');
+    ensure(semanticReleaseWorkflow.includes('WP_SMOKE_DB_HOST'), 'semantic-release.yml should pass WordPress smoke database settings.');
     return 'Semantic release is configured for non-prefixed tags and breaking-change major releases.';
   });
 
@@ -381,6 +408,8 @@ function runStaticChecks() {
     ensure(dsStoreFiles.length === 0, `.DS_Store files found outside .git: ${dsStoreFiles.join(', ')}.`);
     return 'No .DS_Store files were found outside .git.';
   });
+
+  runCommandCheck('WordPress fixture smoke', process.execPath, ['.github/scripts/wordpress-fixture-smoke.cjs']);
 }
 
 function printSummary() {

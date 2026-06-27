@@ -17,6 +17,19 @@ jobs:
   release-readiness:
     name: Release readiness
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_smoke
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     permissions:
       contents: write
       issues: write
@@ -37,7 +50,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          tools: composer:v2
+          extensions: mysqli
+          tools: composer:v2, wp-cli
           coverage: none
 
       - name: Clean npm install
@@ -56,6 +70,13 @@ jobs:
         run: node --check release.config.js
 
       - name: Run release readiness checks
+        env:
+          WP_SMOKE_REQUIRED: '1'
+          WP_SMOKE_DB_HOST: 127.0.0.1
+          WP_SMOKE_DB_PORT: '3306'
+          WP_SMOKE_DB_NAME: wordpress_smoke
+          WP_SMOKE_DB_USER: root
+          WP_SMOKE_DB_PASSWORD: root
         run: npm run release:check
 
       - name: Run release dry run
