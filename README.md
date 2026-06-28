@@ -1,8 +1,8 @@
 ![Emulsify Design System](https://github.com/emulsify-ds/.github/blob/6bd435be881bd820bddfa05d88905efe29176a0a/assets/images/header.png)
 
-# Emulsify WordPress
+# Emulsify Wordpress
 
-Emulsify WordPress 2.0.0 is a Timber-first WordPress parent theme for teams building component-driven sites with Emulsify Core 4, Vite, Storybook, and Twig.
+Emulsify Wordpress 2.0.0 is a Timber-first WordPress parent theme for teams building component-driven sites with Emulsify Core 4, Vite, Storybook, and Twig.
 
 The parent theme provides the WordPress runtime: theme setup, Timber bootstrapping, Twig namespaces and helpers, template fallbacks, asset loading, and optional block registration. Generated child themes provide the project layer: components, templates, source Sass and JavaScript, compiled assets, and site-specific overrides.
 
@@ -115,6 +115,8 @@ wp emulsify "Acme Site" --machine-name=acme-site --activate
 
 The generator copies `emulsify/whisk` to a sibling child theme directory, updates WordPress theme headers, package metadata, Emulsify project metadata, and visible starter labels, then optionally activates the generated child theme.
 
+For Emulsify CLI integration, the standalone starter repository is `https://github.com/emulsify-ds/emulsify-wordpress-starter`. It represents the generated child theme layer from `whisk/`, not the parent runtime theme root, and generated projects still declare `Template: emulsify` so WordPress loads the installed parent theme.
+
 ## Documentation
 
 - [Upgrading from 1.x to 2.x](docs/upgrading-1x-to-2x.md)
@@ -135,11 +137,11 @@ The generator copies `emulsify/whisk` to a sibling child theme directory, update
 
 ## License
 
-Emulsify WordPress is licensed under GPL-2.0-only. See [LICENSE](LICENSE).
+Emulsify Wordpress is licensed under GPL-2.0-only. See [LICENSE](LICENSE).
 
 ## Contributing
 
-Read the [Code of Conduct](https://github.com/emulsify-ds/emulsify-wordpress-theme/blob/main/CODE_OF_CONDUCT.md) before contributing. File bugs and feature requests at [emulsify-ds/emulsify-wordpress-theme](https://github.com/emulsify-ds/emulsify-wordpress-theme/issues).
+Read the [Code of Conduct](https://github.com/emulsify-ds/emulsify-wordpress/blob/main/CODE_OF_CONDUCT.md) before contributing. File bugs and feature requests at [emulsify-ds/emulsify-wordpress](https://github.com/emulsify-ds/emulsify-wordpress/issues).
 
 ## Author
 

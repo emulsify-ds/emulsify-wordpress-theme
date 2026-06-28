@@ -50,7 +50,7 @@ Pull requests run pragmatic checks:
 - Composer metadata validation.
 - Runtime and full npm audits.
 - PHP linting.
-- The practical `pr:check` suite, including WP-CLI child theme generation smoke coverage and Whisk dependency installation.
+- The practical `pr:check` suite, including WP-CLI child theme generation smoke coverage, Whisk dependency installation, and standalone starter init smoke coverage for Emulsify CLI.
 - Static release readiness checks through `release:check`.
 
 Normal pull requests do not start MySQL or run the full WordPress fixture. Manual and scheduled runs execute the full WordPress fixture smoke test with WP-CLI and MySQL so heavier runtime coverage stays available without slowing every pull request.

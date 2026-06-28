@@ -1,6 +1,6 @@
 # Parent and child theme architecture
 
-Emulsify WordPress is split into a reusable parent theme and generated project child themes. The goal is to keep parent runtime behavior stable while allowing each project to own its implementation details.
+Emulsify Wordpress is split into a reusable parent theme and generated project child themes. The goal is to keep parent runtime behavior stable while allowing each project to own its implementation details.
 
 ## Parent theme responsibilities
 

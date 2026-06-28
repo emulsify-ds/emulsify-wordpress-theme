@@ -1,5 +1,5 @@
 {
-  "name": "emulsify-ds/emulsify-wordpress-theme",
+  "name": "emulsify-ds/emulsify-wordpress",
   "description": "Timber-first WordPress parent theme for Emulsify that generates child themes with Emulsify Core 4, Vite, Storybook, and Twig",
   "type": "wordpress-theme",
   "homepage": "https://www.emulsify.info",

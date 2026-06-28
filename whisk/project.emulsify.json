@@ -5,6 +5,6 @@
     "machineName": "whisk"
   },
   "starter": {
-    "repository": "https://github.com/emulsify-ds/emulsify-wordpress-theme/"
+    "repository": "https://github.com/emulsify-ds/emulsify-wordpress-starter"
   }
 }

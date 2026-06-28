@@ -1,6 +1,6 @@
 # Upgrading from 1.x to 2.x
 
-Emulsify WordPress 2.x changes the project model. The repository is now a Timber-first WordPress parent theme that ships a generated child theme starter. Projects should customize the child theme instead of editing parent runtime classes.
+Emulsify Wordpress 2.x changes the project model. The repository is now a Timber-first WordPress parent theme that ships a generated child theme starter. Projects should customize the child theme instead of editing parent runtime classes.
 
 ## What changed
 

@@ -3,7 +3,7 @@
 - Fixes this or that bullet item
   
 ### Related Issue(s)
-- [Title of the issue](https://github.com/emulsify-ds/emulsify-wordpress-theme/issues/1) (if applicable)
+- [Title of the issue](https://github.com/emulsify-ds/emulsify-wordpress/issues/1) (if applicable)
 
 ### Notes:
 - (optional) Document any intentionally unfinished parts or known issues within this PR

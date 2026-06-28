@@ -62,7 +62,7 @@ module.exports = {
   expectedStableRelease,
   tagFormat: '${version}',
   branches: ['main'],
-  repositoryUrl: 'git@github.com:emulsify-ds/emulsify-wordpress-theme.git',
+  repositoryUrl: 'git@github.com:emulsify-ds/emulsify-wordpress.git',
   plugins: [
     ['@semantic-release/commit-analyzer', { parserOpts }],
     ['@semantic-release/release-notes-generator', { parserOpts }],

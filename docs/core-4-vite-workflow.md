@@ -29,6 +29,8 @@ The WordPress runtime also reads that shape so `{% include "@atoms/example/examp
 
 The generated child theme intentionally does not ship a concrete component library. Emulsify CLI can install the component system a project chooses, and that system should own the source tree, Sass entrypoints, stories, and fixture data.
 
+For Emulsify CLI initialization, `whisk/` is also the source for the standalone `emulsify-wordpress-starter` repository. The starter hook runs after CLI dependency installation and updates package metadata, WordPress theme headers, project metadata, and optional JSON pattern namespaces for the generated project.
+
 Whisk keeps `src/components/.gitkeep` only as a placeholder for compatible systems. It does not include default `tokens.scss`, `foundation.scss`, or `layout.scss` files.
 
 Whisk keeps empty `assets/images` and `assets/icons` directories as project-owned theme asset placeholders. Use these for source files that belong to the theme repository, not for uploaded media library files. The optional `assets/fonts` placeholder is available when a project owns local font files.

@@ -179,8 +179,14 @@ function ensureNoTitleCaseBuildPhrase(label, value) {
 }
 
 function ensureWordPressLanguage(label, value) {
-  ensure(value.includes('WordPress'), `${label} should use the canonical WordPress spelling.`);
-  ensure(!/Wordpress/.test(value), `${label} should not use Wordpress.`);
+  const normalizedValue = normalizeProductTitle(value);
+
+  ensure(normalizedValue.includes('WordPress'), `${label} should use the canonical WordPress spelling.`);
+  ensure(!/Wordpress/.test(normalizedValue), `${label} should not use Wordpress outside the Emulsify Wordpress product title.`);
+}
+
+function normalizeProductTitle(value) {
+  return String(value).replace(/\bEmulsify Wordpress\b/g, 'Emulsify WordPress');
 }
 
 function ensureViteLanguage(label, value) {
@@ -247,6 +253,7 @@ function runStaticChecks() {
   const releaseConfig = require(path.join(repoRoot, 'release.config.js'));
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
   const themeReadinessWorkflow = readFile('.github/workflows/theme-readiness.yml');
+  const starterInitSmoke = readFile('.github/scripts/wordpress-starter-init-smoke.cjs');
   const wordpressFixtureSmoke = readFile('.github/scripts/wordpress-fixture-smoke.cjs');
   const readme = readFile('README.md');
   const docs = {
@@ -336,9 +343,14 @@ function runStaticChecks() {
       '.github/scripts/editor-enhancements-smoke.php',
       '.github/scripts/editor-policy-smoke.php',
       '.github/scripts/pattern-registry-smoke.php',
+      '.github/scripts/wordpress-starter-init-smoke.cjs',
       '.github/scripts/theme-filters-smoke.php',
       '.github/scripts/twig-project-namespace-smoke.php',
       '.github/scripts/wordpress-fixture-smoke.cjs',
+      'whisk/.cli/init.js',
+      'whisk/.gitignore',
+      'whisk/.nvmrc',
+      'whisk/config/jest.config.js',
       'whisk/functions.php',
       'whisk/package.json',
       'whisk/project.emulsify.json',
@@ -354,7 +366,7 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Root release metadata', () => {
-    ensure(rootPackage.name === 'emulsify-wordpress-theme', 'package.json name should be emulsify-wordpress-theme.');
+    ensure(rootPackage.name === 'emulsify-wordpress', 'package.json name should be emulsify-wordpress.');
     ensure(semver(rootPackage.version), 'package.json version must be a valid semver string.');
     ensure(rootPackage.version === '2.0.0', 'package.json version should prepare the 2.0.0 release.');
     ensure(rootPackage.description, 'package.json description is required.');
@@ -362,8 +374,8 @@ function runStaticChecks() {
     ensureNoTitleCaseBuildPhrase('package.json description', rootPackage.description);
     ensure(rootPackage.license === 'GPL-2.0-only', 'package.json license should be GPL-2.0-only.');
     ensure(rootPackage.engines && rootPackage.engines.node === '>=24.10', 'package.json engines.node should be >=24.10.');
-    ensure(rootPackage.repository.url === 'git+https://github.com/emulsify-ds/emulsify-wordpress-theme.git', 'package.json repository.url should target emulsify-wordpress-theme.');
-    ensure(rootPackage.bugs.url === 'https://github.com/emulsify-ds/emulsify-wordpress-theme/issues', 'package.json bugs.url should target emulsify-wordpress-theme.');
+    ensure(rootPackage.repository.url === 'git+https://github.com/emulsify-ds/emulsify-wordpress.git', 'package.json repository.url should target emulsify-wordpress.');
+    ensure(rootPackage.bugs.url === 'https://github.com/emulsify-ds/emulsify-wordpress/issues', 'package.json bugs.url should target emulsify-wordpress.');
     ensure(rootPackage.scripts['pr:check'] === 'node .github/scripts/pr-validation.cjs', 'package.json should expose npm run pr:check.');
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
     ensure(rootPackage.scripts['smoke:acf-json'] === 'php .github/scripts/acf-local-json-smoke.php', 'package.json should expose npm run smoke:acf-json.');
@@ -373,12 +385,13 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['smoke:editor-enhancements'] === 'php .github/scripts/editor-enhancements-smoke.php', 'package.json should expose npm run smoke:editor-enhancements.');
     ensure(rootPackage.scripts['smoke:editor-policy'] === 'php .github/scripts/editor-policy-smoke.php', 'package.json should expose npm run smoke:editor-policy.');
     ensure(rootPackage.scripts['smoke:patterns'] === 'php .github/scripts/pattern-registry-smoke.php', 'package.json should expose npm run smoke:patterns.');
+    ensure(rootPackage.scripts['smoke:starter-init'] === 'node .github/scripts/wordpress-starter-init-smoke.cjs', 'package.json should expose npm run smoke:starter-init.');
     ensure(rootPackage.scripts['smoke:theme-filters'] === 'php .github/scripts/theme-filters-smoke.php', 'package.json should expose npm run smoke:theme-filters.');
     ensure(rootPackage.scripts['smoke:twig-project-namespace'] === 'php .github/scripts/twig-project-namespace-smoke.php', 'package.json should expose npm run smoke:twig-project-namespace.');
     ensure(rootPackage.scripts['whisk:install'], 'package.json should expose npm run whisk:install.');
     ensure(rootPackage.scripts['whisk:build'] === 'npm --prefix whisk run build', 'package.json should expose npm run whisk:build.');
     ensure(rootPackage.devDependencies['@semantic-release/npm'], 'package.json should declare @semantic-release/npm directly.');
-    ensure(composer.name === 'emulsify-ds/emulsify-wordpress-theme', 'composer.json name should be emulsify-ds/emulsify-wordpress-theme.');
+    ensure(composer.name === 'emulsify-ds/emulsify-wordpress', 'composer.json name should be emulsify-ds/emulsify-wordpress.');
     ensure(composer.type === 'wordpress-theme', 'composer.json type should be wordpress-theme.');
     ensure(composer.license === 'GPL-2.0-only', 'composer.json license should be GPL-2.0-only.');
     ensure(composer.homepage === 'https://www.emulsify.info', 'composer.json homepage should use the canonical HTTPS URL.');
@@ -556,6 +569,8 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Whisk Core 4 and Vite metadata', () => {
+    const initHook = readFile('whisk/.cli/init.js');
+    const jestConfig = readFile('whisk/config/jest.config.js');
     const scripts = whiskPackage.scripts || {};
     const scriptText = Object.values(scripts).join('\n');
     const starterComponentFiles = listFilesRecursive('whisk/src/components', (file) => path.basename(file) !== '.gitkeep');
@@ -571,6 +586,27 @@ function runStaticChecks() {
     ensure(whiskProject.project.platform === 'wordpress', 'whisk/project.emulsify.json should use the WordPress platform adapter.');
     ensure(whiskProject.project.name === 'whisk', 'whisk/project.emulsify.json project.name should remain whisk.');
     ensure(whiskProject.project.machineName === 'whisk', 'whisk/project.emulsify.json project.machineName should remain whisk.');
+    ensure(whiskProject.starter.repository === 'https://github.com/emulsify-ds/emulsify-wordpress-starter', 'whisk/project.emulsify.json should point to the standalone WordPress starter repository.');
+    ensure(fs.existsSync(path.join(repoRoot, 'whisk/.cli/init.js')), 'Whisk should ship an emulsify-cli init hook.');
+    ensure(fs.existsSync(path.join(repoRoot, 'whisk/.gitignore')), 'Whisk should ship standalone starter ignore rules.');
+    ensure(fs.existsSync(path.join(repoRoot, 'whisk/.nvmrc')), 'Whisk should use .nvmrc for Node version tooling.');
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/.nvm')), 'Whisk should not use the legacy .nvm filename.');
+    ensure(fs.existsSync(path.join(repoRoot, 'whisk/config/jest.config.js')), 'Whisk should provide the Jest config referenced by package scripts.');
+    ensure(scripts.test === 'jest --coverage --passWithNoTests --config ./config/jest.config.js', 'whisk/package.json test script should point at the checked-in Jest config.');
+    ensure(jestConfig.includes("testEnvironment: 'node'"), 'whisk/config/jest.config.js should define a node test environment.');
+    ensure(initHook.includes("replaceThemeHeader(contents, 'Theme Name', name)"), 'Whisk init hook should update style.css Theme Name.');
+    ensure(initHook.includes("replaceThemeHeader(contents, 'Text Domain', machineName)"), 'Whisk init hook should update style.css Text Domain.');
+    ensure(initHook.includes("replaceThemeHeader(contents, 'Template', PARENT_THEME)"), 'Whisk init hook should keep Template aligned to the parent theme.');
+    ensure(initHook.includes("const PARENT_THEME = 'emulsify'"), 'Whisk init hook should keep the parent Template slug as emulsify.');
+    ensure(initHook.includes("data.name = machineName"), 'Whisk init hook should update package metadata names.');
+    ensure(initHook.includes("updateLockfile('package-lock.json'"), 'Whisk init hook should update the package lockfile created before the hook runs.');
+    ensure(initHook.includes("config.project.platform = 'wordpress'"), 'Whisk init hook should keep project.platform on wordpress.');
+    ensure(initHook.includes('updatePatternNamespaces'), 'Whisk init hook should update JSON pattern namespaces.');
+    ensure(starterInitSmoke.includes('package-lock.json') && starterInitSmoke.includes('packages[""].name'), 'Starter init smoke should prove lockfile metadata is updated after npm install.');
+    ensure(starterInitSmoke.includes("project.project.platform === 'wordpress'"), 'Starter init smoke should validate the WordPress platform adapter.');
+    ensure(starterInitSmoke.includes("style.Template === 'emulsify'"), 'Starter init smoke should validate Template: emulsify.');
+    ensure(starterInitSmoke.includes('node_modules') && starterInitSmoke.includes('dist'), 'Starter init smoke should validate copied build and dependency output is absent.');
+    ensure(starterInitSmoke.includes("['--prefix', 'whisk', 'run', 'test']"), 'Starter init smoke should verify the starter npm test script works after Whisk dependencies are installed.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components/.gitkeep')), 'whisk/src/components should remain as an empty optional component placeholder.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/theme.json')), 'Whisk should not ship an empty child theme.json by default.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/components')), 'whisk/components should not remain as an unused starter placeholder.');
@@ -711,6 +747,7 @@ function runStaticChecks() {
     const releaseGuard = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.verifyRelease === 'function');
     ensure(releaseConfig.expectedStableRelease === '2.0.0', 'release.config.js should declare 2.0.0 as the expected stable release.');
     ensure(releaseConfig.tagFormat === '${version}', 'release.config.js should emit non-prefixed semver tags.');
+    ensure(releaseConfig.repositoryUrl === 'git@github.com:emulsify-ds/emulsify-wordpress.git', 'release.config.js should publish against emulsify-wordpress.');
     ensure(Array.isArray(releaseConfig.branches), 'release.config.js branches must be an array.');
     ensure(releaseConfig.branches.length === 1 && releaseConfig.branches[0] === 'main', 'release.config.js should publish only from main.');
     ensure(releaseGuard, 'release.config.js should guard the first stable release version.');
@@ -770,9 +807,11 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:editor-enhancements'), 'PR validation should run the editor enhancements smoke test.');
     ensure(prValidationScript.includes('smoke:editor-policy'), 'PR validation should run the editor policy smoke test.');
     ensure(prValidationScript.includes('smoke:patterns'), 'PR validation should run the pattern registry smoke test.');
+    ensure(prValidationScript.includes('smoke:starter-init'), 'PR validation should run the WordPress starter init smoke test.');
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
     ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
+    ensure(prValidationScript.indexOf('whisk:install') < prValidationScript.indexOf('smoke:starter-init'), 'PR validation should install Whisk dependencies before checking the starter npm test script.');
     ensure(!prValidationScript.includes('whisk:build'), 'PR validation should not require a Whisk build before a component system is installed.');
     return 'Theme readiness covers pragmatic PR checks with manual and scheduled WordPress fixture coverage.';
   });
@@ -795,8 +834,8 @@ function runStaticChecks() {
       'docs/release-process.md',
     ];
 
-    ensure(readme.includes('Emulsify WordPress 2.0.0 is a Timber-first WordPress parent theme'), 'README.md should describe the 2.0.0 Timber-first parent theme.');
-    ensure(readme.includes('Emulsify WordPress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
+    ensure(readme.includes('Emulsify Wordpress 2.0.0 is a Timber-first WordPress parent theme'), 'README.md should describe the 2.0.0 Timber-first parent theme.');
+    ensure(readme.includes('Emulsify Wordpress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
     ensure(readme.includes('[LICENSE](LICENSE)'), 'README.md should link to the repository license file.');
     ensure(readme.includes('## Requirements'), 'README.md should keep requirements visible.');
     ensure(readme.includes('## Quick install'), 'README.md should keep quick install guidance visible.');
@@ -812,8 +851,8 @@ function runStaticChecks() {
       ensure(readme.includes(docLink), `README.md should link to ${docLink}.`);
     }
 
-    ensure(docs.upgrading.includes('Emulsify WordPress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
-    ensure(docs.parity.includes('Emulsify WordPress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
+    ensure(docs.upgrading.includes('Emulsify Wordpress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
+    ensure(docs.parity.includes('Emulsify Wordpress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
     ensure(docs.parity.includes('The parent theme owns reusable CMS runtime behavior'), 'Sister-project parity doc should define parent runtime ownership.');
     ensure(docs.parity.includes('The generated child theme owns project implementation'), 'Sister-project parity doc should define child theme ownership.');
     ensure(docs.parity.includes('Whisk is the starter'), 'Sister-project parity doc should define Whisk as the starter.');
@@ -879,9 +918,9 @@ function runStaticChecks() {
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');
     ensure(!/Webpack/i.test(`${readme}\n${docsText}`), 'Docs should not mention Webpack.');
-    ensure(!/Wordpress/.test(`${readme}\n${docsText}`), 'Docs should use the canonical WordPress spelling.');
-    ensure(issueTemplate.includes('emulsify-wordpress-theme/releases'), 'Issue template should link to WordPress theme releases.');
-    ensure(pullRequestTemplate.includes('emulsify-wordpress-theme/issues/1'), 'Pull request template should link to WordPress theme issues.');
+    ensure(!/Wordpress/.test(normalizeProductTitle(`${readme}\n${docsText}`)), 'Docs should use the canonical WordPress spelling outside the Emulsify Wordpress product title.');
+    ensure(issueTemplate.includes('emulsify-wordpress/releases'), 'Issue template should link to WordPress theme releases.');
+    ensure(pullRequestTemplate.includes('emulsify-wordpress/issues/1'), 'Pull request template should link to WordPress theme issues.');
     ensure(!/emulsify-drupal/.test(`${issueTemplate}\n${pullRequestTemplate}`), 'GitHub templates should not link to the Drupal repository.');
     return 'README, docs, and GitHub templates match the WordPress 2.0.0 release story.';
   });
