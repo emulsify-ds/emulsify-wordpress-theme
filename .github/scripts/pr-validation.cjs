@@ -31,5 +31,6 @@ run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);
 run('Run child theme generator smoke test', 'npm', ['run', 'smoke:child-theme-generator']);
 run('Run component locator smoke test', 'npm', ['run', 'smoke:component-locator']);
 run('Run parent theme filter smoke test', 'npm', ['run', 'smoke:theme-filters']);
+run('Run Twig project namespace smoke test', 'npm', ['run', 'smoke:twig-project-namespace']);
 run('Install Whisk dependencies', 'npm', ['run', 'whisk:install']);
 run('Build Whisk Core 4/Vite assets', 'npm', ['run', 'whisk:build']);

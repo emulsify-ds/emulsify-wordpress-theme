@@ -49,6 +49,8 @@ whisk/src/components/button/
 
 This is intentionally small. It demonstrates the workflow without trying to be a complete design system.
 
+For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`. The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work.
+
 ## Build output
 
 The parent theme loads built files from the active child theme first, then parent fallbacks. Build the child theme before expecting component styles, JavaScript, ACF/Twig block metadata, or native block metadata to appear in WordPress.

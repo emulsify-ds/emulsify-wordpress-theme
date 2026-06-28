@@ -36,6 +36,7 @@
     "smoke:child-theme-generator": "php .github/scripts/child-theme-generator-smoke.php",
     "smoke:component-locator": "php .github/scripts/component-locator-smoke.php",
     "smoke:theme-filters": "php .github/scripts/theme-filters-smoke.php",
+    "smoke:twig-project-namespace": "php .github/scripts/twig-project-namespace-smoke.php",
     "whisk:build": "npm --prefix whisk run build",
     "whisk:install": "npm --prefix whisk install --package-lock=false --ignore-scripts",
     "publish": "semantic-release --tag-format '${version}'",

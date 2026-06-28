@@ -47,6 +47,8 @@ Built child theme components are discovered before built parent theme components
 
 Discovery is memoized for the current PHP request. ACF/Twig and native block registration share one filesystem scan without adding persistent cache invalidation problems.
 
+For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`. The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work.
+
 ## Runtime filters
 
 Child themes and project plugins can extend parent behavior with focused WordPress filters:
@@ -54,6 +56,7 @@ Child themes and project plugins can extend parent behavior with focused WordPre
 - `emulsify_theme_asset_directories`
 - `emulsify_theme_asset_files`
 - `emulsify_theme_twig_namespaces`
+- `emulsify_theme_project_component_roots`
 - `emulsify_theme_context`
 - `emulsify_theme_component_roots`
 - `emulsify_theme_acf_block_metadata`

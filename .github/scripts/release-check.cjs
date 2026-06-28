@@ -313,6 +313,7 @@ function runStaticChecks() {
       '.github/scripts/child-theme-generator-smoke.php',
       '.github/scripts/component-locator-smoke.php',
       '.github/scripts/theme-filters-smoke.php',
+      '.github/scripts/twig-project-namespace-smoke.php',
       '.github/scripts/wordpress-fixture-smoke.cjs',
       'whisk/functions.php',
       'whisk/package.json',
@@ -347,6 +348,7 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['smoke:child-theme-generator'] === 'php .github/scripts/child-theme-generator-smoke.php', 'package.json should expose npm run smoke:child-theme-generator.');
     ensure(rootPackage.scripts['smoke:component-locator'] === 'php .github/scripts/component-locator-smoke.php', 'package.json should expose npm run smoke:component-locator.');
     ensure(rootPackage.scripts['smoke:theme-filters'] === 'php .github/scripts/theme-filters-smoke.php', 'package.json should expose npm run smoke:theme-filters.');
+    ensure(rootPackage.scripts['smoke:twig-project-namespace'] === 'php .github/scripts/twig-project-namespace-smoke.php', 'package.json should expose npm run smoke:twig-project-namespace.');
     ensure(rootPackage.scripts['whisk:install'], 'package.json should expose npm run whisk:install.');
     ensure(rootPackage.scripts['whisk:build'] === 'npm --prefix whisk run build', 'package.json should expose npm run whisk:build.');
     ensure(rootPackage.devDependencies['@semantic-release/npm'], 'package.json should declare @semantic-release/npm directly.');
@@ -585,8 +587,13 @@ function runStaticChecks() {
     ensure(childComponentSrcPathIndex < childComponentLegacyPathIndex, 'Twig integration should prefer child src/components before child components.');
     ensure(childComponentLegacyPathIndex < parentComponentSrcPathIndex, 'Twig integration should register child @components paths before parent @components paths.');
     ensure(parentComponentSrcPathIndex < parentComponentLegacyPathIndex, 'Twig integration should prefer parent src/components before parent components.');
+    ensure(twigIntegration.includes('project.emulsify.json'), 'Twig integration should read active child project.emulsify.json metadata.');
+    ensure(twigIntegration.includes('emulsify_theme_project_component_roots'), 'Twig integration should expose a focused project component roots filter.');
+    ensure(twigIntegration.includes('implements \\Twig\\Loader\\LoaderInterface'), 'Twig integration should wrap the loader for machineName:component references.');
+    ensure(twigIntegration.includes('machineName:component'), 'Twig integration should document the project component reference intent in code comments.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/includes/twig-namespaces.php')), 'Whisk should rely on the parent Twig namespace integration by default.');
     ensure(!childFunctions.includes('twig-namespaces.php'), 'whisk/functions.php should not require a duplicate Twig namespace file.');
+    ensure(childFunctions.includes('whisk:button') && childFunctions.includes('@components for existing shared or migration includes'), 'whisk/functions.php should document project machine-name component references while preserving @components.');
     for (const route of ['home', 'page', 'single', 'archive', 'search', 'author', '404']) {
       ensure(wordpressFixtureSmoke.includes(`name: '${route}'`), `WordPress fixture smoke should render the ${route} route.`);
     }
@@ -693,6 +700,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:child-theme-generator'), 'PR validation should run the child theme generator smoke test.');
     ensure(prValidationScript.includes('smoke:component-locator'), 'PR validation should run the component locator smoke test.');
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
+    ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
     ensure(prValidationScript.includes('whisk:build'), 'PR validation should build Whisk with Vite.');
     return 'Theme readiness covers pragmatic PR checks with manual and scheduled WordPress fixture coverage.';
@@ -747,12 +755,18 @@ function runStaticChecks() {
     ensure(docs.parity.includes('Native Gutenberg blocks use WordPress `block.json` metadata'), 'Sister-project parity doc should document native block.json blocks.');
     ensure(docs.parity.includes("WordPress project generation is handled by the parent theme's WP-CLI command"), 'Sister-project parity doc should document WP-CLI generation.');
     ensure(docs.parity.includes('`project.emulsify.json` uses `"platform": "wordpress"`'), 'Sister-project parity doc should document the WordPress platform adapter.');
+    ensure(docs.parity.includes('{% include "whisk:button" %}') && docs.parity.includes('The legacy `@components/button/button.twig` namespace remains supported'), 'Sister-project parity doc should promote project machine-name component includes while preserving @components.');
     ensure(docs.architecture.includes('The parent theme owns reusable runtime behavior'), 'Architecture doc should explain parent responsibilities.');
     ensure(docs.architecture.includes('@emulsify-tpl'), 'Architecture doc should document the parent-only template namespace.');
+    ensure(docs.architecture.includes('{% include "whisk:button" %}') && docs.architecture.includes('The legacy `@components/button/button.twig` namespace remains supported'), 'Architecture doc should document project machine-name component includes while preserving @components.');
     ensure(docs.twig.includes('@templates') && docs.twig.includes('@components'), 'Twig doc should document core namespaces.');
+    ensure(docs.twig.includes('For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`'), 'Twig doc should prefer project machine-name component includes.');
+    ensure(docs.twig.includes('The general form is `project_machine_name:component_name`'), 'Twig doc should document the generic project component include form.');
+    ensure(docs.twig.includes('The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work'), 'Twig doc should preserve @components support language.');
     ensure(docs.twig.includes('emulsify_theme_context'), 'Twig doc should document context extension.');
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
     ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
+    ensure(docs.workflow.includes('{% include "whisk:button" %}') && docs.workflow.includes('The legacy `@components/button/button.twig` namespace remains supported'), 'Core 4 workflow doc should promote project machine-name component includes while preserving @components.');
     ensure(docs.acfBlocks.includes('The starter button includes an active example metadata file'), 'ACF/Twig blocks doc should explain the starter button metadata.');
     ensure(docs.acfBlocks.includes('emulsify_theme_acf_block_args'), 'ACF/Twig blocks doc should document the block args filter.');
     ensure(docs.nativeBlocks.includes('The starter does not include an active native block example'), 'Native blocks doc should avoid over-claiming a native example.');
