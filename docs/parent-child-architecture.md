@@ -52,6 +52,8 @@ Discovery is memoized for the current PHP request. ACF/Twig and native block reg
 
 For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 
+When a selected component system needs custom legacy namespaces, define them once in `project.emulsify.json` with Emulsify Core's `variant.structureImplementations` array. The WordPress runtime reads that same shape for Timber, keeping Storybook/Core and PHP-rendered templates aligned without adding Drupal-style `.info.yml` metadata.
+
 ## Runtime filters
 
 Child themes and project plugins can extend parent behavior with focused WordPress filters:
@@ -84,3 +86,5 @@ Use these filters for project-specific behavior before editing a parent class. K
 ## Emulsify project metadata
 
 The generated child theme includes `project.emulsify.json` with `"platform": "wordpress"`. Emulsify Core and Emulsify CLI tooling use that adapter value for WordPress-aware project behavior, while reusable WordPress runtime support remains in this parent theme.
+
+Use WordPress-native files for WordPress concerns: `style.css` headers for theme identity and `theme.json` for editor/global style settings. Use `project.emulsify.json` for Emulsify project metadata that Core and project tooling need to share.

@@ -219,6 +219,8 @@ try {
 	emulsify_cli_smoke_assert( is_dir( $destination ), 'Expected generated child theme directory to exist.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/node_modules' ), 'Generated child theme should not copy node_modules.' );
 	emulsify_cli_smoke_assert( is_file( $destination . '/config/acf-json/.gitkeep' ), 'Generated child theme should copy the ACF Local JSON convention directory.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/assets/images/.gitkeep' ), 'Generated child theme should copy the empty theme image asset directory.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/assets/icons/.gitkeep' ), 'Generated child theme should copy the empty theme icon asset directory.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Theme Name: Acme Theme' ), 'style.css should update Theme Name.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Text Domain: acme-child' ), 'style.css should update Text Domain.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Template: emulsify' ), 'style.css should keep the parent Template slug.' );
@@ -232,9 +234,13 @@ try {
 	emulsify_cli_smoke_assert( is_file( $destination . '/src/components/.gitkeep' ), 'Generated child theme should keep the empty component source placeholder.' );
 	emulsify_cli_smoke_assert( is_file( $destination . '/patterns/.gitkeep' ), 'Generated child theme should keep the empty pattern placeholder.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/src/components/button' ), 'Generated child theme should not include the removed starter button component.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/src/editor' ), 'Generated child theme should not include assumed editor enhancement source modules.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/src/foundation' ), 'Generated child theme should not include an assumed foundation source directory.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/src/layout' ), 'Generated child theme should not include an assumed layout source directory.' );
 	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/foundation.scss' ), 'Generated child theme should not include an assumed foundation Sass entry.' );
 	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/layout.scss' ), 'Generated child theme should not include an assumed layout Sass entry.' );
 	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/tokens.scss' ), 'Generated child theme should not include an assumed tokens Sass entry.' );
+	emulsify_cli_smoke_assert( ! is_file( $destination . '/theme.json' ), 'Generated child theme should not include an empty child theme.json by default.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/dist' ), 'Generated child theme should not copy ignored build output directories.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/.out' ), 'Generated child theme should not copy ignored Storybook output directories.' );
 	emulsify_cli_smoke_assert( 'acme-child/smoke-pattern' === $smoke_pattern['name'], 'Generated child theme should update copied pattern namespaces when patterns exist.' );

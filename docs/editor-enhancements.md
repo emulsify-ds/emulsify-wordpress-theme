@@ -1,8 +1,8 @@
 # Editor enhancements
 
-The Whisk starter includes optional block editor enhancement modules under `whisk/src/editor`. The parent theme enqueues built editor assets from `dist/global/editor` when a child theme builds them, but every module is disabled by default.
+The parent theme can enqueue project-owned editor assets from `dist/global/editor` and pass shared configuration to those assets. Whisk does not ship editor source modules because the selected Emulsify component system and project requirements should own editor JavaScript.
 
-Enable modules from a child theme or project plugin with `emulsify_theme_editor_enhancements_config`:
+Every built editor script receives `window.emulsifyEditorEnhancements` from the `emulsify_theme_editor_enhancements_config` filter. Defaults keep every module disabled:
 
 ```php
 add_filter(
@@ -23,15 +23,17 @@ add_filter(
 );
 ```
 
-Run the child theme build after changing editor source:
+Run the child theme build after adding project editor source:
 
 ```sh
 npm --prefix web/app/themes/your-child-theme run build
 ```
 
+The module names below are a stable configuration contract and documentation-only starter guidance. Projects that want these behaviors should implement their own editor source or install a component/editor package that consumes this config.
+
 ## Columns equal height
 
-`columnsEqualHeight` adds an inspector toggle to `core/columns`. When enabled, it stores the configured boolean attribute and adds the configured class to saved markup and the editor preview.
+`columnsEqualHeight` is intended for a project editor module that adds an inspector toggle to `core/columns`. A matching implementation should store the configured boolean attribute and add the configured class to saved markup and the editor preview.
 
 Useful options:
 
@@ -42,7 +44,7 @@ Useful options:
 
 ## File media captions
 
-`fileCaption` adds an inspector toggle to `core/file`. The JavaScript stores a boolean attribute, and the parent PHP render hook appends the media library caption during rendering when the toggle is enabled.
+`fileCaption` is intended for a project editor module that adds an inspector toggle to `core/file`. When the configured attribute exists on a rendered File block, the parent PHP render hook can add the media library caption during rendering.
 
 Useful options:
 
@@ -53,7 +55,7 @@ Useful options:
 
 ## Embed variations
 
-`embedVariations` keeps `core/embed` available while hiding provider-specific embed variations from the inserter. Existing variations are unregistered after editor boot because WordPress does not expose a public API for mutating variation scope after registration.
+`embedVariations` is intended for a project editor module that keeps `core/embed` available while hiding provider-specific embed variations from the inserter.
 
 Useful options:
 
@@ -62,7 +64,7 @@ Useful options:
 
 ## Singleton top placement
 
-`placement` enforces one configured top-level block, optionally moving it to the top of the post and removing duplicates. This is useful for project-specific hero, alert, or page-header blocks without hard-coding those names in the parent theme.
+`placement` is intended for a project editor module that enforces one configured top-level block, optionally moving it to the top of the post and removing duplicates. This is useful for project-specific hero, alert, or page-header blocks without hard-coding those names in the parent theme.
 
 Useful options:
 

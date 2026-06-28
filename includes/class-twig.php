@@ -33,35 +33,40 @@ final class Twig {
 			return $loader;
 		}
 
-		$namespaces = array(
+		$namespaces = array_merge(
 			array(
-				'namespace' => 'templates',
-				'path'      => get_stylesheet_directory() . '/templates',
+				array(
+					'namespace' => 'templates',
+					'path'      => get_stylesheet_directory() . '/templates',
+				),
+				array(
+					'namespace' => 'templates',
+					'path'      => get_template_directory() . '/templates',
+				),
+				array(
+					'namespace' => 'emulsify-tpl',
+					'path'      => get_template_directory() . '/templates',
+				),
 			),
+			$this->project_structure_namespaces(),
 			array(
-				'namespace' => 'templates',
-				'path'      => get_template_directory() . '/templates',
-			),
-			array(
-				'namespace' => 'emulsify-tpl',
-				'path'      => get_template_directory() . '/templates',
-			),
-			array(
-				'namespace' => 'components',
-				'path'      => get_stylesheet_directory() . '/src/components',
-			),
-			array(
-				'namespace' => 'components',
-				'path'      => get_stylesheet_directory() . '/components',
-			),
-			array(
-				'namespace' => 'components',
-				'path'      => get_template_directory() . '/src/components',
-			),
-			array(
-				'namespace' => 'components',
-				'path'      => get_template_directory() . '/components',
-			),
+				array(
+					'namespace' => 'components',
+					'path'      => get_stylesheet_directory() . '/src/components',
+				),
+				array(
+					'namespace' => 'components',
+					'path'      => get_stylesheet_directory() . '/components',
+				),
+				array(
+					'namespace' => 'components',
+					'path'      => get_template_directory() . '/src/components',
+				),
+				array(
+					'namespace' => 'components',
+					'path'      => get_template_directory() . '/components',
+				),
+			)
 		);
 
 		/**
@@ -190,6 +195,73 @@ final class Twig {
 	}
 
 	/**
+	 * Gets Twig namespace records declared by project.emulsify.json.
+	 *
+	 * Emulsify Core already supports variant.structureImplementations for
+	 * component-system roots. Honor the same config here so Storybook/Core and
+	 * WordPress runtime Twig resolution stay aligned.
+	 *
+	 * @return array Twig namespace path records.
+	 */
+	private function project_structure_namespaces(): array {
+		$config = $this->project_config();
+
+		if ( empty( $config['variant']['structureImplementations'] ) || ! is_array( $config['variant']['structureImplementations'] ) ) {
+			return array();
+		}
+
+		$records   = array();
+		$theme_dir = rtrim( get_stylesheet_directory(), '/\\' );
+
+		foreach ( $config['variant']['structureImplementations'] as $implementation ) {
+			if ( ! is_array( $implementation ) || empty( $implementation['name'] ) || empty( $implementation['directory'] ) ) {
+				continue;
+			}
+
+			$namespace = ltrim( (string) $implementation['name'], '@' );
+
+			if ( 1 !== preg_match( '/^[A-Za-z0-9_-]+$/', $namespace ) ) {
+				continue;
+			}
+
+			$resolved = $this->resolve_project_path( $theme_dir, (string) $implementation['directory'] );
+
+			if ( '' === $resolved ) {
+				continue;
+			}
+
+			$records[] = array(
+				'namespace' => $namespace,
+				'path'      => $resolved,
+			);
+		}
+
+		return $records;
+	}
+
+	/**
+	 * Resolves a project config path to a safe child-theme-relative path.
+	 *
+	 * @param string $theme_dir Theme root.
+	 * @param string $path      Project-configured path.
+	 * @return string Resolved path, or empty string when invalid.
+	 */
+	private function resolve_project_path( string $theme_dir, string $path ): string {
+		$path = trim( str_replace( '\\', '/', $path ) );
+
+		if (
+			'' === $path
+			|| false !== strpos( $path, "\0" )
+			|| 0 === strpos( $path, '/' )
+			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
+		) {
+			return '';
+		}
+
+		return rtrim( $theme_dir, '/\\' ) . '/' . ltrim( $path, '/' );
+	}
+
+	/**
 	 * Wraps the Timber loader with project machine-name component support.
 	 *
 	 * @param mixed $loader Timber loader.
@@ -234,19 +306,7 @@ final class Twig {
 	 * @return string Project machine name, or empty string when unavailable.
 	 */
 	private function project_machine_name(): string {
-		$path = get_stylesheet_directory() . '/project.emulsify.json';
-
-		if ( ! is_readable( $path ) ) {
-			return '';
-		}
-
-		$contents = file_get_contents( $path );
-
-		if ( false === $contents ) {
-			return '';
-		}
-
-		$data = json_decode( $contents, true );
+		$data = $this->project_config();
 
 		if ( ! is_array( $data ) || empty( $data['project']['machineName'] ) ) {
 			return '';
@@ -259,6 +319,29 @@ final class Twig {
 		}
 
 		return $machine_name;
+	}
+
+	/**
+	 * Reads active child theme Emulsify project metadata.
+	 *
+	 * @return array Project config, or an empty array when unavailable.
+	 */
+	private function project_config(): array {
+		$path = get_stylesheet_directory() . '/project.emulsify.json';
+
+		if ( ! is_readable( $path ) ) {
+			return array();
+		}
+
+		$contents = file_get_contents( $path );
+
+		if ( false === $contents ) {
+			return array();
+		}
+
+		$data = json_decode( $contents, true );
+
+		return is_array( $data ) ? $data : array();
 	}
 
 	/**

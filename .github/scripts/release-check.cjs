@@ -338,14 +338,6 @@ function runStaticChecks() {
       'whisk/config/acf-json/.gitkeep',
       'whisk/patterns/.gitkeep',
       'whisk/src/components/.gitkeep',
-      'whisk/src/editor/columns-equal-height.component.js',
-      'whisk/src/editor/default-config.component.js',
-      'whisk/src/editor/embed-variations.component.js',
-      'whisk/src/editor/file-caption.component.js',
-      'whisk/src/editor/index.js',
-      'whisk/src/editor/index.scss',
-      'whisk/src/editor/placement.component.js',
-      'whisk/src/editor/utils.component.js',
       'whisk/templates/page.twig',
     ];
     const missingFiles = requiredFiles.filter((file) => !fs.existsSync(path.join(repoRoot, file)));
@@ -447,10 +439,16 @@ function runStaticChecks() {
     ensure(smoke.includes("'force' => true"), 'Child theme generator smoke should cover --force.');
     ensure(smoke.includes("'activate' => true"), 'Child theme generator smoke should cover --activate.');
     ensure(smoke.includes('project.emulsify.json'), 'Child theme generator smoke should validate project.emulsify.json updates.');
+    ensure(smoke.includes("assets/images/.gitkeep"), 'Child theme generator smoke should validate copied image asset placeholders.');
+    ensure(smoke.includes("assets/icons/.gitkeep"), 'Child theme generator smoke should validate copied icon asset placeholders.');
     ensure(smoke.includes("'wordpress' === $project['project']['platform']"), 'Child theme generator smoke should validate the WordPress platform adapter.');
     ensure(smoke.includes('smoke-pattern.json'), 'Child theme generator smoke should validate optional copied pattern namespace updates.');
     ensure(smoke.includes("! is_dir( $destination . '/src/components/button' )"), 'Child theme generator smoke should prove removed starter components are not copied.');
+    ensure(smoke.includes("! is_dir( $destination . '/src/editor' )"), 'Child theme generator smoke should prove assumed editor modules are not copied.');
+    ensure(smoke.includes("! is_dir( $destination . '/src/foundation' )"), 'Child theme generator smoke should prove assumed foundation directories are not copied.');
+    ensure(smoke.includes("! is_dir( $destination . '/src/layout' )"), 'Child theme generator smoke should prove assumed layout directories are not copied.');
     ensure(smoke.includes("! is_file( $destination . '/src/foundation.scss' )"), 'Child theme generator smoke should prove assumed Sass entrypoints are not copied.');
+    ensure(smoke.includes("! is_file( $destination . '/theme.json' )"), 'Child theme generator smoke should prove empty child theme.json is not copied by default.');
     return 'WP-CLI child theme generation uses safe options and targeted metadata updates.';
   });
 
@@ -552,8 +550,6 @@ function runStaticChecks() {
   runStaticCheck('Whisk Core 4 and Vite metadata', () => {
     const scripts = whiskPackage.scripts || {};
     const scriptText = Object.values(scripts).join('\n');
-    const editorEntrypoint = readFile('whisk/src/editor/index.js');
-    const editorConfig = readFile('whisk/src/editor/default-config.component.js');
     const starterComponentFiles = listFilesRecursive('whisk/src/components', (file) => path.basename(file) !== '.gitkeep');
     const starterPatternFiles = listFilesRecursive('whisk/patterns', (file) => path.basename(file) !== '.gitkeep');
     ensure(whiskPackage.name === 'whisk', 'whisk/package.json name should remain whisk.');
@@ -568,6 +564,7 @@ function runStaticChecks() {
     ensure(whiskProject.project.name === 'whisk', 'whisk/project.emulsify.json project.name should remain whisk.');
     ensure(whiskProject.project.machineName === 'whisk', 'whisk/project.emulsify.json project.machineName should remain whisk.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components/.gitkeep')), 'whisk/src/components should remain as an empty optional component placeholder.');
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/theme.json')), 'Whisk should not ship an empty child theme.json by default.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/components')), 'whisk/components should not remain as an unused starter placeholder.');
     ensure(starterComponentFiles.length === 0, `Whisk should not ship concrete starter component files: ${starterComponentFiles.join(', ')}.`);
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/patterns/.gitkeep')), 'whisk/patterns should remain as an empty optional pattern placeholder.');
@@ -575,15 +572,16 @@ function runStaticChecks() {
     for (const entryFile of ['foundation.scss', 'layout.scss', 'tokens.scss']) {
       ensure(!fs.existsSync(path.join(repoRoot, 'whisk/src', entryFile)), `whisk/src/${entryFile} should not assume a selected component library.`);
     }
-    ensure(editorEntrypoint.includes('registerColumnsEqualHeight'), 'Whisk editor entrypoint should register the columns enhancement module.');
-    ensure(editorEntrypoint.includes('registerFileCaption'), 'Whisk editor entrypoint should register the file caption enhancement module.');
-    ensure(editorEntrypoint.includes('registerEmbedVariations'), 'Whisk editor entrypoint should register the embed variation enhancement module.');
-    ensure(editorEntrypoint.includes('registerPlacementEnforcement'), 'Whisk editor entrypoint should register the placement enhancement module.');
-    ensure(editorConfig.includes('enabled: false'), 'Whisk editor enhancements should be disabled by default.');
+    for (const directory of ['editor', 'foundation', 'layout']) {
+      ensure(!fs.existsSync(path.join(repoRoot, 'whisk/src', directory)), `whisk/src/${directory} should not assume a selected component library.`);
+    }
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/whisk.info.yml')), 'Whisk should not add Drupal-style .info.yml metadata.');
+    ensure(!fs.existsSync(path.join(repoRoot, 'whisk/scripts/vite-if-inputs.mjs')), 'Whisk should not wrap Emulsify Core Vite build errors.');
     ensure(whiskPackage.dependencies && whiskPackage.dependencies['@emulsify/core'], 'whisk/package.json must declare @emulsify/core.');
     ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.1.0', 'whisk/package.json should target Emulsify Core ^4.1.0.');
-    ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config.');
-    ensure(scripts.vite && scripts.vite.includes('vite build --watch'), 'whisk/package.json should expose a Vite watch script.');
+    ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config directly.');
+    ensure(scripts.vite && scripts.vite.includes('vite build --watch --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json should expose the Emulsify Core Vite watch script directly.');
+    ensure(!scriptText.includes('vite-if-inputs'), 'whisk/package.json scripts should not wrap missing-input build errors.');
     ensure(scripts.develop && scripts.develop.includes('npm:vite'), 'whisk/package.json develop script should run the Vite watcher.');
     ensure(!scripts.webpack, 'whisk/package.json should not expose a webpack script.');
     ensure(!scripts['build-dev'], 'whisk/package.json should not expose the old Webpack build-dev script.');
@@ -599,6 +597,7 @@ function runStaticChecks() {
 
   runStaticCheck('Template fallback model', () => {
     const twigIntegration = readFile('includes/class-twig.php');
+    const twigNamespaceSmoke = readFile('.github/scripts/twig-project-namespace-smoke.php');
     const childFunctions = readFile('whisk/functions.php');
     const childPageTemplate = readFile('whisk/templates/page.twig');
     const parentTemplateFiles = listFilesRecursive('templates', (file) => file.endsWith('.twig')).sort();
@@ -645,9 +644,11 @@ function runStaticChecks() {
     ensure(childComponentLegacyPathIndex < parentComponentSrcPathIndex, 'Twig integration should register child @components paths before parent @components paths.');
     ensure(parentComponentSrcPathIndex < parentComponentLegacyPathIndex, 'Twig integration should check parent src/components compatibility roots before parent components roots.');
     ensure(twigIntegration.includes('project.emulsify.json'), 'Twig integration should read active child project.emulsify.json metadata.');
+    ensure(twigIntegration.includes('project_structure_namespaces') && twigIntegration.includes('structureImplementations'), 'Twig integration should honor Emulsify Core structureImplementations for configured namespaces.');
     ensure(twigIntegration.includes('emulsify_theme_project_component_roots'), 'Twig integration should expose a focused project component roots filter.');
     ensure(twigIntegration.includes('implements \\Twig\\Loader\\LoaderInterface'), 'Twig integration should wrap the loader for machineName:component references.');
     ensure(twigIntegration.includes('machineName:component'), 'Twig integration should document the project component reference intent in code comments.');
+    ensure(twigNamespaceSmoke.includes('@custom/teaser.twig') && twigNamespaceSmoke.includes('variant.structureImplementations'), 'Twig namespace smoke should verify configured Core structure namespaces.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/includes/twig-namespaces.php')), 'Whisk should rely on the parent Twig namespace integration by default.');
     ensure(!childFunctions.includes('twig-namespaces.php'), 'whisk/functions.php should not require a duplicate Twig namespace file.');
     ensure(childFunctions.includes('project_machine_name:component_name') && childFunctions.includes('@components for compatible component libraries'), 'whisk/functions.php should document generic project machine-name component references while preserving @components compatibility.');
@@ -681,6 +682,7 @@ function runStaticChecks() {
     for (const placeholder of expectedPlaceholders) {
       ensure(fs.existsSync(path.join(repoRoot, placeholder)), `${placeholder} should keep the starter asset directory.`);
     }
+    ensure(wordpressFixtureSmoke.includes('assets/icons/.gitkeep') && wordpressFixtureSmoke.includes('assets/images/.gitkeep'), 'WordPress fixture smoke should validate copied asset placeholders.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/assets/audio')), 'whisk/assets/audio should not ship as a default starter directory.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/assets/video')), 'whisk/assets/video should not ship as a default starter directory.');
     return 'Whisk keeps only generic starter asset placeholders.';
@@ -742,7 +744,7 @@ function runStaticChecks() {
     ensure(themeReadinessWorkflow.includes('npm audit --omit=dev'), 'theme-readiness.yml should run runtime npm audit.');
     ensure(themeReadinessWorkflow.includes('npm audit'), 'theme-readiness.yml should run full npm audit.');
     ensure(themeReadinessWorkflow.includes('npm run lint:php'), 'theme-readiness.yml should run PHP lint.');
-    ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke and Whisk build checks to npm run pr:check.');
+    ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke checks to npm run pr:check.');
     ensure(themeReadinessWorkflow.includes('npm run release:check'), 'theme-readiness.yml should run release readiness checks.');
     ensure(themeReadinessWorkflow.includes("github.event_name != 'pull_request'"), 'theme-readiness.yml should keep the WordPress fixture off normal pull requests.');
     ensure(themeReadinessWorkflow.includes('mysql:'), 'theme-readiness.yml should provide MySQL for the WordPress fixture job.');
@@ -763,7 +765,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
     ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
-    ensure(prValidationScript.includes('whisk:build'), 'PR validation should build Whisk with Vite.');
+    ensure(!prValidationScript.includes('whisk:build'), 'PR validation should not require a Whisk build before a component system is installed.');
     return 'Theme readiness covers pragmatic PR checks with manual and scheduled WordPress fixture coverage.';
   });
 
@@ -794,6 +796,7 @@ function runStaticChecks() {
     ensure(readme.includes('## Basic commands'), 'README.md should keep root commands visible.');
     ensure(readme.includes('## Documentation'), 'README.md should link to deeper docs.');
     ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
+    ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
     ensure(readme.includes('WP_SMOKE_REQUIRED=1'), 'README.md should document required WordPress fixture smoke behavior.');
 
@@ -816,6 +819,7 @@ function runStaticChecks() {
     ensure(docs.parity.includes('Frontend rendering uses Timber'), 'Sister-project parity doc should document Timber as a WordPress difference.');
     ensure(docs.parity.includes('WordPress theme identity lives in `style.css` headers'), 'Sister-project parity doc should document WordPress theme headers.');
     ensure(docs.parity.includes('`theme.json` is the WordPress site and editor configuration surface'), 'Sister-project parity doc should document theme.json.');
+    ensure(docs.parity.includes('Whisk does not include a child `theme.json` by default'), 'Sister-project parity doc should explain why Whisk does not ship an empty child theme.json.');
     ensure(docs.parity.includes('ACF/Twig block registration is an optional WordPress integration'), 'Sister-project parity doc should document ACF/Twig blocks.');
     ensure(docs.parity.includes('Native Gutenberg blocks use WordPress `block.json` metadata'), 'Sister-project parity doc should document native block.json blocks.');
     ensure(docs.parity.includes("WordPress project generation is handled by the parent theme's WP-CLI command"), 'Sister-project parity doc should document WP-CLI generation.');
@@ -832,6 +836,8 @@ function runStaticChecks() {
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
     ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
     ensure(docs.workflow.includes('does not ship a concrete component library'), 'Core 4 workflow doc should describe Whisk as component-system agnostic.');
+    ensure(docs.workflow.includes('assets/images') && docs.workflow.includes('assets/icons'), 'Core 4 workflow doc should document generic starter asset directories.');
+    ensure(docs.workflow.includes('does not include a child `theme.json` by default'), 'Core 4 workflow doc should document the child theme.json convention.');
     ensure(docs.workflow.includes('The following shape is an example of a compatible component, not files shipped by Whisk'), 'Core 4 workflow doc should keep component examples documentation-only.');
     ensure(docs.workflow.includes('{% include "project_machine_name:component_name" %}') && docs.workflow.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Core 4 workflow doc should promote generic project machine-name component includes while preserving @components compatibility.');
     ensure(docs.acfJson.includes('config/acf-json'), 'ACF Local JSON doc should document the child theme JSON path.');

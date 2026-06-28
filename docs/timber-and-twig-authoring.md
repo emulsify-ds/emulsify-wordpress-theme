@@ -57,9 +57,45 @@ The legacy `@components/example-card/example-card.twig` namespace remains suppor
 } only %}
 ```
 
-Use `emulsify_theme_project_component_roots` to adjust roots for `project_machine_name:component_name` references. Use `emulsify_theme_twig_namespaces` for normal `@namespace/path.twig` paths.
+Use `emulsify_theme_project_component_roots` to adjust roots for `project_machine_name:component_name` references. Use `emulsify_theme_twig_namespaces` for advanced runtime-only `@namespace/path.twig` paths.
 
 Root-level `components` and `src/components` directories are compatibility paths, not starter requirements. Do not remove existing `@components` includes during migration; both forms are supported.
+
+## Component-system namespaces
+
+For legacy `@namespace/path/to/template.twig` references that should work in both Emulsify Core and WordPress, configure the namespace roots in `project.emulsify.json` with Core's existing `variant.structureImplementations` shape:
+
+```json
+{
+	"project": {
+		"platform": "wordpress",
+		"name": "Example Project",
+		"machineName": "example_project"
+	},
+	"variant": {
+		"structureImplementations": [
+			{
+				"name": "atoms",
+				"directory": "src/components/atoms"
+			},
+			{
+				"name": "molecules",
+				"directory": "src/components/molecules"
+			}
+		]
+	}
+}
+```
+
+Then includes such as this resolve through the configured child-theme-relative root:
+
+```twig
+{% include "@atoms/button/button.twig" with {
+  text: 'Read more'
+} only %}
+```
+
+Do not use `theme.json` for Twig namespaces. `theme.json` is WordPress configuration for editor settings, global styles, presets, templates, and style variations; it is not a Twig loader configuration file.
 
 ## Attribute helpers
 

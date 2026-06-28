@@ -201,11 +201,34 @@ $parent        = $work_root . '/parent-theme';
 $extra         = $work_root . '/extra-components';
 
 try {
-	emulsify_twig_project_smoke_write( $child . '/project.emulsify.json', '{"project":{"machineName":"whisk"}}' );
+	emulsify_twig_project_smoke_write(
+		$child . '/project.emulsify.json',
+		json_encode(
+			array(
+				'project' => array(
+					'machineName' => 'whisk',
+				),
+				'variant' => array(
+					'structureImplementations' => array(
+						array(
+							'name'      => 'custom',
+							'directory' => 'custom-twig',
+						),
+						array(
+							'name'      => '@unsafe',
+							'directory' => '../outside',
+						),
+					),
+				),
+			),
+			JSON_UNESCAPED_SLASHES
+		)
+	);
 	emulsify_twig_project_smoke_write( $child . '/src/components/example-card/example-card.twig', 'Child example card' );
 	emulsify_twig_project_smoke_write( $child . '/src/components/badge.twig', 'Child badge' );
 	emulsify_twig_project_smoke_write( $child . '/src/components/ui/heading/heading.twig', 'Child heading' );
 	emulsify_twig_project_smoke_write( $child . '/components/link/link.twig', 'Child legacy link' );
+	emulsify_twig_project_smoke_write( $child . '/custom-twig/teaser.twig', 'Configured namespace teaser' );
 	emulsify_twig_project_smoke_write( $parent . '/src/components/example-card/example-card.twig', 'Parent example card' );
 	emulsify_twig_project_smoke_write( $extra . '/filtered/filtered.twig', 'Filtered root' );
 
@@ -234,6 +257,12 @@ try {
 		'Child example card',
 		emulsify_twig_project_smoke_render( $environment, '{% include "@components/example-card/example-card.twig" %}' ),
 		'@components should still resolve child components.'
+	);
+
+	emulsify_twig_project_smoke_assert_same(
+		'Configured namespace teaser',
+		emulsify_twig_project_smoke_render( $environment, '{% include "@custom/teaser.twig" %}' ),
+		'variant.structureImplementations should register matching Twig namespaces.'
 	);
 
 	emulsify_twig_project_smoke_assert_same(

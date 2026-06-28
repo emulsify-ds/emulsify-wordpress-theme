@@ -216,28 +216,6 @@ function copyThemes(themesDir) {
   return { childTheme, parentTheme };
 }
 
-function ensureWhiskBuild() {
-  if (process.env.WP_SMOKE_BUILD_WHISK === '0') {
-    return;
-  }
-
-  const whiskDir = path.join(repoRoot, 'whisk');
-  const coreDependency = path.join(whiskDir, 'node_modules', '@emulsify', 'core');
-
-  if (!fs.existsSync(coreDependency)) {
-    run('Install Whisk dependencies', 'npm', ['install', '--ignore-scripts', '--package-lock=false'], {
-      cwd: whiskDir,
-    });
-  }
-
-  run('Build Whisk child theme assets', 'npm', ['run', 'build'], { cwd: whiskDir });
-
-  const editorAsset = path.join(whiskDir, 'dist', 'global', 'editor', 'js', 'index.js');
-  if (!fs.existsSync(editorAsset)) {
-    throw new Error(`Expected built Whisk editor asset is missing: ${editorAsset}`);
-  }
-}
-
 function installThemeDependencies(parentTheme) {
   run('Install Timber with Composer', 'composer', ['install', '--no-interaction', '--no-progress', '--prefer-dist', '--no-dev'], {
     cwd: parentTheme,
@@ -249,10 +227,12 @@ function assertGeneratedChildTheme(themePath, slug) {
   const project = JSON.parse(fs.readFileSync(path.join(themePath, 'project.emulsify.json'), 'utf8'));
   const packageJson = JSON.parse(fs.readFileSync(path.join(themePath, 'package.json'), 'utf8'));
   const requiredFiles = [
+    'assets/icons/.gitkeep',
+    'assets/images/.gitkeep',
     'config/acf-json/.gitkeep',
     'patterns/.gitkeep',
     'src/components/.gitkeep',
-    'src/editor/index.js',
+    'project.emulsify.json',
     'templates/page.twig',
   ];
 
@@ -282,6 +262,16 @@ function assertGeneratedChildTheme(themePath, slug) {
   for (const file of ['src/foundation.scss', 'src/layout.scss', 'src/tokens.scss']) {
     if (fs.existsSync(path.join(themePath, file))) {
       throw new Error(`Generated child theme should not include assumed Sass entrypoint: ${file}`);
+    }
+  }
+
+  if (fs.existsSync(path.join(themePath, 'theme.json'))) {
+    throw new Error('Generated child theme should not include an empty child theme.json by default.');
+  }
+
+  for (const directory of ['src/editor', 'src/foundation', 'src/layout']) {
+    if (fs.existsSync(path.join(themePath, directory))) {
+      throw new Error(`Generated child theme should not include assumed source directory: ${directory}`);
     }
   }
 
@@ -725,7 +715,6 @@ async function main() {
   const baseUrl = `http://${host}:${port}`;
 
   log(`Fixture directory: ${workDir}`);
-  ensureWhiskBuild();
   createDatabase(env);
 
   run('Download WordPress core', 'wp', [

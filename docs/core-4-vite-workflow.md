@@ -6,16 +6,41 @@ The generated child theme uses Emulsify Core 4, Vite, Storybook, Twig stories, S
 
 `whisk/project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter while this parent theme owns the reusable WordPress runtime.
 
+Keep this file in generated child themes. The child theme generator updates `project.name` and `project.machineName`, and Emulsify Core uses the same metadata for component-library behavior.
+
+If a selected component system needs legacy Twig namespaces, use Core's existing `variant.structureImplementations` array:
+
+```json
+{
+	"variant": {
+		"structureImplementations": [
+			{
+				"name": "atoms",
+				"directory": "src/components/atoms"
+			}
+		]
+	}
+}
+```
+
+The WordPress runtime also reads that shape so `{% include "@atoms/example/example.twig" %}` works in PHP-rendered Timber templates without requiring a separate WordPress-only namespace file. Do not move these roots into `theme.json`; WordPress uses `theme.json` for editor settings and global styles, not Twig loader configuration.
+
 ## Source directories
 
 The generated child theme intentionally does not ship a concrete component library. Emulsify CLI can install the component system a project chooses, and that system should own the source tree, Sass entrypoints, stories, and fixture data.
 
 Whisk keeps `src/components/.gitkeep` only as a placeholder for compatible systems. It does not include default `tokens.scss`, `foundation.scss`, or `layout.scss` files.
 
+Whisk keeps empty `assets/images` and `assets/icons` directories as project-owned theme asset placeholders. Use these for source files that belong to the theme repository, not for uploaded media library files. The optional `assets/fonts` placeholder is available when a project owns local font files.
+
+Whisk does not include a child `theme.json` by default. The parent theme provides the reusable WordPress editor/global-style baseline; generated child themes should add `theme.json` only when the project needs its own presets, settings, styles, templates, or style variations.
+
 The parent WordPress runtime has only two default build-output conventions:
 
 - `dist/global` for built global CSS and JavaScript.
 - `dist/components` for built component assets, ACF/Twig block metadata, and native `block.json` metadata.
+
+A fresh Whisk child theme has no Vite input files until a component system is installed. Its build and watch scripts call Emulsify Core's Vite config directly, so Core owns build-system errors and reporting when required inputs are missing.
 
 ## Core 4, Vite, and Storybook commands
 

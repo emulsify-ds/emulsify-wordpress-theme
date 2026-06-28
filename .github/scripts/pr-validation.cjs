@@ -38,4 +38,3 @@ run('Run pattern registry smoke test', 'npm', ['run', 'smoke:patterns']);
 run('Run parent theme filter smoke test', 'npm', ['run', 'smoke:theme-filters']);
 run('Run Twig project namespace smoke test', 'npm', ['run', 'smoke:twig-project-namespace']);
 run('Install Whisk dependencies', 'npm', ['run', 'whisk:install']);
-run('Build Whisk Core 4/Vite assets', 'npm', ['run', 'whisk:build']);

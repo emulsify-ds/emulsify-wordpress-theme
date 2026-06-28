@@ -61,9 +61,10 @@ The generated `whisk` child theme owns project implementation:
 
 - `whisk/src/components` is an empty placeholder until a project installs the component system it wants to use.
 - Source Sass, JavaScript, stories, data fixtures, and component metadata are defined by the selected Emulsify component system, not by this parent theme starter.
+- `whisk/assets/images` and `whisk/assets/icons` are empty placeholders for project-owned theme media and icon files.
 - `whisk/templates/page.twig` is a small example override.
 - `whisk/dist/global` and `whisk/dist/components` are runtime build output conventions when a component system emits them.
-- `whisk/project.emulsify.json` uses `"platform": "wordpress"` so Core and CLI tooling can load the WordPress platform adapter.
+- `whisk/project.emulsify.json` uses `"platform": "wordpress"` so Core and CLI tooling can load the WordPress platform adapter. Projects can also use Core-supported metadata such as `variant.structureImplementations` there when a selected component system needs legacy Twig namespaces.
 
 ## Bedrock and Timber
 

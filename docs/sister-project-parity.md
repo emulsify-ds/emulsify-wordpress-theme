@@ -41,6 +41,8 @@ Frontend rendering uses Timber. The parent theme owns Timber bootstrapping, glob
 
 For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 
+Custom legacy namespaces should use Emulsify Core's existing `variant.structureImplementations` entries in `project.emulsify.json`. Do not add Drupal `.info.yml` files to the WordPress starter for this purpose.
+
 ### Parent and child theme headers
 
 WordPress theme identity lives in `style.css` headers. The parent theme is installed as `emulsify`, and generated child themes declare `Template: emulsify` so WordPress uses the parent runtime.
@@ -50,6 +52,8 @@ The generator updates the child theme `Theme Name`, `Text Domain`, `Template`, p
 ### theme.json surface
 
 `theme.json` is the WordPress site and editor configuration surface. It carries editor settings, presets, and styles that WordPress and the Site Editor understand. This is separate from component source and should be treated as WordPress configuration, not as a replacement for Core 4 Sass and component assets.
+
+Whisk does not include a child `theme.json` by default. Add one in a generated child theme when the project needs WordPress editor/global-style overrides; do not add an empty file just to mirror the parent.
 
 ### ACF/Twig block registration
 
@@ -72,6 +76,8 @@ The command copies Whisk to a sibling child theme and performs targeted metadata
 ### Emulsify platform metadata
 
 `project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter. WordPress runtime behavior still lives in this parent theme for the 2.x release line.
+
+This file may also hold Emulsify Core metadata such as `variant.structureImplementations`. `theme.json` remains the WordPress site and editor configuration surface, not a component-library or Twig namespace registry.
 
 ## Parity guardrails
 
