@@ -11,6 +11,8 @@ The default built asset directories are:
 
 Global CSS is loaded from `dist/global`. Component CSS and JavaScript are loaded from `dist/components`.
 
+`dist/global/editor` is reserved for block editor enhancement assets. Those files are loaded by the editor enhancement service on `enqueue_block_editor_assets` and are skipped by the generic global style loader so editor-only CSS is not sent to normal frontend visitors.
+
 ## Enqueue behavior
 
 The parent theme enqueues styles for both the frontend and block editor previews through WordPress block asset hooks. Frontend component JavaScript is loaded from built component output.

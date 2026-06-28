@@ -11,8 +11,11 @@ The parent theme owns reusable runtime behavior:
 - Timber integration and global context.
 - Twig namespace registration and helper functions.
 - Asset loading for built child and parent files.
+- Optional ACF Local JSON save/load path support.
 - Optional ACF/Twig block registration.
 - Optional native Gutenberg block registration.
+- Optional JSON block pattern registration.
+- Optional block editor governance when configured by a child theme.
 - Minimal Timber fallback templates.
 
 Most parent runtime code lives in `includes/`. The root `functions.php` should stay thin.
@@ -21,8 +24,8 @@ Most parent runtime code lives in `includes/`. The root `functions.php` should s
 
 Generated child themes own:
 
-- Project components.
-- Project Sass and JavaScript.
+- Project components in the structure supplied by the selected Emulsify component system.
+- Project Sass and JavaScript defined by that component system or by the project.
 - Storybook stories and data fixtures.
 - Built Vite output under `dist/`.
 - Intentional template overrides.
@@ -47,7 +50,7 @@ Built child theme components are discovered before built parent theme components
 
 Discovery is memoized for the current PHP request. ACF/Twig and native block registration share one filesystem scan without adding persistent cache invalidation problems.
 
-For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`. The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work.
+For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 
 ## Runtime filters
 
@@ -58,11 +61,23 @@ Child themes and project plugins can extend parent behavior with focused WordPre
 - `emulsify_theme_twig_namespaces`
 - `emulsify_theme_project_component_roots`
 - `emulsify_theme_context`
+- `emulsify_theme_acf_json_enabled`
+- `emulsify_theme_acf_json_save_path`
+- `emulsify_theme_acf_json_load_paths`
+- `emulsify_theme_acf_json_remove_default_load_path`
 - `emulsify_theme_component_roots`
 - `emulsify_theme_acf_block_metadata`
 - `emulsify_theme_acf_block_args`
 - `emulsify_theme_native_block_directories`
+- `emulsify_theme_pattern_directories`
+- `emulsify_theme_pattern_data`
+- `emulsify_theme_pattern_categories`
+- `emulsify_theme_pattern_args`
 - `emulsify_theme_setup_options`
+- `emulsify_theme_editor_policy_options`
+- `emulsify_theme_allowed_block_types`
+- `emulsify_theme_pattern_namespaces`
+- `emulsify_theme_block_support_overrides`
 
 Use these filters for project-specific behavior before editing a parent class. Keep broad application logic in a project plugin when it is not theme-specific.
 

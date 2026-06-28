@@ -50,6 +50,11 @@ final class Bootstrap {
 
 		( new Setup() )->register();
 		( new Assets() )->register();
+		( new Acf_Local_JSON() )->register();
+		( new Core_Block_Twig_Renderer() )->register();
+		( new Editor_Enhancements() )->register();
+		( new Editor_Policy() )->register();
+		( new Patterns() )->register();
 		( new Blocks\Registry() )->register();
 		( new Cli() )->register();
 
@@ -84,6 +89,7 @@ final class Bootstrap {
 	 */
 	private function load_classes(): void {
 		$files = array(
+			'class-acf-local-json.php',
 			'class-attribute-bag.php',
 			'class-assets.php',
 			'Blocks/class-component-locator.php',
@@ -92,7 +98,11 @@ final class Bootstrap {
 			'Blocks/class-registry.php',
 			'class-cli.php',
 			'class-context.php',
+			'class-core-block-twig-renderer.php',
+			'class-editor-enhancements.php',
+			'class-editor-policy.php',
 			'class-missing-timber.php',
+			'class-patterns.php',
 			'class-setup.php',
 			'class-timber-integration.php',
 			'class-twig.php',

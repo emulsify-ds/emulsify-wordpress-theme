@@ -13,15 +13,20 @@ The Twig template can match the metadata filename or the component directory nam
 
 ## Example
 
-The starter button includes an active example metadata file:
+Whisk does not include an active ACF/Twig block example. A project component system can add metadata like this and build it into `dist/components`:
 
 ```text
-whisk/src/components/button/button.component.json
+src/components/example-card/example-card.component.json
 ```
 
-After the child theme build, that metadata is available under `dist/components` and can be discovered by the parent theme.
+After the child theme build, that metadata might be available at:
 
-Remove or rename the example metadata file if the project should not register the starter button as an ACF block.
+```text
+dist/components/example-card/example-card.component.json
+dist/components/example-card/example-card.twig
+```
+
+This documentation example proves the shape, but it does not ship project field groups or content model assumptions.
 
 ## Registration
 
@@ -35,7 +40,7 @@ The final registration arguments can be adjusted with:
 add_filter(
   'emulsify_theme_acf_block_args',
   function ( array $args, array $component ): array {
-    if ( 'button' === $component['relative'] ) {
+    if ( 'example-card' === $component['relative'] ) {
       $args['category'] = 'design';
     }
 

@@ -232,16 +232,9 @@ function ensureWhiskBuild() {
 
   run('Build Whisk child theme assets', 'npm', ['run', 'build'], { cwd: whiskDir });
 
-  for (const file of ['foundation.css', 'layout.css', 'tokens.css']) {
-    const builtFile = path.join(whiskDir, 'dist', 'global', file);
-    if (!fs.existsSync(builtFile)) {
-      throw new Error(`Expected built Whisk global CSS is missing: ${builtFile}`);
-    }
-  }
-
-  const buttonCss = path.join(whiskDir, 'dist', 'components', 'button', 'css', 'button.css');
-  if (!fs.existsSync(buttonCss)) {
-    throw new Error(`Expected built Whisk button CSS is missing: ${buttonCss}`);
+  const editorAsset = path.join(whiskDir, 'dist', 'global', 'editor', 'js', 'index.js');
+  if (!fs.existsSync(editorAsset)) {
+    throw new Error(`Expected built Whisk editor asset is missing: ${editorAsset}`);
   }
 }
 
@@ -256,12 +249,10 @@ function assertGeneratedChildTheme(themePath, slug) {
   const project = JSON.parse(fs.readFileSync(path.join(themePath, 'project.emulsify.json'), 'utf8'));
   const packageJson = JSON.parse(fs.readFileSync(path.join(themePath, 'package.json'), 'utf8'));
   const requiredFiles = [
-    'dist/global/foundation.css',
-    'dist/global/layout.css',
-    'dist/global/tokens.css',
-    'dist/components/button/button.component.json',
-    'dist/components/button/button.twig',
-    'dist/components/button/css/button.css',
+    'config/acf-json/.gitkeep',
+    'patterns/.gitkeep',
+    'src/components/.gitkeep',
+    'src/editor/index.js',
     'templates/page.twig',
   ];
 
@@ -287,6 +278,53 @@ function assertGeneratedChildTheme(themePath, slug) {
       throw new Error(`Generated child theme is missing expected Whisk file: ${file}`);
     }
   }
+
+  for (const file of ['src/foundation.scss', 'src/layout.scss', 'src/tokens.scss']) {
+    if (fs.existsSync(path.join(themePath, file))) {
+      throw new Error(`Generated child theme should not include assumed Sass entrypoint: ${file}`);
+    }
+  }
+
+  for (const directory of ['dist', '.out']) {
+    if (fs.existsSync(path.join(themePath, directory))) {
+      throw new Error(`Generated child theme should not copy ignored build output directory: ${directory}`);
+    }
+  }
+}
+
+function installGeneratedChildFixtures(themePath) {
+  const globalDirectory = path.join(themePath, 'dist', 'global');
+  const acfDirectory = path.join(themePath, 'dist', 'components', 'smoke-acf');
+
+  fs.mkdirSync(globalDirectory, { recursive: true });
+  fs.mkdirSync(path.join(acfDirectory, 'css'), { recursive: true });
+  fs.writeFileSync(
+    path.join(globalDirectory, 'smoke.css'),
+    '.smoke-generated-global { color: inherit; }\n'
+  );
+  fs.writeFileSync(
+    path.join(acfDirectory, 'css', 'smoke-acf.css'),
+    '.smoke-acf { display: block; }\n'
+  );
+  fs.writeFileSync(
+    path.join(acfDirectory, 'smoke-acf.twig'),
+    '<section class="smoke-acf">{{ title|default("Smoke ACF") }}</section>\n'
+  );
+  fs.writeFileSync(
+    path.join(acfDirectory, 'smoke-acf.component.json'),
+    JSON.stringify(
+      {
+        name: 'emulsify-smoke-acf',
+        title: 'Smoke ACF',
+        description: 'Fixture component for WordPress smoke coverage.',
+        category: 'widgets',
+        icon: 'admin-generic',
+        keywords: ['smoke'],
+      },
+      null,
+      2
+    ) + '\n'
+  );
 }
 
 function installNativeBlockFixture(themePath) {
@@ -355,21 +393,21 @@ if ( function_exists( 'acf_register_block_type' ) ) {
 
 $locator = new \Emulsify\Theme\Blocks\Component_Locator();
 $components = $locator->acf_components();
-$button = null;
+$fixture = null;
 
 foreach ( $components as $component ) {
-  if ( isset( $component['relative'], $component['source'] ) && 'button' === $component['relative'] && 'child' === $component['source'] ) {
-    $button = $component;
+  if ( isset( $component['relative'], $component['source'] ) && 'smoke-acf' === $component['relative'] && 'child' === $component['source'] ) {
+    $fixture = $component;
     break;
   }
 }
 
-if ( null === $button ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig button component was not discovered without ACF.' );
+if ( null === $fixture ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture component was not discovered without ACF.' );
 }
 
-if ( 'dist/components/button/button.twig' !== $button['template'] ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig button template was not resolved.' );
+if ( 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture template was not resolved.' );
 }
 
 ( new \Emulsify\Theme\Blocks\Acf_Blocks( $locator ) )->register_blocks();
@@ -394,25 +432,25 @@ do_action( 'acf/init' );
 $registered = isset( $GLOBALS['emulsify_smoke_acf_registered'] ) && is_array( $GLOBALS['emulsify_smoke_acf_registered'] )
   ? $GLOBALS['emulsify_smoke_acf_registered']
   : array();
-$button = null;
+$fixture = null;
 
 foreach ( $registered as $block ) {
-  if ( isset( $block['name'] ) && 'emulsify-example-button' === $block['name'] ) {
-    $button = $block;
+  if ( isset( $block['name'] ) && 'emulsify-smoke-acf' === $block['name'] ) {
+    $fixture = $block;
     break;
   }
 }
 
-if ( null === $button ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig button block was not registered with the ACF stub.' );
+if ( null === $fixture ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture block was not registered with the ACF stub.' );
 }
 
-if ( 'dist/components/button/button.twig' !== $button['twig_template'] ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig block did not keep its Twig template.' );
+if ( 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['twig_template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture did not keep its Twig template.' );
 }
 
-if ( empty( $button['data']['twig_template'] ) || 'dist/components/button/button.twig' !== $button['data']['twig_template'] ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig block data did not include its Twig template.' );
+if ( empty( $fixture['data']['twig_template'] ) || 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['data']['twig_template'] ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture data did not include its Twig template.' );
 }
 `;
 
@@ -613,10 +651,8 @@ async function checkGeneratedAsset(baseUrl, themeSlug, relativePath, expectedTex
 }
 
 async function checkGeneratedAssets(baseUrl, themeSlug) {
-  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/foundation.css', 'box-sizing');
-  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/layout.css', 'max-width');
-  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/tokens.css', '--emulsify-color-text');
-  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/components/button/css/button.css', '.button');
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/global/smoke.css', '.smoke-generated-global');
+  await checkGeneratedAsset(baseUrl, themeSlug, 'dist/components/smoke-acf/css/smoke-acf.css', '.smoke-acf');
 }
 
 async function renderRoutes(wpPath, content, baseUrl, port, themeSlug) {
@@ -627,8 +663,8 @@ async function renderRoutes(wpPath, content, baseUrl, port, themeSlug) {
     'Smoke Page',
     'Smoke page content',
     `${themeSlug}-page`,
-    `/wp-content/themes/${themeSlug}/dist/global/foundation.css`,
-    `/wp-content/themes/${themeSlug}/dist/components/button/css/button.css`,
+    `/wp-content/themes/${themeSlug}/dist/global/smoke.css`,
+    `/wp-content/themes/${themeSlug}/dist/components/smoke-acf/css/smoke-acf.css`,
   ];
   const routes = [
     { name: 'home', path: '/', includes: ['Emulsify Smoke', 'Smoke Post'] },
@@ -734,6 +770,7 @@ async function main() {
   wp(wpPath, ['theme', 'activate', 'whisk']);
   wp(wpPath, ['emulsify', 'Smoke Generated', `--machine-name=${generatedChildSlug}`, '--activate']);
   assertGeneratedChildTheme(generatedChild, generatedChildSlug);
+  installGeneratedChildFixtures(generatedChild);
   wp(wpPath, ['theme', 'is-installed', generatedChildSlug]);
 
   const activeStylesheet = wp(wpPath, ['option', 'get', 'stylesheet']);

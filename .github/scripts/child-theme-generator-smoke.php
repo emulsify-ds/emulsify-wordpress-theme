@@ -188,6 +188,19 @@ try {
 	}
 
 	emulsify_cli_smoke_copy( $repo_root . '/whisk', $parent_root . '/whisk' );
+	file_put_contents(
+		$parent_root . '/whisk/patterns/smoke-pattern.json',
+		json_encode(
+			array(
+				'name'        => 'whisk/smoke-pattern',
+				'title'       => 'Smoke Pattern',
+				'description' => 'Temporary pattern fixture for child-theme generation smoke coverage.',
+				'categories'  => array( 'text' ),
+				'content'     => '<!-- wp:paragraph --><p>Smoke pattern content</p><!-- /wp:paragraph -->',
+			),
+			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+		) . "\n"
+	);
 
 	require_once $repo_root . '/includes/class-cli.php';
 
@@ -201,11 +214,11 @@ try {
 	$project     = emulsify_cli_smoke_json( $destination . '/project.emulsify.json' );
 	$page        = file_get_contents( $destination . '/templates/page.twig' );
 	$functions   = file_get_contents( $destination . '/functions.php' );
-	$button      = file_get_contents( $destination . '/src/components/button/button.twig' );
-	$button_meta = emulsify_cli_smoke_json( $destination . '/src/components/button/button.component.json' );
+	$smoke_pattern = emulsify_cli_smoke_json( $destination . '/patterns/smoke-pattern.json' );
 
 	emulsify_cli_smoke_assert( is_dir( $destination ), 'Expected generated child theme directory to exist.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/node_modules' ), 'Generated child theme should not copy node_modules.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/config/acf-json/.gitkeep' ), 'Generated child theme should copy the ACF Local JSON convention directory.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Theme Name: Acme Theme' ), 'style.css should update Theme Name.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Text Domain: acme-child' ), 'style.css should update Text Domain.' );
 	emulsify_cli_smoke_assert( false !== strpos( $style, 'Template: emulsify' ), 'style.css should keep the parent Template slug.' );
@@ -216,8 +229,16 @@ try {
 	emulsify_cli_smoke_assert( false !== strpos( $page, 'acme-child-page' ), 'Example template should update slug class.' );
 	emulsify_cli_smoke_assert( false === strpos( $page, 'whisk-page' ), 'Example template should not keep the whisk slug class.' );
 	emulsify_cli_smoke_assert( false !== strpos( $functions, 'Acme Theme child theme hooks.' ), 'functions.php should update visible Whisk label.' );
-	emulsify_cli_smoke_assert( false !== strpos( $button, "bem('button'" ), 'Generated child theme should copy the starter button component.' );
-	emulsify_cli_smoke_assert( 'Example Button' === $button_meta['title'], 'Generated child theme should copy example component metadata.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/src/components/.gitkeep' ), 'Generated child theme should keep the empty component source placeholder.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/patterns/.gitkeep' ), 'Generated child theme should keep the empty pattern placeholder.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/src/components/button' ), 'Generated child theme should not include the removed starter button component.' );
+	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/foundation.scss' ), 'Generated child theme should not include an assumed foundation Sass entry.' );
+	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/layout.scss' ), 'Generated child theme should not include an assumed layout Sass entry.' );
+	emulsify_cli_smoke_assert( ! is_file( $destination . '/src/tokens.scss' ), 'Generated child theme should not include an assumed tokens Sass entry.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/dist' ), 'Generated child theme should not copy ignored build output directories.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/.out' ), 'Generated child theme should not copy ignored Storybook output directories.' );
+	emulsify_cli_smoke_assert( 'acme-child/smoke-pattern' === $smoke_pattern['name'], 'Generated child theme should update copied pattern namespaces when patterns exist.' );
+	emulsify_cli_smoke_assert( false !== strpos( $smoke_pattern['content'], 'Smoke pattern content' ), 'Generated child theme should copy optional pattern content when patterns exist.' );
 
 	$failed_without_force = false;
 

@@ -50,8 +50,8 @@ $helpers = new Twig();
 
 emulsify_attribute_helper_assert_same(
 	'bem positional syntax',
-	'class="button button--primary"',
-	(string) $helpers->bem( 'button', array( 'primary' ) )
+	'class="example-card example-card--featured"',
+	(string) $helpers->bem( 'example-card', array( 'featured' ) )
 );
 
 emulsify_attribute_helper_assert_same(
@@ -114,11 +114,11 @@ emulsify_attribute_helper_assert_same(
 
 emulsify_attribute_helper_assert_same(
 	'context-aware bem syntax',
-	'class="button button--primary context"',
+	'class="example-card example-card--featured context"',
 	(string) $helpers->bem(
 		array( 'attributes' => new AttributeBag( array( 'class' => array( 'context' ) ) ) ),
-		'button',
-		array( 'primary' )
+		'example-card',
+		array( 'featured' )
 	)
 );
 
@@ -132,7 +132,7 @@ if ( class_exists( \Twig\Environment::class ) && class_exists( \Twig\Loader\Arra
 	$environment = new \Twig\Environment(
 		new \Twig\Loader\ArrayLoader(
 			array(
-				'fixture' => '{{ bem("button", ["primary"]) }}|{{ add_attributes({ class: ["foo"] }) }}',
+				'fixture' => '{{ bem("example-card", ["featured"]) }}|{{ add_attributes({ class: ["foo"] }) }}',
 			)
 		),
 		array( 'autoescape' => false )
@@ -142,7 +142,7 @@ if ( class_exists( \Twig\Environment::class ) && class_exists( \Twig\Loader\Arra
 
 	emulsify_attribute_helper_assert_same(
 		'Twig fixture render',
-		'class="button button--primary"|class="foo"',
+		'class="example-card example-card--featured"|class="foo"',
 		$environment->render( 'fixture' )
 	);
 

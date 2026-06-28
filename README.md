@@ -59,10 +59,10 @@ The `emulsify` parent theme owns reusable runtime behavior:
 
 The generated `whisk` child theme owns project implementation:
 
-- `whisk/src/components` is the primary component source directory.
-- `whisk/src/tokens.scss`, `whisk/src/foundation.scss`, and `whisk/src/layout.scss` are the Core 4 global style entry points.
+- `whisk/src/components` is an empty placeholder until a project installs the component system it wants to use.
+- Source Sass, JavaScript, stories, data fixtures, and component metadata are defined by the selected Emulsify component system, not by this parent theme starter.
 - `whisk/templates/page.twig` is a small example override.
-- `whisk/dist/global` and `whisk/dist/components` contain built assets after running Vite.
+- `whisk/dist/global` and `whisk/dist/components` are runtime build output conventions when a component system emits them.
 - `whisk/project.emulsify.json` uses `"platform": "wordpress"` so Core and CLI tooling can load the WordPress platform adapter.
 
 ## Bedrock and Timber
@@ -121,8 +121,13 @@ The generator copies `emulsify/whisk` to a sibling child theme directory, update
 - [Parent and child theme architecture](docs/parent-child-architecture.md)
 - [Timber and Twig authoring](docs/timber-and-twig-authoring.md)
 - [Emulsify Core 4 and Vite workflow](docs/core-4-vite-workflow.md)
+- [ACF Local JSON](docs/acf-local-json.md)
 - [ACF/Twig blocks](docs/acf-twig-blocks.md)
+- [Core block Twig rendering](docs/core-block-twig-rendering.md)
 - [Native Gutenberg blocks](docs/native-gutenberg-blocks.md)
+- [Block patterns](docs/block-patterns.md)
+- [Editor enhancements](docs/editor-enhancements.md)
+- [Editor policy](docs/editor-policy.md)
 - [Asset loading](docs/asset-loading.md)
 - [WP-CLI child theme generation](docs/wp-cli-child-theme-generation.md)
 - [Release process](docs/release-process.md)

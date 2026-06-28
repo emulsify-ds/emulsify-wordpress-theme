@@ -297,6 +297,7 @@ $GLOBALS['emulsify_filter_smoke_parent'] = $parent;
 
 try {
 	emulsify_filter_smoke_write( $child . '/dist/global/child.css', 'body { color: black; }' );
+	emulsify_filter_smoke_write( $child . '/dist/global/editor/css/index.css', '.editor-only { display: block; }' );
 	emulsify_filter_smoke_write( $extra . '/assets/extra.css', 'body { color: red; }' );
 	emulsify_filter_smoke_write( $extra . '/twig/example.twig', 'Example' );
 	emulsify_filter_smoke_write( $extra . '/components/filter-card/filter-card.component.json', '{"title":"Filter Card"}' );
@@ -439,6 +440,17 @@ try {
 	emulsify_filter_smoke_assert(
 		isset( $GLOBALS['emulsify_filter_smoke_styles']['emulsify-global-filtered'] ),
 		'Asset files filter should add a filtered CSS asset.'
+	);
+	emulsify_filter_smoke_assert(
+		empty(
+			array_filter(
+				array_keys( $GLOBALS['emulsify_filter_smoke_styles'] ),
+				static function ( string $handle ): bool {
+					return false !== strpos( $handle, 'editor' );
+				}
+			)
+		),
+		'Generic asset loading should skip editor-only global assets.'
 	);
 
 	$loader = new class() {

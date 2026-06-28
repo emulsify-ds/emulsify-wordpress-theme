@@ -7,6 +7,7 @@ Emulsify WordPress 2.x changes the project model. The repository is now a Timber
 - The parent theme owns WordPress runtime behavior in `includes/`.
 - The parent theme owns minimal Timber fallback templates in `templates/`.
 - Generated child themes own project components, template overrides, source Sass and JavaScript, and built assets.
+- The selected Emulsify component system defines the component source structure; Whisk does not ship default foundation, layout, token, or button files.
 - The starter child theme uses Emulsify Core 4, Vite, Storybook, and Twig.
 - The generated child theme keeps `project.emulsify.json` set to `"platform": "wordpress"` for Emulsify Core and Emulsify CLI WordPress adapter support.
 - Release metadata is aligned around the `2.0.0` stable release.
@@ -28,7 +29,7 @@ Do not move everything into the parent theme. The parent should stay reusable; p
 
 1. Install the 2.x parent theme as `emulsify`.
 2. Generate or update a child theme from the Whisk starter.
-3. Move project components into the child theme `src/components` directory.
+3. Install or configure the chosen Emulsify component system, then move project components into that system's source structure.
 4. Move only intentional template overrides into the child theme `templates` directory.
 5. Rebuild child theme assets with Vite.
 6. Confirm WordPress is activating the child theme, not the parent.

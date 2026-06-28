@@ -8,14 +8,14 @@ The generated child theme uses Emulsify Core 4, Vite, Storybook, Twig stories, S
 
 ## Source directories
 
-The generated child theme uses:
+The generated child theme intentionally does not ship a concrete component library. Emulsify CLI can install the component system a project chooses, and that system should own the source tree, Sass entrypoints, stories, and fixture data.
 
-- `src/components` for component source.
-- `src/tokens.scss` for design tokens.
-- `src/foundation.scss` for base styles.
-- `src/layout.scss` for layout styles.
-- `dist/global` for built global CSS.
-- `dist/components` for built component assets and block metadata.
+Whisk keeps `src/components/.gitkeep` only as a placeholder for compatible systems. It does not include default `tokens.scss`, `foundation.scss`, or `layout.scss` files.
+
+The parent WordPress runtime has only two default build-output conventions:
+
+- `dist/global` for built global CSS and JavaScript.
+- `dist/components` for built component assets, ACF/Twig block metadata, and native `block.json` metadata.
 
 ## Core 4, Vite, and Storybook commands
 
@@ -34,22 +34,26 @@ Run these from the generated child theme directory:
 | `npm run a11y` | Build Storybook and run the Core accessibility check. |
 | `npm run test` | Run Jest with `--passWithNoTests` for starter projects. |
 
-## Example component
+## Documentation-only component example
 
-The Whisk starter includes a minimal button component:
+The following shape is an example of a compatible component, not files shipped by Whisk:
 
 ```text
-whisk/src/components/button/
-  button.twig
-  button.scss
-  button.data.json
-  button.stories.js
-  button.component.json
+src/components/example-card/
+  example-card.twig
+  example-card.scss
+  example-card.data.json
+  example-card.stories.js
+  example-card.component.json
 ```
 
-This is intentionally small. It demonstrates the workflow without trying to be a complete design system.
+Project teams should add, rename, or remove component files according to the selected component system and project naming model. This parent theme does not require a button component or any specific foundation, layout, or token Sass files.
 
-For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`. The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work.
+When a component system builds `*.component.json` files into `dist/components`, the parent theme can discover those files for optional ACF/Twig block registration. Documentation examples prove the shape, but Whisk does not register any starter ACF/Twig blocks by default.
+
+For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`. The general form is `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
+
+Whisk keeps `patterns/.gitkeep` only as a placeholder. If a project adds JSON patterns, the child theme generator updates copied pattern namespaces from `whisk/*` to the generated machine name.
 
 ## Build output
 

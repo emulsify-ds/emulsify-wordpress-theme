@@ -16,6 +16,9 @@ final class Cli {
 
 	private const EXCLUDED_COPY_PATHS = array(
 		'.git',
+		'.coverage',
+		'.out',
+		'dist',
 		'node_modules',
 	);
 
@@ -262,7 +265,50 @@ final class Cli {
 			}
 		);
 
+		$this->collect_pattern_updates( $updates, $root, $machine_name );
+
 		return $updates;
+	}
+
+	/**
+	 * Adds starter pattern metadata updates.
+	 *
+	 * @param array  $updates      Update accumulator.
+	 * @param string $root         Theme root.
+	 * @param string $machine_name Generated child theme machine name.
+	 * @return void
+	 */
+	private function collect_pattern_updates( array &$updates, string $root, string $machine_name ): void {
+		$pattern_dir = $this->join_path( $root, 'patterns' );
+
+		if ( ! is_dir( $pattern_dir ) ) {
+			return;
+		}
+
+		$files = glob( $pattern_dir . '/*.json' );
+
+		if ( ! is_array( $files ) ) {
+			return;
+		}
+
+		sort( $files );
+
+		foreach ( $files as $path ) {
+			$relative = 'patterns/' . basename( $path );
+
+			$this->collect_json_update(
+				$updates,
+				$root,
+				$relative,
+				function ( array $data ) use ( $machine_name ): array {
+					if ( isset( $data['name'] ) && is_string( $data['name'] ) && 0 === strpos( $data['name'], self::STARTER_SLUG . '/' ) ) {
+						$data['name'] = $machine_name . '/' . substr( $data['name'], strlen( self::STARTER_SLUG ) + 1 );
+					}
+
+					return $data;
+				}
+			);
+		}
 	}
 
 	/**

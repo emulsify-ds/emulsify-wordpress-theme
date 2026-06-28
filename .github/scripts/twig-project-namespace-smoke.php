@@ -202,11 +202,11 @@ $extra         = $work_root . '/extra-components';
 
 try {
 	emulsify_twig_project_smoke_write( $child . '/project.emulsify.json', '{"project":{"machineName":"whisk"}}' );
-	emulsify_twig_project_smoke_write( $child . '/src/components/button/button.twig', 'Child button' );
+	emulsify_twig_project_smoke_write( $child . '/src/components/example-card/example-card.twig', 'Child example card' );
 	emulsify_twig_project_smoke_write( $child . '/src/components/badge.twig', 'Child badge' );
 	emulsify_twig_project_smoke_write( $child . '/src/components/ui/heading/heading.twig', 'Child heading' );
 	emulsify_twig_project_smoke_write( $child . '/components/link/link.twig', 'Child legacy link' );
-	emulsify_twig_project_smoke_write( $parent . '/src/components/button/button.twig', 'Parent button' );
+	emulsify_twig_project_smoke_write( $parent . '/src/components/example-card/example-card.twig', 'Parent example card' );
 	emulsify_twig_project_smoke_write( $extra . '/filtered/filtered.twig', 'Filtered root' );
 
 	add_filter(
@@ -225,14 +225,14 @@ try {
 	$environment = emulsify_twig_project_smoke_environment( $child, $parent );
 
 	emulsify_twig_project_smoke_assert_same(
-		'Child button',
-		emulsify_twig_project_smoke_render( $environment, '{% include "whisk:button" %}' ),
+		'Child example card',
+		emulsify_twig_project_smoke_render( $environment, '{% include "whisk:example-card" %}' ),
 		'machineName:component should resolve to the child src component template.'
 	);
 
 	emulsify_twig_project_smoke_assert_same(
-		'Child button',
-		emulsify_twig_project_smoke_render( $environment, '{% include "@components/button/button.twig" %}' ),
+		'Child example card',
+		emulsify_twig_project_smoke_render( $environment, '{% include "@components/example-card/example-card.twig" %}' ),
 		'@components should still resolve child components.'
 	);
 
@@ -261,33 +261,33 @@ try {
 	);
 
 	emulsify_twig_project_smoke_assert(
-		false === $environment->getLoader()->exists( 'whisk:../button' ),
+		false === $environment->getLoader()->exists( 'whisk:../example-card' ),
 		'Unsafe project component references should be rejected.'
 	);
 
-	emulsify_twig_project_smoke_write( $missing_child . '/src/components/button/button.twig', 'Missing project button' );
+	emulsify_twig_project_smoke_write( $missing_child . '/src/components/example-card/example-card.twig', 'Missing project example card' );
 
 	$missing_environment = emulsify_twig_project_smoke_environment( $missing_child, $parent );
 
 	emulsify_twig_project_smoke_assert_same(
-		'Missing project button',
-		emulsify_twig_project_smoke_render( $missing_environment, '{% include "@components/button/button.twig" %}' ),
+		'Missing project example card',
+		emulsify_twig_project_smoke_render( $missing_environment, '{% include "@components/example-card/example-card.twig" %}' ),
 		'Missing project.emulsify.json should not break @components.'
 	);
 
 	emulsify_twig_project_smoke_assert(
-		false === $missing_environment->getLoader()->exists( 'whisk:button' ),
+		false === $missing_environment->getLoader()->exists( 'whisk:example-card' ),
 		'Missing project.emulsify.json should not register a project component loader.'
 	);
 
 	emulsify_twig_project_smoke_write( $invalid_child . '/project.emulsify.json', '{"project":' );
-	emulsify_twig_project_smoke_write( $invalid_child . '/src/components/button/button.twig', 'Invalid project button' );
+	emulsify_twig_project_smoke_write( $invalid_child . '/src/components/example-card/example-card.twig', 'Invalid project example card' );
 
 	$invalid_environment = emulsify_twig_project_smoke_environment( $invalid_child, $parent );
 
 	emulsify_twig_project_smoke_assert_same(
-		'Invalid project button',
-		emulsify_twig_project_smoke_render( $invalid_environment, '{% include "@components/button/button.twig" %}' ),
+		'Invalid project example card',
+		emulsify_twig_project_smoke_render( $invalid_environment, '{% include "@components/example-card/example-card.twig" %}' ),
 		'Invalid project.emulsify.json should not break @components.'
 	);
 

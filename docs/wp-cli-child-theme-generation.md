@@ -35,6 +35,8 @@ The generator copies `emulsify/whisk` to a sibling child theme directory and upd
 
 The generator avoids broad blind string replacement. It targets known metadata files and starter labels.
 
+Ignored dependency, cache, Storybook, and Vite output directories are not copied. A generated child theme should install its own dependencies, install or configure the chosen Emulsify component system, and create its own `dist` output.
+
 ## After generation
 
 Install dependencies and build assets in the generated child theme:

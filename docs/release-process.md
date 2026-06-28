@@ -29,6 +29,7 @@ npm run publish-test -- --no-ci
 - Composer metadata validation.
 - Composer dependency install for Twig smoke coverage.
 - PHP linting.
+- ACF Local JSON smoke test.
 - Twig attribute helper smoke test.
 - Child theme generator smoke test.
 - Component locator smoke test.
@@ -36,7 +37,7 @@ npm run publish-test -- --no-ci
 - Whisk dependency installation.
 - Whisk Core 4/Vite build.
 
-`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, renders frontend routes through Timber, fetches built Whisk assets, and checks ACF/Twig and native `block.json` discovery. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
+`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
 
 ## CI
 

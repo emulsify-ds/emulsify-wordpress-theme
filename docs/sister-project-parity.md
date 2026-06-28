@@ -21,11 +21,11 @@ The parent runtime should stay reusable and predictable. It provides CMS integra
 
 ## Generated source and assets
 
-Generated child themes are expected to own component source and built output:
+Generated child themes are expected to own component source and built output. The selected Emulsify component system defines the project source structure:
 
-- `src/components` is the primary component source directory.
-- `src/tokens.scss`, `src/foundation.scss`, and `src/layout.scss` are the Core 4 global style entry points.
-- Storybook stories and data fixtures live with the component source.
+- Whisk keeps an empty `src/components` placeholder for compatible systems, but it does not prescribe a component tree.
+- Whisk does not ship default `tokens.scss`, `foundation.scss`, or `layout.scss` entrypoints.
+- Storybook stories and data fixtures live with the component source chosen by the project.
 - Built global assets are emitted under `dist/global`.
 - Built component assets and block metadata are emitted under `dist/components`.
 
@@ -39,7 +39,7 @@ Emulsify WordPress is not a Drupal runtime port. It keeps parity at the Emulsify
 
 Frontend rendering uses Timber. The parent theme owns Timber bootstrapping, global context, Twig namespace registration, route fallbacks, and Twig helper functions. Child themes supply project Twig templates and component source.
 
-For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, such as `{% include "whisk:button" %}`. The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work.
+For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 
 ### Parent and child theme headers
 

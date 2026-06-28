@@ -13,6 +13,6 @@ export default {
   },
   // List of storybook component IDs defined and used in this project.
   // Example:
-  // components: ['components-button--default', 'components-card--default'],
+  // components: ['components-example--default'],
   components: [],
 };

@@ -27,9 +27,14 @@ run('Install Composer dependencies for Twig smoke coverage', 'composer', [
   '--prefer-dist',
 ]);
 run('Run PHP lint', 'npm', ['run', 'lint:php']);
+run('Run ACF Local JSON smoke test', 'npm', ['run', 'smoke:acf-json']);
 run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);
 run('Run child theme generator smoke test', 'npm', ['run', 'smoke:child-theme-generator']);
 run('Run component locator smoke test', 'npm', ['run', 'smoke:component-locator']);
+run('Run core block Twig renderer smoke test', 'npm', ['run', 'smoke:core-block-twig']);
+run('Run editor enhancements smoke test', 'npm', ['run', 'smoke:editor-enhancements']);
+run('Run editor policy smoke test', 'npm', ['run', 'smoke:editor-policy']);
+run('Run pattern registry smoke test', 'npm', ['run', 'smoke:patterns']);
 run('Run parent theme filter smoke test', 'npm', ['run', 'smoke:theme-filters']);
 run('Run Twig project namespace smoke test', 'npm', ['run', 'smoke:twig-project-namespace']);
 run('Install Whisk dependencies', 'npm', ['run', 'whisk:install']);

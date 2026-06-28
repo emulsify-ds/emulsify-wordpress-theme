@@ -37,38 +37,38 @@ Use `@templates` for normal includes. Use `@emulsify-tpl` when a child override 
 
 ## Component includes
 
-Author project components under `src/components` in the generated child theme:
+Install or author project components in the structure defined by the selected Emulsify component system. For compatible component roots, new project includes can use the generated child theme machine name from `project.emulsify.json`:
 
 ```twig
-{% include "whisk:button" with {
-  text: post.title
+{% include "project_machine_name:example-card" with {
+  heading: post.title
 } only %}
 ```
 
-For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`: `{% include "whisk:button" %}`. The general form is `project_machine_name:component_name`.
+The general form is `project_machine_name:component_name`.
 
-This reference resolves child-first component roots, including `src/components/button/button.twig`, `src/components/button.twig`, `components/button/button.twig`, and `components/button.twig`. One-level grouped names such as `whisk:ui/heading` resolve to paths like `src/components/ui/heading/heading.twig`.
+This reference resolves child-first compatibility roots, including `src/components/example-card/example-card.twig`, `src/components/example-card.twig`, `components/example-card/example-card.twig`, and `components/example-card.twig`. One-level grouped names such as `project_machine_name:ui/heading` resolve to paths like `src/components/ui/heading/heading.twig`.
 
-The legacy `@components/button/button.twig` namespace remains supported for existing projects, shared templates, and migration work:
+The legacy `@components/example-card/example-card.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work:
 
 ```twig
-{% include "@components/button/button.twig" with {
-  text: post.title
+{% include "@components/example-card/example-card.twig" with {
+  heading: post.title
 } only %}
 ```
 
 Use `emulsify_theme_project_component_roots` to adjust roots for `project_machine_name:component_name` references. Use `emulsify_theme_twig_namespaces` for normal `@namespace/path.twig` paths.
 
-Root-level `components` directories remain a compatibility path for older projects. New work should use `src/components`. Do not remove existing `@components` includes during migration; both forms are supported.
+Root-level `components` and `src/components` directories are compatibility paths, not starter requirements. Do not remove existing `@components` includes during migration; both forms are supported.
 
 ## Attribute helpers
 
 The parent theme registers Core-style helpers for class and attribute handling:
 
 ```twig
-<button {{ bem('button', ['primary']) }}>
-  {{ text }}
-</button>
+<div {{ bem('example-card', ['featured']) }}>
+  {{ content }}
+</div>
 
 <div {{ add_attributes({ class: ['foo'], 'data-component': 'example' }) }}>
   {{ content }}

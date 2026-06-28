@@ -117,6 +117,10 @@ final class Assets {
 
 				$relative = $this->relative_path( $root['path'], $file->getPathname() );
 
+				if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
+					continue;
+				}
+
 				if ( isset( $seen[ $relative ] ) ) {
 					continue;
 				}
@@ -245,6 +249,18 @@ final class Assets {
 		$relative = ltrim( str_replace( rtrim( $base_path, '/\\' ), '', $path ), '/\\' );
 
 		return str_replace( '\\', '/', $relative );
+	}
+
+	/**
+	 * Checks whether a built asset is reserved for editor-only loading.
+	 *
+	 * @param string $directory Theme-relative asset directory being scanned.
+	 * @param string $relative  Asset path relative to the built directory.
+	 * @return bool TRUE when the editor service should own the asset.
+	 */
+	private function is_reserved_editor_asset( string $directory, string $relative ): bool {
+		return 'dist/global' === trim( $directory, '/\\' )
+			&& 0 === strpos( ltrim( $relative, '/\\' ), 'editor/' );
 	}
 
 	/**
