@@ -1,5 +1,7 @@
 name: WordPress Release
 
+# Release publishing is gated by the same local readiness script used by
+# maintainers, with the WordPress fixture required instead of optional.
 on:
   push:
     branches:

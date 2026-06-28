@@ -48,6 +48,9 @@ final class Bootstrap {
 		$this->load_vendor_autoload();
 		$this->load_classes();
 
+		// These services use WordPress APIs directly and must stay available even
+		// when Timber is missing. The Missing_Timber service owns frontend failure
+		// handling later in this method.
 		( new Setup() )->register();
 		( new Assets() )->register();
 		( new Acf_Local_JSON() )->register();
@@ -61,6 +64,9 @@ final class Bootstrap {
 		$timber = new Timber_Integration();
 
 		if ( $timber->register() ) {
+			// Timber-dependent services are registered only after Timber has
+			// initialized, which keeps admin, CLI, and non-template requests usable
+			// in partially installed environments.
 			( new Context() )->register();
 			( new Twig() )->register();
 			return;
@@ -88,6 +94,8 @@ final class Bootstrap {
 	 * @return void
 	 */
 	private function load_classes(): void {
+		// Keep load order explicit. Shared value objects and block discovery
+		// helpers are required before the services that instantiate them.
 		$files = array(
 			'class-acf-local-json.php',
 			'class-attribute-bag.php',

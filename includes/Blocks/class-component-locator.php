@@ -100,6 +100,8 @@ final class Component_Locator {
 			$template           = $this->twig_template( $file['root_path'], $directory, $path );
 
 			if ( '' === $template ) {
+				// A metadata file without a matching Twig template is not a renderable
+				// ACF/Twig component; native block.json registration is handled separately.
 				continue;
 			}
 
@@ -308,6 +310,8 @@ final class Component_Locator {
 			$key  = realpath( $path );
 
 			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
+				// Missing build output is expected before a project installs and runs
+				// its chosen component system.
 				continue;
 			}
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// End-to-end WordPress smoke fixture. It installs a disposable WordPress site,
+// mounts this parent theme, generates a Whisk child theme, and exercises the
+// runtime features that cannot be proven with pure PHP stubs.
+
 const childProcess = require('child_process');
 const fs = require('fs');
 const net = require('net');

@@ -29,6 +29,8 @@ final class Context {
 	 */
 	public function add( array $context ): array {
 		if ( empty( $context['site'] ) && class_exists( '\Timber\Site' ) ) {
+			// Timber usually supplies "site"; keep this fallback for smoke tests
+			// and custom contexts that invoke the filter before Timber populates it.
 			$context['site'] = new \Timber\Site();
 		}
 
@@ -85,6 +87,8 @@ final class Context {
 
 		try {
 			if ( has_nav_menu( 'primary' ) ) {
+				// Prefer the registered primary location. Falling back to Timber's
+				// default menu keeps minimal installs from failing with no menu set.
 				return \Timber\Timber::get_menu( 'primary' );
 			}
 

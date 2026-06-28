@@ -1,5 +1,7 @@
 name: WordPress Theme Readiness
 
+# Pull requests run fast, stubbed checks. Manual and scheduled runs can also
+# exercise the full WordPress fixture with WP-CLI and MySQL.
 on:
   pull_request:
     branches:

@@ -1,25 +1,37 @@
+{# Generic teaser card used by index/archive/search fallbacks. #}
+{% set teaser_attributes = {
+    class: bem('teaser', [post.type|default('post')]),
+    id: post.id|default(null) ? 'teaser-' ~ post.id : null
+} %}
+{% set teaser_media_attributes = {
+    class: bem('media', [], 'teaser')
+} %}
+{% set teaser_title_attributes = {
+    class: bem('title', [], 'teaser')
+} %}
+{% set teaser_summary_attributes = {
+    class: bem('summary', [], 'teaser')
+} %}
+
 {% if post|default(null) %}
-    <article {{ add_attributes({
-        class: ['teaser', 'teaser--' ~ post.type|default('post')],
-        id: post.id|default(null) ? 'teaser-' ~ post.id : null
-    }) }}>
+    <article {{ add_attributes(teaser_attributes) }}>
         {% block media %}
             {% if post.thumbnail|default(null) and post.thumbnail.src|default(null) %}
-                <div class="teaser__media">
+                <div {{ add_attributes(teaser_media_attributes) }}>
                     <img src="{{ post.thumbnail.src }}" alt="{{ post.thumbnail.alt|default(post.title) }}" />
                 </div>
             {% endif %}
         {% endblock %}
 
         {% block title %}
-            <h2 class="teaser__title">
-                <a href="{{ post.link|default('#') }}">{{ post.title|default('Untitled') }}</a>
+            <h2 {{ add_attributes(teaser_title_attributes) }}>
+                <a href="{{ post.link|default('#') }}">{{ post.title|default(function('__', 'Untitled', 'emulsify')) }}</a>
             </h2>
         {% endblock %}
 
         {% block summary %}
             {% if post.excerpt|default(null) %}
-                <div class="teaser__summary">{{ post.excerpt }}</div>
+                <div {{ add_attributes(teaser_summary_attributes) }}>{{ post.excerpt }}</div>
             {% endif %}
         {% endblock %}
     </article>

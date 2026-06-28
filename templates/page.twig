@@ -1,20 +1,33 @@
+{# Page fallback rendered by page.php. Child themes should extend or override
+   this file instead of copying PHP route controllers. #}
 {% extends '@templates/layouts/base.twig' %}
+
+{% set entry_attributes = {
+    class: bem('entry', [post.type|default('page')]),
+    id: post.id|default(null) ? 'post-' ~ post.id : null
+} %}
+{% set entry_header_attributes = {
+    class: bem('header', [], 'entry')
+} %}
+{% set entry_title_attributes = {
+    class: bem('title', [], 'entry')
+} %}
+{% set entry_content_attributes = {
+    class: bem('content', [], 'entry')
+} %}
 
 {% block content %}
     {% if post|default(null) %}
-        <article {{ add_attributes({
-            class: ['entry', 'entry--' ~ post.type|default('page')],
-            id: post.id|default(null) ? 'post-' ~ post.id : null
-        }) }}>
-            <header class="entry__header">
-                <h1 class="entry__title">{{ post.title }}</h1>
+        <article {{ add_attributes(entry_attributes) }}>
+            <header {{ add_attributes(entry_header_attributes) }}>
+                <h1 {{ add_attributes(entry_title_attributes) }}>{{ post.title }}</h1>
             </header>
 
-            <div class="entry__content">
+            <div {{ add_attributes(entry_content_attributes) }}>
                 {{ post.content }}
             </div>
         </article>
     {% else %}
-        <p>No page content was found.</p>
+        <p>{{ function('__', 'No page content was found.', 'emulsify') }}</p>
     {% endif %}
 {% endblock %}

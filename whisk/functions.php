@@ -12,3 +12,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	return;
 }
+
+// Add project-specific WordPress hooks here or, for reusable behavior, in a
+// project plugin. The parent theme owns the shared runtime services.

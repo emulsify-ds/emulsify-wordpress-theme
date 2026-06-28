@@ -46,6 +46,104 @@ function emulsify_register_smoke_twig_functions( \Twig\Environment $environment,
 	}
 }
 
+/**
+ * Registers minimal WordPress/Timber shims needed to parse parent templates.
+ *
+ * @param \Twig\Environment $environment Twig environment.
+ * @return void
+ */
+function emulsify_register_smoke_wordpress_twig_shims( \Twig\Environment $environment ): void {
+	$environment->addFunction(
+		new \Twig\TwigFunction(
+			'function',
+			static function ( string $name, ...$arguments ) {
+				if ( '__' === $name || 'esc_attr__' === $name ) {
+					return $arguments[0] ?? '';
+				}
+
+				return '';
+			},
+			array( 'is_safe' => array( 'html' ) )
+		)
+	);
+	$environment->addFunction( new \Twig\TwigFunction( 'action', static function (): string { return ''; } ) );
+	$environment->addFilter( new \Twig\TwigFilter( 'wpautop', static function ( $value ) { return $value; }, array( 'is_safe' => array( 'html' ) ) ) );
+	$environment->addFilter( new \Twig\TwigFilter( 'resize', static function ( $value ) { return $value; } ) );
+}
+
+/**
+ * Asserts parent templates route class output through add_attributes().
+ *
+ * @param string $templates_dir Parent template directory.
+ * @return void
+ */
+function emulsify_attribute_helper_assert_parent_templates_use_helpers( string $templates_dir ): void {
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $templates_dir, RecursiveDirectoryIterator::SKIP_DOTS )
+	);
+
+	foreach ( $iterator as $file ) {
+		if ( 'twig' !== $file->getExtension() ) {
+			continue;
+		}
+
+		$contents = file_get_contents( $file->getPathname() );
+
+		if ( is_string( $contents ) && preg_match( '/\sclass=(["\'])/', $contents ) ) {
+			fwrite( STDERR, sprintf( "Parent template should use bem() or add_attributes() for classes: %s\n", $file->getPathname() ) );
+			exit( 1 );
+		}
+
+		if ( is_string( $contents ) && preg_match( '/{{\s*bem\s*\(/', $contents ) ) {
+			fwrite( STDERR, sprintf( "Parent template should pass bem() through add_attributes(): %s\n", $file->getPathname() ) );
+			exit( 1 );
+		}
+	}
+}
+
+/**
+ * Parses parent templates with the attribute helper functions registered.
+ *
+ * @param Twig    $helpers       Emulsify helper integration.
+ * @param string $templates_dir Parent template directory.
+ * @return int Parsed template count.
+ */
+function emulsify_attribute_helper_parse_parent_templates( Twig $helpers, string $templates_dir ): int {
+	$loader = new \Twig\Loader\FilesystemLoader();
+	$loader->addPath( $templates_dir, 'templates' );
+	$loader->addPath( $templates_dir, 'emulsify-tpl' );
+
+	$environment = new \Twig\Environment(
+		$loader,
+		array(
+			'autoescape' => false,
+			'cache'      => false,
+		)
+	);
+
+	emulsify_register_smoke_twig_functions( $environment, $helpers );
+	emulsify_register_smoke_wordpress_twig_shims( $environment );
+
+	$checked  = 0;
+	$iterator = new RecursiveIteratorIterator(
+		new RecursiveDirectoryIterator( $templates_dir, RecursiveDirectoryIterator::SKIP_DOTS )
+	);
+
+	foreach ( $iterator as $file ) {
+		if ( 'twig' !== $file->getExtension() ) {
+			continue;
+		}
+
+		$relative = str_replace( rtrim( $templates_dir, '/\\' ) . '/', '', $file->getPathname() );
+		$template = '@templates/' . str_replace( '\\', '/', $relative );
+
+		$environment->parse( $environment->tokenize( $environment->getLoader()->getSourceContext( $template ) ) );
+		++$checked;
+	}
+
+	return $checked;
+}
+
 $helpers = new Twig();
 
 emulsify_attribute_helper_assert_same(
@@ -128,7 +226,15 @@ if ( is_readable( $autoload ) ) {
 	require_once $autoload;
 }
 
-if ( class_exists( \Twig\Environment::class ) && class_exists( \Twig\Loader\ArrayLoader::class ) && class_exists( \Twig\TwigFunction::class ) ) {
+$templates_dir = __DIR__ . '/../../templates';
+emulsify_attribute_helper_assert_parent_templates_use_helpers( $templates_dir );
+
+if (
+	class_exists( \Twig\Environment::class )
+	&& class_exists( \Twig\Loader\ArrayLoader::class )
+	&& class_exists( \Twig\Loader\FilesystemLoader::class )
+	&& class_exists( \Twig\TwigFunction::class )
+) {
 	$environment = new \Twig\Environment(
 		new \Twig\Loader\ArrayLoader(
 			array(
@@ -146,7 +252,9 @@ if ( class_exists( \Twig\Environment::class ) && class_exists( \Twig\Loader\Arra
 		$environment->render( 'fixture' )
 	);
 
-	echo "Attribute helper smoke checks passed with Twig fixture rendering.\n";
+	$parsed = emulsify_attribute_helper_parse_parent_templates( $helpers, $templates_dir );
+
+	echo sprintf( "Attribute helper smoke checks passed with Twig fixture rendering and %d parent template parse checks.\n", $parsed );
 	exit( 0 );
 }
 

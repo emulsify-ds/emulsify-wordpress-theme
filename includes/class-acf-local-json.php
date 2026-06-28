@@ -19,6 +19,8 @@ final class Acf_Local_JSON {
 	 */
 	public function register(): void {
 		if ( ! $this->acf_available() ) {
+			// ACF is optional. Register no hooks until an ACF API marker exists so
+			// the parent theme can run cleanly on sites without the plugin.
 			return;
 		}
 
@@ -56,6 +58,8 @@ final class Acf_Local_JSON {
 		$save_path = $this->configured_save_path();
 
 		if ( '' === $save_path ) {
+			// If the configured directory is missing, leave ACF's default Local JSON
+			// behavior untouched instead of creating paths implicitly.
 			return $paths;
 		}
 

@@ -91,6 +91,8 @@ final class AttributeBag implements \Stringable {
 
 		if ( 'class' === $attribute_name ) {
 			$class_string = is_string( $value ) ? self::parseClassAttributeString( $value ) : null;
+			// Support legacy helper calls that pass class="foo bar" while storing
+			// classes internally as tokens for safe merging and deduplication.
 			$this->addClass( null !== $class_string ? $class_string : $value );
 			return $this;
 		}
@@ -181,6 +183,8 @@ final class AttributeBag implements \Stringable {
 			}
 
 			if ( true === $value ) {
+				// Boolean HTML attributes such as "disabled" should render without a
+				// value. False/null were already filtered during normalization.
 				$output[] = $name;
 				continue;
 			}

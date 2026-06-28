@@ -52,12 +52,17 @@ final class Editor_Policy {
 		$filtered = apply_filters( 'emulsify_theme_allowed_block_types', $blocks, $post_type, $context, $allowed_block_types, $options );
 
 		if ( null === $filtered || ! is_array( $filtered ) ) {
+			// Null is the "no opinion" value. Returning the incoming WordPress value
+			// preserves default editor behavior unless a child theme configures a policy.
 			return $allowed_block_types;
 		}
 
 		$blocks = $this->normalize_block_names( $filtered );
 
 		if ( ! empty( $options['auto_allow_pattern_blocks'] ) ) {
+			// Pattern JSON can reference supporting blocks that are easy to forget
+			// in a manual allow list. This opt-in merge prevents configured patterns
+			// from becoming impossible to insert.
 			$blocks = array_merge( $blocks, $this->pattern_block_names( $options ) );
 		}
 
@@ -86,6 +91,8 @@ final class Editor_Policy {
 		$disable_user_patterns = ! empty( $options['disable_user_patterns_for_non_admins'] );
 
 		if ( $disable_user_patterns && ! $this->current_user_can( (string) $options['admin_capability'] ) ) {
+			// WordPress still registers project/theme patterns; this only hides the
+			// user-created pattern UI for users below the configured capability.
 			$settings['enableUserPatterns'] = false;
 		}
 
@@ -464,6 +471,8 @@ final class Editor_Policy {
 			return array();
 		}
 
+		// Pattern content is serialized Gutenberg markup. Pull names from block
+		// comments instead of parsing rendered HTML, which would miss dynamic blocks.
 		return $this->normalize_block_names( $matches[1] );
 	}
 
@@ -501,6 +510,8 @@ final class Editor_Policy {
 
 		foreach ( array( '*', $block_name ) as $key ) {
 			if ( isset( $overrides[ $key ] ) && is_array( $overrides[ $key ] ) ) {
+				// Apply global overrides first and block-specific overrides second so
+				// a child theme can set broad defaults with targeted exceptions.
 				$settings = $this->merge_override( $settings, $overrides[ $key ] );
 			}
 		}

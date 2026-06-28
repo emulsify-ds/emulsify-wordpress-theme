@@ -50,6 +50,9 @@ final class Twig {
 			),
 			$this->project_structure_namespaces(),
 			array(
+				// @components remains a compatibility namespace for component
+				// systems and existing projects that have not moved to
+				// project_machine_name:component references.
 				array(
 					'namespace' => 'components',
 					'path'      => get_stylesheet_directory() . '/src/components',
@@ -255,6 +258,9 @@ final class Twig {
 			|| 0 === strpos( $path, '/' )
 			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
 		) {
+			// project.emulsify.json paths are child-theme relative. Reject
+			// absolute paths and traversal so configuration cannot expose
+			// arbitrary server files as Twig namespaces.
 			return '';
 		}
 
@@ -644,6 +650,8 @@ final class Twig {
 				$filename = end( $parts ) . '.twig';
 
 				foreach ( $this->roots as $root ) {
+					// Support the single-directory component convention first, then the
+					// older flat component.twig form. Roots are already child-first.
 					foreach ( array( $component . '/' . $filename, $component . '.twig' ) as $relative ) {
 						$path = $root . '/' . $relative;
 
@@ -674,6 +682,9 @@ final class Twig {
 				$component = substr( $name, strlen( $this->prefix ) );
 
 				if ( 1 !== preg_match( '/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)?$/', $component ) ) {
+					// Keep project component references intentionally shallow:
+					// component-name or group/component-name. Legacy deep paths are
+					// still available through explicit @namespace configuration.
 					return null;
 				}
 

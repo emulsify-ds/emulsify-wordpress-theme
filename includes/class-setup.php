@@ -86,11 +86,15 @@ final class Setup {
 		}
 
 		if ( ! empty( $options['textdomain']['domain'] ) && ! empty( $options['textdomain']['path'] ) ) {
+			// The parent text domain stays "emulsify"; generated child themes can
+			// load their own text domain from child functions.php when needed.
 			load_theme_textdomain( (string) $options['textdomain']['domain'], (string) $options['textdomain']['path'] );
 		}
 
 		foreach ( $options['theme_supports'] ?? array() as $feature => $support_options ) {
 			if ( false === $support_options ) {
+				// A false value gives child themes a simple way to opt out of one
+				// parent support without replacing the full setup service.
 				continue;
 			}
 

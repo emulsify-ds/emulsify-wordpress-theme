@@ -1,11 +1,18 @@
+{# Last-resort post listing fallback. More specific route controllers can pass
+   front-page/home/search/archive templates before this one. #}
 {% extends '@templates/layouts/base.twig' %}
+
+{% set entry_list_attributes = {
+    class: bem('entry-list')
+} %}
 
 {% block content %}
     {% set entries = posts|default([]) %}
 
     {% if entries is not empty %}
-        <div class="entry-list">
+        <div {{ add_attributes(entry_list_attributes) }}>
             {% for post in entries %}
+                {# Prefer a post-type-specific teaser partial before generic teaser markup. #}
                 {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
                     post: post
                 } only %}
@@ -20,6 +27,6 @@
             })
         } only %}
     {% else %}
-        <p>No posts were found.</p>
+        <p>{{ function('__', 'No posts were found.', 'emulsify') }}</p>
     {% endif %}
 {% endblock %}

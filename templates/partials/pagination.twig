@@ -1,26 +1,69 @@
+{# Timber pagination fallback. Route templates pass a pagination object created
+   from posts.pagination(). #}
 {% set pages = pagination.pages|default([]) %}
+{% set pagination_attributes = {
+    class: bem('pagination'),
+    'aria-label': function('__', 'Pagination', 'emulsify')
+} %}
+{% set pagination_items_attributes = {
+    class: bem('items', [], 'pagination')
+} %}
 {% if pages is not empty %}
-    <nav class="pagination" aria-label="Pagination">
-        <ul class="pagination__items">
+    <nav {{ add_attributes(pagination_attributes) }}>
+        <ul {{ add_attributes(pagination_items_attributes) }}>
             {% if pagination.prev|default(null) %}
-                <li class="pagination__item pagination__item--previous">
-                    <a class="pagination__link" href="{{ pagination.prev.link }}">Previous</a>
+                {% set previous_item_attributes = {
+                    class: bem('item', ['previous'], 'pagination')
+                } %}
+                {% set previous_link_attributes = {
+                    class: bem('link', [], 'pagination'),
+                    href: pagination.prev.link
+                } %}
+                <li {{ add_attributes(previous_item_attributes) }}>
+                    <a {{ add_attributes(previous_link_attributes) }}>{{ function('__', 'Previous', 'emulsify') }}</a>
                 </li>
             {% endif %}
 
             {% for page in pages %}
-                <li class="pagination__item{% if page.current|default(false) %} pagination__item--current{% endif %}">
+                {% set page_item_attributes = {
+                    class: bem('item', [page.current|default(false) ? 'current' : ''], 'pagination')
+                } %}
+                {% if page.link|default(null) %}
+                    {% set page_link_attributes = {
+                        class: [
+                            bem('link', [], 'pagination'),
+                            page.class|default('')
+                        ],
+                        href: page.link
+                    } %}
+                {% else %}
+                    {% set page_link_attributes = {
+                        class: [
+                            bem('link', [], 'pagination'),
+                            page.class|default('')
+                        ],
+                        'aria-current': 'page'
+                    } %}
+                {% endif %}
+                <li {{ add_attributes(page_item_attributes) }}>
                     {% if page.link|default(null) %}
-                        <a class="pagination__link {{ page.class|default('') }}" href="{{ page.link }}">{{ page.title }}</a>
+                        <a {{ add_attributes(page_link_attributes) }}>{{ page.title }}</a>
                     {% else %}
-                        <span class="pagination__link {{ page.class|default('') }}" aria-current="page">{{ page.title }}</span>
+                        <span {{ add_attributes(page_link_attributes) }}>{{ page.title }}</span>
                     {% endif %}
                 </li>
             {% endfor %}
 
             {% if pagination.next|default(null) %}
-                <li class="pagination__item pagination__item--next">
-                    <a class="pagination__link" href="{{ pagination.next.link }}">Next</a>
+                {% set next_item_attributes = {
+                    class: bem('item', ['next'], 'pagination')
+                } %}
+                {% set next_link_attributes = {
+                    class: bem('link', [], 'pagination'),
+                    href: pagination.next.link
+                } %}
+                <li {{ add_attributes(next_item_attributes) }}>
+                    <a {{ add_attributes(next_link_attributes) }}>{{ function('__', 'Next', 'emulsify') }}</a>
                 </li>
             {% endif %}
         </ul>

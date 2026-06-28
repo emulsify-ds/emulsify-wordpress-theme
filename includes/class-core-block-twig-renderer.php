@@ -43,6 +43,8 @@ final class Core_Block_Twig_Renderer {
 		$template = $this->template_for_block( $block_name, $block );
 
 		if ( '' === $template ) {
+			// Unmapped blocks keep WordPress' original HTML, which protects block
+			// validation and frontend output unless a project opts in block-by-block.
 			return $block_content;
 		}
 
@@ -54,6 +56,8 @@ final class Core_Block_Twig_Renderer {
 			$context = $this->context( $block, $block_content, $instance, $template );
 			$html    = \Timber\Timber::compile( $template, $context );
 		} catch ( \Throwable $throwable ) {
+			// Rendering failures should not blank content. Editors get diagnostics
+			// when allowed; visitors continue to receive WordPress' rendered block.
 			return $this->render_error( $block_content, $throwable->getMessage(), $block, $template );
 		}
 
@@ -102,6 +106,9 @@ final class Core_Block_Twig_Renderer {
 
 		$attributes = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
 
+		// Keep WordPress' original rendered content available to Twig templates so
+		// mapped blocks can wrap or progressively replace markup instead of being
+		// forced into an all-or-nothing rewrite.
 		$context['block']          = $block;
 		$context['block_metadata'] = $block;
 		$context['block_name']     = $this->block_name( $block );
@@ -235,6 +242,8 @@ final class Core_Block_Twig_Renderer {
 
 		foreach ( $this->theme_roots() as $root ) {
 			if ( is_readable( rtrim( $root, '/\\' ) . '/' . $template ) ) {
+				// Return the theme-relative path because Timber resolves templates
+				// through its configured child/parent loaders.
 				return $template;
 			}
 		}
@@ -303,6 +312,8 @@ final class Core_Block_Twig_Renderer {
 		$processor = new \WP_HTML_Tag_Processor( $html );
 
 		while ( $processor->next_tag() ) {
+			// Prefer WordPress' HTML API over regular expressions so class cleanup
+			// does not corrupt nested markup or attributes.
 			foreach ( $classes as $class_name ) {
 				$processor->remove_class( $class_name );
 			}

@@ -44,6 +44,8 @@ final class Native_Blocks {
 	 */
 	public function register_blocks(): void {
 		if ( ! function_exists( 'register_block_type' ) ) {
+			// Older or incomplete WordPress contexts may not expose the Block API.
+			// Smoke tests can still load the class without registering anything.
 			return;
 		}
 
@@ -76,6 +78,8 @@ final class Native_Blocks {
 			$name = ! empty( $component['name'] ) && is_scalar( $component['name'] ) ? trim( (string) $component['name'] ) : '';
 
 			if ( '' !== $name && isset( $seen_names[ $name ] ) ) {
+				// Filters may merge or rename block directories. Keep the first
+				// discovered name and surface later duplicates only in debug/admin contexts.
 				$skipped[] = array(
 					'type'    => 'native_filtered_block_name',
 					'name'    => $name,

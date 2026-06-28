@@ -1,20 +1,31 @@
+{# Recursive menu partial for Timber menu item trees. #}
 {% set menu_items = items|default([]) %}
+{% set menu_attributes = {
+    class: menu_class|default('menu')
+} %}
 {% if menu_items is not empty %}
-    <ul class="{{ menu_class|default('menu') }}">
+    <ul {{ add_attributes(menu_attributes) }}>
         {% for item in menu_items %}
             {% set children = item.children|default([]) %}
-            <li {{ add_attributes({
+            {% set item_attributes = {
                 class: [
-                    'menu__item',
-                    item.classes|default([]),
-                    children is not empty ? 'menu__item--has-children' : ''
+                    bem('item', [children is not empty ? 'has-children' : ''], 'menu'),
+                    item.classes|default([])
                 ]
-            }) }}>
-                <a class="menu__link" href="{{ item.link|default('#') }}"{% if item.target|default(null) %} target="{{ item.target }}" rel="noopener"{% endif %}>
+            } %}
+            {% set link_attributes = {
+                class: bem('link', [], 'menu'),
+                href: item.link|default('#'),
+                target: item.target|default(null),
+                rel: item.target|default(null) ? 'noopener' : null
+            } %}
+            <li {{ add_attributes(item_attributes) }}>
+                <a {{ add_attributes(link_attributes) }}>
                     {{ item.title|default('') }}
                 </a>
 
                 {% if children is not empty %}
+                    {# Render submenu items with the same markup contract. #}
                     {% include '@templates/partials/menu.twig' with {
                         items: children,
                         menu_class: 'menu menu--sub'

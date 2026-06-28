@@ -31,6 +31,8 @@ final class Editor_Enhancements {
 	public function editor_assets(): void {
 		$config = $this->config();
 
+		// The parent ships the enqueue/runtime support only. A child theme or
+		// selected component system decides whether any editor bundle exists.
 		foreach ( $this->asset_files( 'dist/global/editor', array( 'css' ) ) as $asset ) {
 			wp_enqueue_style(
 				$this->handle( 'emulsify-editor', $asset['relative'] ),
@@ -55,6 +57,8 @@ final class Editor_Enhancements {
 
 			wp_add_inline_script(
 				$handle,
+				// Expose the normalized PHP config before the editor bundle runs so
+				// modules can stay declarative and filter-driven.
 				'window.emulsifyEditorEnhancements = ' . $this->json_encode( $config ) . ';',
 				'before'
 			);
@@ -136,6 +140,8 @@ final class Editor_Enhancements {
 		);
 
 		if ( preg_match( '/<\/div>\s*$/i', $block_content ) ) {
+			// core/file normally renders a wrapper div. Append inside that wrapper
+			// so the caption inherits block spacing and editor/frontend styling.
 			$filtered = preg_replace( '/<\/div>\s*$/i', $caption_html . '</div>', $block_content, 1 );
 
 			return is_string( $filtered ) ? $filtered : $block_content;
@@ -348,6 +354,8 @@ final class Editor_Enhancements {
 			$key  = realpath( $path );
 
 			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
+				// Missing editor build output is normal for an agnostic starter. Only
+				// enqueue assets after a project has opted into building them.
 				continue;
 			}
 

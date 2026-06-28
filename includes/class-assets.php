@@ -118,10 +118,15 @@ final class Assets {
 				$relative = $this->relative_path( $root['path'], $file->getPathname() );
 
 				if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
+					// Editor-only assets are handled by Editor_Enhancements so they
+					// receive editor dependencies and configuration before enqueue.
 					continue;
 				}
 
 				if ( isset( $seen[ $relative ] ) ) {
+					// Discovery roots are child-first. Once a relative path is seen,
+					// later parent files with the same name are intentional fallbacks
+					// and should not be enqueued twice.
 					continue;
 				}
 
@@ -210,6 +215,8 @@ final class Assets {
 			$key  = realpath( $path );
 
 			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
+				// Ignore missing build directories silently. Generated child themes
+				// may not have installed a component system or produced Vite output yet.
 				continue;
 			}
 

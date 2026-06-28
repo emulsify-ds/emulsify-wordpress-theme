@@ -12,8 +12,15 @@ namespace Emulsify\Theme;
  */
 final class Cli {
 
+	/**
+	 * Bundled starter child theme directory.
+	 */
 	private const STARTER_SLUG = 'whisk';
 
+	/**
+	 * Dependency/cache/build paths that should never be copied into a generated
+	 * child theme.
+	 */
 	private const EXCLUDED_COPY_PATHS = array(
 		'.git',
 		'.coverage',
@@ -210,6 +217,9 @@ final class Cli {
 		$machine_name = $config['machine_name'];
 		$parent       = $config['parent'];
 
+		// Update known metadata surfaces deliberately. Avoid blind recursive text
+		// replacement so example prose, generated assets, and project content are
+		// not mutated unexpectedly.
 		$this->collect_text_update(
 			$updates,
 			$root,
@@ -282,6 +292,8 @@ final class Cli {
 		$pattern_dir = $this->join_path( $root, 'patterns' );
 
 		if ( ! is_dir( $pattern_dir ) ) {
+			// Patterns are optional in Whisk. Empty generated themes should not pay
+			// a filesystem or warning cost for a feature they have not adopted.
 			return;
 		}
 
@@ -533,6 +545,8 @@ final class Cli {
 			return true;
 		}
 
+		// --force removal is scoped to the computed child theme destination. The
+		// generator validates that destination before this method is called.
 		if ( is_file( $path ) || is_link( $path ) ) {
 			return unlink( $path );
 		}
@@ -595,6 +609,8 @@ final class Cli {
 
 		foreach ( $parts as $part ) {
 			if ( in_array( $part, self::EXCLUDED_COPY_PATHS, true ) ) {
+				// Match any path segment so nested dependencies and generated build
+				// output cannot leak into a new project child theme.
 				return true;
 			}
 		}

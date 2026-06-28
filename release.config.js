@@ -1,4 +1,7 @@
 const parserOpts = {
+  // semantic-release's default parser does not treat "feat!:" consistently
+  // across the release lines this project supports, so keep the breaking-change
+  // header patterns explicit.
   headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!?: (.*)$/,
   headerCorrespondence: ['type', 'scope', 'subject'],
   breakingHeaderPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?!: (.*)$/,
@@ -42,6 +45,8 @@ function isAtLeastVersion(version, minimumVersion) {
 
 const expectedStableReleaseGuard = {
   verifyRelease(pluginConfig, { branch, lastRelease = {}, nextRelease }) {
+    // The 2.x release branch prepares the stable 2.0.0 baseline. After that
+    // baseline exists, normal semantic-release versioning can continue.
     if (branch.name !== 'main' || isAtLeastVersion(lastRelease.version, expectedStableRelease)) {
       return;
     }

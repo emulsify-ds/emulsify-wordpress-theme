@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Static release contract checks plus optional WordPress fixture smoke coverage.
+// This script makes release assumptions executable so broad refactors do not
+// silently drop a parent-theme hook, generated child convention, or CI guarantee.
+
 const fs = require('fs');
 const path = require('path');
 const childProcess = require('child_process');
@@ -30,6 +34,8 @@ function semver(value) {
 }
 
 function runStaticCheck(name, callback) {
+  // Static checks intentionally inspect files as text. They catch packaging and
+  // documentation regressions without needing a full WordPress install.
   try {
     const detail = callback();
     addResult('PASS', name, detail);
@@ -40,6 +46,8 @@ function runStaticCheck(name, callback) {
 }
 
 function runCommandCheck(name, command, args) {
+  // Command checks are reserved for smoke paths that already know how to skip
+  // when local prerequisites such as WP-CLI or MySQL are absent.
   const result = childProcess.spawnSync(command, args, {
     cwd: repoRoot,
     encoding: 'utf8',

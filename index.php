@@ -14,9 +14,15 @@
 
 use Timber\Timber;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $templates = array( '@templates/index.twig' );
 
 if ( is_home() ) {
+	// Prefer WordPress' blog/front-page Twig names before the generic index
+	// fallback, matching the PHP template hierarchy without duplicate files.
 	array_unshift( $templates, '@templates/front-page.twig', '@templates/home.twig' );
 }
 

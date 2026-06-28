@@ -7,11 +7,16 @@
 
 use Timber\Timber;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 $templates = array( '@templates/search.twig', '@templates/archive.twig', '@templates/index.twig' );
 
 $context = Timber::context(
 	array(
-		'title' => 'Search results for ' . get_search_query(),
+		/* translators: %s is the search query. */
+		'title' => sprintf( __( 'Search results for %s', 'emulsify' ), get_search_query() ),
 	)
 );
 

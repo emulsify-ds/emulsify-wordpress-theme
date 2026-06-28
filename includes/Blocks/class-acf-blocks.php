@@ -42,6 +42,8 @@ final class Acf_Blocks {
 	 */
 	public function register(): void {
 		if ( ! function_exists( 'acf_register_block_type' ) ) {
+			// ACF block registration is optional; no hooks are registered when ACF is
+			// unavailable so non-ACF projects keep the same runtime behavior.
 			return;
 		}
 
@@ -107,6 +109,8 @@ final class Acf_Blocks {
 			$name         = $this->block_name( $args );
 
 			if ( '' !== $name && isset( $seen_names[ $name ] ) ) {
+				// Duplicate names can happen after filters alter metadata. Register
+				// the first child-first record and report the skipped one in debug.
 				$this->record_skipped_duplicate(
 					'acf_block_name',
 					$name,
@@ -189,6 +193,8 @@ final class Acf_Blocks {
 		$context['is_preview'] = (bool) $is_preview;
 
 		try {
+			// ACF expects render_callback output directly. Timber::render echoes the
+			// template, matching ACF's callback contract.
 			\Timber\Timber::render( $template, $context );
 		} catch ( \Throwable $throwable ) {
 			$this->render_error( $throwable->getMessage() );
@@ -439,6 +445,8 @@ final class Acf_Blocks {
 	 */
 	private function render_error( string $message ): void {
 		if ( function_exists( 'current_user_can' ) && ! current_user_can( 'edit_posts' ) ) {
+			// Block errors are authoring diagnostics. Avoid showing implementation
+			// details to normal frontend visitors.
 			return;
 		}
 

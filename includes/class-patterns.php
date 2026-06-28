@@ -124,6 +124,8 @@ final class Patterns {
 				}
 
 				if ( isset( $seen_relative[ $relative ] ) ) {
+					// Directories are scanned child-first. A child JSON file with the
+					// same basename intentionally overrides the parent starter file.
 					$this->debug(
 						sprintf(
 							'Skipped duplicate block pattern JSON file "%s" from %s.',
@@ -270,6 +272,8 @@ final class Patterns {
 		$content = $this->string_value( $data['content'] ?? null );
 
 		if ( '' === $name || '' === $title || '' === $content ) {
+			// Invalid JSON should never break a site. Keep diagnostics behind
+			// WP_DEBUG so production visitors do not see authoring mistakes.
 			$this->debug( sprintf( 'Skipped invalid block pattern JSON file: %s.', $file['path'] ) );
 			return null;
 		}
@@ -376,6 +380,8 @@ final class Patterns {
 				}
 
 				$categories[ $category ] = array(
+					// WordPress requires a label when registering a category. Use a
+					// readable default and let projects refine it through the filter.
 					'label'       => $this->label_from_slug( $category ),
 					'description' => '',
 				);

@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Practical PR gate for checks that do not need a database-backed WordPress
+// install. The Whisk starter is installed but not built because a generated
+// child theme intentionally fails Vite until a component system is installed.
+
 const childProcess = require('child_process');
 const path = require('path');
 
