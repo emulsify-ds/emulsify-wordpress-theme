@@ -1,6 +1,6 @@
 # Timber and Twig authoring
 
-Timber provides the bridge between WordPress data and Twig templates. Emulsify Wordpress keeps Twig authoring predictable by registering a small set of namespaces and helper functions from the parent theme.
+Timber provides the bridge between WordPress data and Twig templates. Emulsify WordPress keeps Twig authoring predictable by registering a small set of namespaces and helper functions from the parent theme.
 
 ## Bedrock and Timber
 

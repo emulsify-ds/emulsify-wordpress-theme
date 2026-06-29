@@ -1,12 +1,12 @@
 # Sister-project parity contract
 
-Emulsify Wordpress is the WordPress sister project to Emulsify Drupal. The projects should feel familiar to teams moving between CMS platforms while preserving the runtime conventions each CMS expects.
+Emulsify WordPress is the WordPress sister project to Emulsify Drupal. The projects should feel familiar to teams moving between CMS platforms while preserving the runtime conventions each CMS expects.
 
 This contract defines the shared Emulsify model first, then the intentional WordPress differences.
 
 ## Shared Emulsify contract
 
-Emulsify Wordpress and Emulsify Drupal share the same project boundary:
+Emulsify WordPress and Emulsify Drupal share the same project boundary:
 
 - The parent theme owns reusable CMS runtime behavior.
 - The generated child theme owns project implementation.
@@ -33,7 +33,7 @@ WordPress should load built child theme output before parent fallback output. A 
 
 ## Intentional WordPress differences
 
-Emulsify Wordpress is not a Drupal runtime port. It keeps parity at the Emulsify project-model layer and uses WordPress-native integration where WordPress needs it.
+Emulsify WordPress is not a Drupal runtime port. It keeps parity at the Emulsify project-model layer and uses WordPress-native integration where WordPress needs it.
 
 ### Timber runtime
 

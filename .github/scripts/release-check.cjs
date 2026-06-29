@@ -178,15 +178,11 @@ function ensureNoTitleCaseBuildPhrase(label, value) {
   ensure(!/Webpack Build|Vite Build/.test(value), `${label} should not use title-case build workflow phrases.`);
 }
 
+const incorrectWordPressPattern = new RegExp('Word' + 'press');
+
 function ensureWordPressLanguage(label, value) {
-  const normalizedValue = normalizeProductTitle(value);
-
-  ensure(normalizedValue.includes('WordPress'), `${label} should use the canonical WordPress spelling.`);
-  ensure(!/Wordpress/.test(normalizedValue), `${label} should not use Wordpress outside the Emulsify Wordpress product title.`);
-}
-
-function normalizeProductTitle(value) {
-  return String(value).replace(/\bEmulsify Wordpress\b/g, 'Emulsify WordPress');
+  ensure(value.includes('WordPress'), `${label} should use the canonical WordPress spelling.`);
+  ensure(!incorrectWordPressPattern.test(value), `${label} should use the canonical WordPress spelling.`);
 }
 
 function ensureViteLanguage(label, value) {
@@ -834,8 +830,8 @@ function runStaticChecks() {
       'docs/release-process.md',
     ];
 
-    ensure(readme.includes('Emulsify Wordpress 2.0.0 is a Timber-first WordPress parent theme'), 'README.md should describe the 2.0.0 Timber-first parent theme.');
-    ensure(readme.includes('Emulsify Wordpress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
+    ensure(readme.includes('Emulsify WordPress 2.0.0 is a Timber-first WordPress parent theme'), 'README.md should describe the 2.0.0 Timber-first parent theme.');
+    ensure(readme.includes('Emulsify WordPress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
     ensure(readme.includes('[LICENSE](LICENSE)'), 'README.md should link to the repository license file.');
     ensure(readme.includes('## Requirements'), 'README.md should keep requirements visible.');
     ensure(readme.includes('## Quick install'), 'README.md should keep quick install guidance visible.');
@@ -851,8 +847,8 @@ function runStaticChecks() {
       ensure(readme.includes(docLink), `README.md should link to ${docLink}.`);
     }
 
-    ensure(docs.upgrading.includes('Emulsify Wordpress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
-    ensure(docs.parity.includes('Emulsify Wordpress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
+    ensure(docs.upgrading.includes('Emulsify WordPress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
+    ensure(docs.parity.includes('Emulsify WordPress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
     ensure(docs.parity.includes('The parent theme owns reusable CMS runtime behavior'), 'Sister-project parity doc should define parent runtime ownership.');
     ensure(docs.parity.includes('The generated child theme owns project implementation'), 'Sister-project parity doc should define child theme ownership.');
     ensure(docs.parity.includes('Whisk is the starter'), 'Sister-project parity doc should define Whisk as the starter.');
@@ -918,7 +914,7 @@ function runStaticChecks() {
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');
     ensure(!/Webpack/i.test(`${readme}\n${docsText}`), 'Docs should not mention Webpack.');
-    ensure(!/Wordpress/.test(normalizeProductTitle(`${readme}\n${docsText}`)), 'Docs should use the canonical WordPress spelling outside the Emulsify Wordpress product title.');
+    ensure(!incorrectWordPressPattern.test(`${readme}\n${docsText}`), 'Docs should use the canonical WordPress spelling.');
     ensure(issueTemplate.includes('emulsify-wordpress/releases'), 'Issue template should link to WordPress theme releases.');
     ensure(pullRequestTemplate.includes('emulsify-wordpress/issues/1'), 'Pull request template should link to WordPress theme issues.');
     ensure(!/emulsify-drupal/.test(`${issueTemplate}\n${pullRequestTemplate}`), 'GitHub templates should not link to the Drupal repository.');
