@@ -99,3 +99,5 @@ add_filter(
 ```
 
 Generated child themes include an empty `patterns` placeholder, but no content patterns by default. If a project adds JSON patterns under `whisk/patterns`, the generator rewrites pattern names from the `whisk/` namespace to the generated child theme machine name.
+
+See [Component recipes](component-recipes.md) for a short pattern example and guidance on when a pattern is a better fit than a custom block.

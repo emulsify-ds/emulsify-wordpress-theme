@@ -258,8 +258,10 @@ function runStaticChecks() {
     architecture: readFile('docs/parent-child-architecture.md'),
     twig: readFile('docs/timber-and-twig-authoring.md'),
     workflow: readFile('docs/core-4-vite-workflow.md'),
+    componentRecipes: readFile('docs/component-recipes.md'),
     acfJson: readFile('docs/acf-local-json.md'),
     acfBlocks: readFile('docs/acf-twig-blocks.md'),
+    coreBlockTwig: readFile('docs/core-block-twig-rendering.md'),
     nativeBlocks: readFile('docs/native-gutenberg-blocks.md'),
     blockPatterns: readFile('docs/block-patterns.md'),
     editorEnhancements: readFile('docs/editor-enhancements.md'),
@@ -302,6 +304,8 @@ function runStaticChecks() {
       'docs/acf-twig-blocks.md',
       'docs/asset-loading.md',
       'docs/block-patterns.md',
+      'docs/component-recipes.md',
+      'docs/core-block-twig-rendering.md',
       'docs/core-4-vite-workflow.md',
       'docs/editor-enhancements.md',
       'docs/native-gutenberg-blocks.md',
@@ -849,6 +853,7 @@ function runStaticChecks() {
       'docs/editor-policy.md',
       'docs/asset-loading.md',
       'docs/wp-cli-child-theme-generation.md',
+      'docs/component-recipes.md',
       'docs/release-process.md',
     ];
 
@@ -869,6 +874,7 @@ function runStaticChecks() {
     ensure(readme.includes('generatedFrom') && readme.includes('generatedFromVersion'), 'README.md should explain generated child theme source metadata.');
     ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
+    ensure(readme.includes('docs/component-recipes.md'), 'README.md should link to component recipes.');
     ensure(readme.includes('Normal PR checks do not start MySQL or run the full WordPress fixture'), 'README.md should distinguish practical PR checks from the full fixture.');
     ensure(readme.includes('GitHub Actions > `WordPress Theme Readiness`'), 'README.md should tell maintainers where to run the manual fixture workflow.');
     ensure(readme.includes('WP_SMOKE_REQUIRED=1'), 'README.md should document required WordPress fixture smoke behavior.');
@@ -908,6 +914,7 @@ function runStaticChecks() {
     ensure(docs.twig.includes('Install or author project components in the structure defined by the selected Emulsify component system'), 'Twig doc should avoid prescribing a component source structure.');
     ensure(docs.twig.includes('The general form is `project_machine_name:component_name`'), 'Twig doc should document the generic project component include form.');
     ensure(docs.twig.includes('The legacy `@components/example-card/example-card.twig` namespace remains supported for compatible component libraries'), 'Twig doc should preserve @components compatibility language.');
+    ensure(docs.twig.includes('[Component recipes](component-recipes.md)'), 'Twig doc should link to component recipes.');
     ensure(docs.twig.includes('emulsify_theme_context'), 'Twig doc should document context extension.');
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
     ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
@@ -916,15 +923,27 @@ function runStaticChecks() {
     ensure(docs.workflow.includes('assets/images') && docs.workflow.includes('assets/icons'), 'Core 4 workflow doc should document generic starter asset directories.');
     ensure(docs.workflow.includes('does not include a child `theme.json` by default'), 'Core 4 workflow doc should document the child theme.json convention.');
     ensure(docs.workflow.includes('The following shape is an example of a compatible component, not files shipped by Whisk'), 'Core 4 workflow doc should keep component examples documentation-only.');
+    ensure(docs.workflow.includes('[Component recipes](component-recipes.md)'), 'Core 4 workflow doc should link to component recipes.');
     ensure(docs.workflow.includes('{% include "project_machine_name:component_name" %}') && docs.workflow.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Core 4 workflow doc should promote generic project machine-name component includes while preserving @components compatibility.');
+    ensure(docs.componentRecipes.includes('not files that must ship in every starter'), 'Component recipes doc should keep examples documentation-only.');
+    ensure(docs.componentRecipes.includes('Do not add a full component library to `whisk/src/components`'), 'Component recipes doc should avoid adding active starter components to Whisk.');
+    ensure(docs.componentRecipes.includes('src/components/card/card.twig'), 'Component recipes doc should include a Twig component example.');
+    ensure(docs.componentRecipes.includes('src/components/card/card.stories.js'), 'Component recipes doc should include a Storybook story example.');
+    ensure(docs.componentRecipes.includes('src/components/card/card.component.json'), 'Component recipes doc should include an ACF/Twig component metadata example.');
+    ensure(docs.componentRecipes.includes('src/components/card/block.json'), 'Component recipes doc should include a native block metadata example.');
+    ensure(docs.componentRecipes.includes('patterns/card-feature.json'), 'Component recipes doc should include a pattern JSON example.');
+    ensure(docs.componentRecipes.includes('Use core block Twig rendering only'), 'Component recipes doc should explain core block Twig rendering use.');
     ensure(docs.acfJson.includes('config/acf-json'), 'ACF Local JSON doc should document the child theme JSON path.');
     ensure(docs.acfJson.includes('emulsify_theme_acf_json_save_path'), 'ACF Local JSON doc should document the save path filter.');
     ensure(docs.acfJson.includes('commit ACF JSON files'), 'ACF Local JSON doc should tell project teams to commit ACF JSON.');
     ensure(docs.acfBlocks.includes('Whisk does not include an active ACF/Twig block example'), 'ACF/Twig blocks doc should explain that starter metadata is documentation-only.');
+    ensure(docs.acfBlocks.includes('[Component recipes](component-recipes.md)'), 'ACF/Twig blocks doc should link to component recipes.');
     ensure(docs.acfBlocks.includes('emulsify_theme_acf_block_args'), 'ACF/Twig blocks doc should document the block args filter.');
     ensure(docs.nativeBlocks.includes('The starter does not include an active native block example'), 'Native blocks doc should avoid over-claiming a native example.');
+    ensure(docs.nativeBlocks.includes('[Component recipes](component-recipes.md)'), 'Native block doc should link to component recipes.');
     ensure(docs.nativeBlocks.includes('emulsify_theme_native_block_directories'), 'Native blocks doc should document the native block directories filter.');
     ensure(docs.blockPatterns.includes('patterns/*.json'), 'Block patterns doc should document JSON pattern discovery.');
+    ensure(docs.blockPatterns.includes('[Component recipes](component-recipes.md)'), 'Block patterns doc should link to component recipes.');
     ensure(docs.blockPatterns.includes('emulsify_theme_pattern_directories'), 'Block patterns doc should document directory filtering.');
     ensure(docs.blockPatterns.includes('emulsify_theme_pattern_args'), 'Block patterns doc should document final args filtering.');
     ensure(docs.editorEnhancements.includes('emulsify_theme_editor_enhancements_config'), 'Editor enhancements doc should document the config filter.');
@@ -936,6 +955,7 @@ function runStaticChecks() {
     ensure(docs.editorPolicy.includes('auto_allow_pattern_blocks'), 'Editor policy doc should document pattern JSON auto-allow behavior.');
     ensure(docs.editorPolicy.includes('emulsify_theme_block_support_overrides'), 'Editor policy doc should document block support overrides.');
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
+    ensure(docs.coreBlockTwig.includes('[Component recipes](component-recipes.md)'), 'Core block Twig rendering doc should link to component recipes.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');
     ensure(docs.cli.includes('Upgrade and support diagnostics') && docs.cli.includes('generatedFromVersion'), 'WP-CLI doc should document generated child theme lineage diagnostics.');

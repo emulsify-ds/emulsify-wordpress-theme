@@ -61,6 +61,8 @@ Use `emulsify_theme_project_component_roots` to adjust roots for `project_machin
 
 Root-level `components` and `src/components` directories are compatibility paths, not starter requirements. Do not remove existing `@components` includes during migration; both forms are supported.
 
+See [Component recipes](component-recipes.md) for a small Twig component and Storybook story example that can be added to a generated child theme.
+
 ## Component-system namespaces
 
 For legacy `@namespace/path/to/template.twig` references that should work in both Emulsify Core and WordPress, configure the namespace roots in `project.emulsify.json` with Core's existing `variant.structureImplementations` shape:

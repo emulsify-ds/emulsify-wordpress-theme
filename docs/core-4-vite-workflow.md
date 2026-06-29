@@ -76,6 +76,8 @@ src/components/example-card/
 
 Project teams should add, rename, or remove component files according to the selected component system and project naming model. This parent theme does not require a button component or any specific foundation, layout, or token Sass files.
 
+See [Component recipes](component-recipes.md) for small Twig, Storybook, ACF/Twig, native block, and pattern examples that can be copied into a generated child theme when a project needs them.
+
 When a component system builds `*.component.json` files into `dist/components`, the parent theme can discover those files for optional ACF/Twig block registration. Documentation examples prove the shape, but Whisk does not register any starter ACF/Twig blocks by default.
 
 For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`. The general form is `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.

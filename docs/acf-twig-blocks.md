@@ -28,6 +28,8 @@ dist/components/example-card/example-card.twig
 
 This documentation example proves the shape, but it does not ship project field groups or content model assumptions.
 
+See [Component recipes](component-recipes.md) for a short `*.component.json` example and guidance on when to choose ACF/Twig blocks.
+
 ## Registration
 
 The parent theme reads the component metadata, merges default block arguments, and calls `acf_register_block_type()`. Rendering happens through Timber with block data, ACF fields, preview state, and the normal global Timber context.

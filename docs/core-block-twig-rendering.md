@@ -4,6 +4,8 @@ The parent theme includes an experimental `Core_Block_Twig_Renderer` service tha
 
 Use this carefully. Replacing core block output can affect block validation, style supports, accessibility attributes, plugin integrations, and future WordPress markup changes. Keep Twig output compatible with the saved block attributes and test editing, saving, reloading, and frontend rendering for every mapped block.
 
+See [Component recipes](component-recipes.md) for guidance on when to choose core block Twig rendering instead of a plain Twig component, ACF/Twig block, native block, or pattern.
+
 ## Enable the service
 
 Enable rendering and provide an explicit block-to-template map:

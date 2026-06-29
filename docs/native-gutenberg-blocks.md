@@ -8,6 +8,8 @@ Add a `block.json` file to a component folder and build the child theme so the b
 
 The starter does not include an active native block example. Native blocks usually need project-specific editor scripts, attributes, supports, and block behavior, so projects should add them intentionally.
 
+See [Component recipes](component-recipes.md) for a short `block.json` example and guidance on when to choose native blocks.
+
 ## When to use native blocks
 
 Use native blocks when the project needs block editor APIs such as:

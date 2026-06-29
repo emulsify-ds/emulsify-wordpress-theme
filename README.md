@@ -135,6 +135,7 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 - [Parent and child theme architecture](docs/parent-child-architecture.md)
 - [Timber and Twig authoring](docs/timber-and-twig-authoring.md)
 - [Emulsify Core 4 and Vite workflow](docs/core-4-vite-workflow.md)
+- [Component recipes](docs/component-recipes.md)
 - [ACF Local JSON](docs/acf-local-json.md)
 - [ACF/Twig blocks](docs/acf-twig-blocks.md)
 - [Core block Twig rendering](docs/core-block-twig-rendering.md)
