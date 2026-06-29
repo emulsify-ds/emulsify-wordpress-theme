@@ -10,6 +10,7 @@ Emulsify WordPress 2.x changes the project model. The repository is now a Timber
 - The selected Emulsify component system defines the component source structure; Whisk does not ship default foundation, layout, token, or button files.
 - The starter child theme uses Emulsify Core 4, Vite, Storybook, and Twig.
 - The generated child theme keeps `project.emulsify.json` set to `"platform": "wordpress"` for Emulsify Core and Emulsify CLI WordPress adapter support.
+- New generated child themes also include `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion` in `project.emulsify.json` so future upgrades and support checks can identify starter lineage. Older generated child themes may not include these fields until they are regenerated or updated intentionally.
 - Release metadata is aligned around the `2.0.0` stable release.
 
 ## Before upgrading

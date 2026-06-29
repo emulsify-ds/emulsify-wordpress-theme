@@ -451,10 +451,13 @@ function runStaticChecks() {
     ensure(cli.includes("replace_theme_header( $contents, 'Template'"), 'Child theme generator should update Template explicitly.');
     ensure(cli.includes("data['project']['name']"), 'Child theme generator should update project.emulsify.json project.name.');
     ensure(cli.includes("data['project']['machineName']"), 'Child theme generator should update project.emulsify.json project.machineName.');
+    ensure(cli.includes("data['project']['generatedFrom']"), 'Child theme generator should update project.emulsify.json generatedFrom.');
+    ensure(cli.includes("data['project']['generatedFromVersion']"), 'Child theme generator should update project.emulsify.json generatedFromVersion.');
     ensure(cli.includes("data['name'] = $machine_name"), 'Child theme generator should update package.json name.');
     ensure(cli.includes('collect_pattern_updates'), 'Child theme generator should update starter pattern namespaces.');
     ensure(cli.includes('get_destination_replacement_error'), 'Child theme generator should verify existing destinations before force replacement.');
     ensure(cli.includes('project.platform: wordpress'), 'Child theme generator should require WordPress project metadata before force replacement.');
+    ensure(cli.includes('project.generatedFrom'), 'Child theme generator should use generated source metadata for force replacement safety.');
     ensure(!cli.includes('rename_instances'), 'Child theme generator should not use blind recursive starter string replacement.');
     ensure(smoke.includes("'machine-name' => 'acme-child'"), 'Child theme generator smoke should cover --machine-name.');
     ensure(smoke.includes("'dry-run' => true"), 'Child theme generator smoke should cover --dry-run.');
@@ -466,6 +469,9 @@ function runStaticChecks() {
     ensure(smoke.includes("assets/images/.gitkeep"), 'Child theme generator smoke should validate copied image asset placeholders.');
     ensure(smoke.includes("assets/icons/.gitkeep"), 'Child theme generator smoke should validate copied icon asset placeholders.');
     ensure(smoke.includes("'wordpress' === $project['project']['platform']"), 'Child theme generator smoke should validate the WordPress platform adapter.');
+    ensure(smoke.includes("'emulsify-wordpress' === $project['project']['generatedFrom']"), 'Child theme generator smoke should validate generatedFrom metadata.');
+    ensure(smoke.includes("'2.0.0' === $project['project']['generatedFromVersion']"), 'Child theme generator smoke should validate generatedFromVersion metadata.');
+    ensure(smoke.includes('foreign-generator'), 'Child theme generator smoke should reject conflicting generatedFrom metadata.');
     ensure(smoke.includes('smoke-pattern.json'), 'Child theme generator smoke should validate optional copied pattern namespace updates.');
     ensure(smoke.includes("! is_dir( $destination . '/src/components/button' )"), 'Child theme generator smoke should prove removed starter components are not copied.');
     ensure(smoke.includes("! is_dir( $destination . '/src/editor' )"), 'Child theme generator smoke should prove assumed editor modules are not copied.');
@@ -589,6 +595,8 @@ function runStaticChecks() {
     ensure(whiskProject.project.platform === 'wordpress', 'whisk/project.emulsify.json should use the WordPress platform adapter.');
     ensure(whiskProject.project.name === 'whisk', 'whisk/project.emulsify.json project.name should remain whisk.');
     ensure(whiskProject.project.machineName === 'whisk', 'whisk/project.emulsify.json project.machineName should remain whisk.');
+    ensure(whiskProject.project.generatedFrom === 'emulsify-wordpress', 'whisk/project.emulsify.json should identify the generated child theme source.');
+    ensure(whiskProject.project.generatedFromVersion === '2.0.0', 'whisk/project.emulsify.json should record the generated child theme source version.');
     ensure(whiskProject.starter.repository === 'https://github.com/emulsify-ds/emulsify-wordpress-starter', 'whisk/project.emulsify.json should point to the standalone WordPress starter repository.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/.cli/init.js')), 'Whisk should ship an emulsify-cli init hook.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/.gitignore')), 'Whisk should ship standalone starter ignore rules.');
@@ -604,9 +612,13 @@ function runStaticChecks() {
     ensure(initHook.includes("data.name = machineName"), 'Whisk init hook should update package metadata names.');
     ensure(initHook.includes("updateLockfile('package-lock.json'"), 'Whisk init hook should update the package lockfile created before the hook runs.');
     ensure(initHook.includes("config.project.platform = 'wordpress'"), 'Whisk init hook should keep project.platform on wordpress.');
+    ensure(initHook.includes("config.project.generatedFrom = GENERATED_FROM"), 'Whisk init hook should set generatedFrom metadata.');
+    ensure(initHook.includes("config.project.generatedFromVersion = generatedFromVersion"), 'Whisk init hook should set generatedFromVersion metadata.');
     ensure(initHook.includes('updatePatternNamespaces'), 'Whisk init hook should update JSON pattern namespaces.');
     ensure(starterInitSmoke.includes('package-lock.json') && starterInitSmoke.includes('packages[""].name'), 'Starter init smoke should prove lockfile metadata is updated after npm install.');
     ensure(starterInitSmoke.includes("project.project.platform === 'wordpress'"), 'Starter init smoke should validate the WordPress platform adapter.');
+    ensure(starterInitSmoke.includes("project.project.generatedFrom === 'emulsify-wordpress'"), 'Starter init smoke should validate generatedFrom metadata.');
+    ensure(starterInitSmoke.includes("project.project.generatedFromVersion === '2.0.0'"), 'Starter init smoke should validate generatedFromVersion metadata.');
     ensure(starterInitSmoke.includes("style.Template === 'emulsify'"), 'Starter init smoke should validate Template: emulsify.');
     ensure(starterInitSmoke.includes('node_modules') && starterInitSmoke.includes('dist'), 'Starter init smoke should validate copied build and dependency output is absent.');
     ensure(starterInitSmoke.includes("['--prefix', 'whisk', 'run', 'test']"), 'Starter init smoke should verify the starter npm test script works after Whisk dependencies are installed.');
@@ -708,6 +720,8 @@ function runStaticChecks() {
     ensure(wordpressFixtureSmoke.includes("['emulsify', 'Smoke Generated'"), 'WordPress fixture smoke should generate a child theme from Whisk with WP-CLI.');
     ensure(wordpressFixtureSmoke.includes("['option', 'get', 'stylesheet']"), 'WordPress fixture smoke should verify the generated child theme is active.');
     ensure(wordpressFixtureSmoke.includes('assertGeneratedChildTheme'), 'WordPress fixture smoke should validate generated child theme metadata and copied Whisk files.');
+    ensure(wordpressFixtureSmoke.includes("project.project?.generatedFrom !== 'emulsify-wordpress'"), 'WordPress fixture smoke should validate generatedFrom metadata.');
+    ensure(wordpressFixtureSmoke.includes("project.project?.generatedFromVersion !== '2.0.0'"), 'WordPress fixture smoke should validate generatedFromVersion metadata.');
     ensure(wordpressFixtureSmoke.includes('${themeSlug}-page'), 'WordPress fixture smoke should prove the generated child page template renders through Timber.');
     ensure(wordpressFixtureSmoke.includes('checkGeneratedAssets'), 'WordPress fixture smoke should fetch generated child theme built assets.');
     ensure(wordpressFixtureSmoke.includes('runAcfDiscoveryWithoutAcf'), 'WordPress fixture smoke should check ACF/Twig discovery when ACF is absent.');
@@ -852,6 +866,7 @@ function runStaticChecks() {
     ensure(readme.includes('npm ci --ignore-scripts'), 'README.md should document parent maintainer npm install.');
     ensure(readme.includes('composer install'), 'README.md should document Composer install usage.');
     ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
+    ensure(readme.includes('generatedFrom') && readme.includes('generatedFromVersion'), 'README.md should explain generated child theme source metadata.');
     ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
     ensure(readme.includes('Normal PR checks do not start MySQL or run the full WordPress fixture'), 'README.md should distinguish practical PR checks from the full fixture.');
@@ -863,6 +878,7 @@ function runStaticChecks() {
     }
 
     ensure(docs.upgrading.includes('Emulsify WordPress 2.x changes the project model'), 'Upgrade doc should explain the 2.x project model.');
+    ensure(docs.upgrading.includes('generatedFrom: "emulsify-wordpress"') && docs.upgrading.includes('Older generated child themes may not include these fields'), 'Upgrade doc should document generated child theme lineage metadata.');
     ensure(docs.parity.includes('Emulsify WordPress is the WordPress sister project to Emulsify Drupal'), 'Sister-project parity doc should name the Drupal sister project.');
     ensure(docs.parity.includes('The parent theme owns reusable CMS runtime behavior'), 'Sister-project parity doc should define parent runtime ownership.');
     ensure(docs.parity.includes('The generated child theme owns project implementation'), 'Sister-project parity doc should define child theme ownership.');
@@ -882,8 +898,10 @@ function runStaticChecks() {
     ensure(docs.parity.includes('Native Gutenberg blocks use WordPress `block.json` metadata'), 'Sister-project parity doc should document native block.json blocks.');
     ensure(docs.parity.includes("WordPress project generation is handled by the parent theme's WP-CLI command"), 'Sister-project parity doc should document WP-CLI generation.');
     ensure(docs.parity.includes('`project.emulsify.json` uses `"platform": "wordpress"`'), 'Sister-project parity doc should document the WordPress platform adapter.');
+    ensure(docs.parity.includes('generatedFrom: "emulsify-wordpress"'), 'Sister-project parity doc should document generated child theme lineage metadata.');
     ensure(docs.parity.includes('{% include "project_machine_name:component_name" %}') && docs.parity.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Sister-project parity doc should promote generic project machine-name component includes while preserving @components compatibility.');
     ensure(docs.architecture.includes('The parent theme owns reusable runtime behavior'), 'Architecture doc should explain parent responsibilities.');
+    ensure(docs.architecture.includes('generatedFrom: "emulsify-wordpress"') && docs.architecture.includes('safer replacement checks'), 'Architecture doc should document generated child theme lineage metadata.');
     ensure(docs.architecture.includes('@emulsify-tpl'), 'Architecture doc should document the parent-only template namespace.');
     ensure(docs.architecture.includes('{% include "project_machine_name:component_name" %}') && docs.architecture.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Architecture doc should document generic project machine-name component includes while preserving @components compatibility.');
     ensure(docs.twig.includes('@templates') && docs.twig.includes('@components'), 'Twig doc should document core namespaces.');
@@ -893,6 +911,7 @@ function runStaticChecks() {
     ensure(docs.twig.includes('emulsify_theme_context'), 'Twig doc should document context extension.');
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
     ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
+    ensure(docs.workflow.includes('generatedFrom: "emulsify-wordpress"') && docs.workflow.includes('support diagnostics'), 'Core 4 workflow doc should document generated child theme lineage metadata.');
     ensure(docs.workflow.includes('does not ship a concrete component library'), 'Core 4 workflow doc should describe Whisk as component-system agnostic.');
     ensure(docs.workflow.includes('assets/images') && docs.workflow.includes('assets/icons'), 'Core 4 workflow doc should document generic starter asset directories.');
     ensure(docs.workflow.includes('does not include a child `theme.json` by default'), 'Core 4 workflow doc should document the child theme.json convention.');
@@ -919,6 +938,7 @@ function runStaticChecks() {
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');
+    ensure(docs.cli.includes('Upgrade and support diagnostics') && docs.cli.includes('generatedFromVersion'), 'WP-CLI doc should document generated child theme lineage diagnostics.');
     ensure(docs.cli.includes('Ignored dependency, cache, Storybook, and Vite output directories are not copied'), 'WP-CLI doc should explain that generated themes do not inherit build output.');
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
     ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');

@@ -77,7 +77,7 @@ Emulsify CLI uses the standalone `https://github.com/emulsify-ds/emulsify-wordpr
 
 ### Emulsify platform metadata
 
-`project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter. WordPress runtime behavior still lives in this parent theme for the 2.x release line.
+`project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter. It also records `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion` so support and upgrade tooling can identify the WordPress starter lineage. WordPress runtime behavior still lives in this parent theme for the 2.x release line.
 
 This file may also hold Emulsify Core metadata such as `variant.structureImplementations`. `theme.json` remains the WordPress site and editor configuration surface, not a component-library or Twig namespace registry.
 
@@ -90,4 +90,4 @@ Use this contract when evaluating future changes:
 - Keep Whisk small enough to work as a starter.
 - Keep generated child theme source aligned with Emulsify Core 4 conventions.
 - Keep WordPress-specific behavior explicit rather than hiding it behind Drupal naming or assumptions.
-- Keep `project.emulsify.json` on `"platform": "wordpress"` so generated child themes advertise the WordPress platform adapter.
+- Keep `project.emulsify.json` on `"platform": "wordpress"` and `generatedFrom: "emulsify-wordpress"` so generated child themes advertise the WordPress platform adapter and starter lineage.

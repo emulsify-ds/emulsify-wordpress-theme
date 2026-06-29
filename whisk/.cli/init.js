@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 const STARTER_SLUG = 'whisk';
 const PARENT_THEME = 'emulsify';
+const GENERATED_FROM = 'emulsify-wordpress';
+const FALLBACK_GENERATED_FROM_VERSION = '2.0.0';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const projectConfigPath = path.join(ROOT, 'project.emulsify.json');
@@ -83,6 +85,14 @@ const updatePackageJson = ({ machineName }) => {
   writeJsonIfChanged(filePath, data);
 };
 
+const getGeneratedFromVersion = () => {
+  const data = readJson(path.join(ROOT, 'package.json'));
+
+  return typeof data.version === 'string' && data.version.trim() !== ''
+    ? data.version.trim()
+    : FALLBACK_GENERATED_FROM_VERSION;
+};
+
 const updateLockfile = (relativePath, { machineName }) => {
   const filePath = path.join(ROOT, relativePath);
 
@@ -101,10 +111,12 @@ const updateLockfile = (relativePath, { machineName }) => {
   writeJsonIfChanged(filePath, data);
 };
 
-const updateProjectConfig = (config, { name, machineName }) => {
+const updateProjectConfig = (config, { name, machineName, generatedFromVersion }) => {
   config.project.platform = 'wordpress';
   config.project.name = name;
   config.project.machineName = machineName;
+  config.project.generatedFrom = GENERATED_FROM;
+  config.project.generatedFromVersion = generatedFromVersion;
 
   writeJsonIfChanged(projectConfigPath, config);
 };
@@ -161,6 +173,7 @@ const main = () => {
   const project = {
     name: config.project.name,
     machineName: config.project.machineName,
+    generatedFromVersion: getGeneratedFromVersion(),
   };
 
   updateStyleCss(project);

@@ -30,6 +30,7 @@ The generator copies `emulsify/whisk` to a sibling child theme directory and upd
 - `package.json` name.
 - `project.emulsify.json` project name.
 - `project.emulsify.json` machine name.
+- `project.emulsify.json` generated source metadata.
 - Visible Whisk starter labels where appropriate.
 - Lowercase slug references where appropriate.
 
@@ -45,8 +46,25 @@ Ignored dependency, cache, Storybook, and Vite output directories are not copied
 - `project.emulsify.json` exists.
 - `project.emulsify.json` declares `"platform": "wordpress"`.
 - `project.emulsify.json` includes a project `machineName`.
+- New generated child themes include `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion`; `--force` refuses a destination that declares a different generated source.
 
 Use `--dry-run --force` to inspect replacement intent without deleting files. If the destination is an unrelated theme, remove or rename it manually before generating a child theme with the same machine name.
+
+## Upgrade and support diagnostics
+
+Generated child themes record their source in `project.emulsify.json`:
+
+```json
+{
+  "project": {
+    "platform": "wordpress",
+    "generatedFrom": "emulsify-wordpress",
+    "generatedFromVersion": "2.0.0"
+  }
+}
+```
+
+Use these fields when diagnosing project lineage or planning starter upgrades. `generatedFrom` identifies the Emulsify WordPress starter lineage, while `generatedFromVersion` records the parent/starter release that generated or last regenerated the child theme. Older generated child themes may not have these fields; the generator still uses the existing WordPress platform and machine-name markers for compatibility.
 
 ## Emulsify CLI starter hook
 
@@ -65,7 +83,7 @@ The hook deliberately mirrors the parent WP-CLI generator's targeted updates:
 
 - `style.css` `Theme Name`, `Text Domain`, and `Template`.
 - `package.json` name and generated package lockfile root name.
-- `project.emulsify.json` project name and machine name, while keeping `"platform": "wordpress"`.
+- `project.emulsify.json` project name, machine name, generated source metadata, and `"platform": "wordpress"`.
 - Visible Whisk labels in known starter files.
 - `templates/page.twig` class from `whisk-page` to the generated machine-name class.
 - JSON pattern names from the `whisk/*` namespace to the generated machine-name namespace.

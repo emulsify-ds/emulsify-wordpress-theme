@@ -87,4 +87,6 @@ Use these filters for project-specific behavior before editing a parent class. K
 
 The generated child theme includes `project.emulsify.json` with `"platform": "wordpress"`. Emulsify Core and Emulsify CLI tooling use that adapter value for WordPress-aware project behavior, while reusable WordPress runtime support remains in this parent theme.
 
+Generated child themes also record `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion`. These fields identify the starter lineage for future upgrades, support diagnostics, and safer replacement checks.
+
 Use WordPress-native files for WordPress concerns: `style.css` headers for theme identity and `theme.json` for editor/global style settings. Use `project.emulsify.json` for Emulsify project metadata that Core and project tooling need to share.

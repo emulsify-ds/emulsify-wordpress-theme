@@ -251,7 +251,9 @@ function assertGeneratedChildTheme(themePath, slug) {
   if (
     project.project?.platform !== 'wordpress' ||
     project.project?.name !== 'Smoke Generated' ||
-    project.project?.machineName !== slug
+    project.project?.machineName !== slug ||
+    project.project?.generatedFrom !== 'emulsify-wordpress' ||
+    project.project?.generatedFromVersion !== '2.0.0'
   ) {
     throw new Error('Generated child theme project.emulsify.json metadata is incorrect.');
   }

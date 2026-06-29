@@ -18,6 +18,16 @@ final class Cli {
 	private const STARTER_SLUG = 'whisk';
 
 	/**
+	 * Project metadata source identifier for generated child themes.
+	 */
+	private const GENERATED_FROM = 'emulsify-wordpress';
+
+	/**
+	 * Fallback generated child theme source version.
+	 */
+	private const GENERATED_FROM_VERSION = '2.0.0';
+
+	/**
 	 * Dependency/cache/build paths that should never be copied into a generated
 	 * child theme.
 	 */
@@ -88,6 +98,7 @@ final class Cli {
 		$activate     = $this->get_flag_value( $assoc_args, 'activate' );
 		$source       = $this->join_path( get_theme_root(), $parent, self::STARTER_SLUG );
 		$destination  = $this->join_path( get_theme_root(), $machine_name );
+		$version      = $this->get_generated_from_version( $source );
 
 		\WP_CLI::log( sprintf( 'Generating child theme "%s" (%s) from Emulsify.', $label, $machine_name ) );
 		\WP_CLI::log( sprintf( 'Source: %s', $source ) );
@@ -111,6 +122,7 @@ final class Cli {
 				'label'        => $label,
 				'machine_name' => $machine_name,
 				'parent'       => $parent,
+				'version'      => $version,
 			)
 		);
 
@@ -149,6 +161,7 @@ final class Cli {
 				'label'        => $label,
 				'machine_name' => $machine_name,
 				'parent'       => $parent,
+				'version'      => $version,
 			)
 		);
 		$this->apply_metadata_updates( $destination, $metadata_updates );
@@ -229,6 +242,7 @@ final class Cli {
 		$theme_label  = $config['label'];
 		$machine_name = $config['machine_name'];
 		$parent       = $config['parent'];
+		$version      = $config['version'];
 
 		// Update known metadata surfaces deliberately. Avoid blind recursive text
 		// replacement so example prose, generated assets, and project content are
@@ -258,13 +272,16 @@ final class Cli {
 			$updates,
 			$root,
 			'project.emulsify.json',
-			function ( array $data ) use ( $theme_label, $machine_name ): array {
+			function ( array $data ) use ( $theme_label, $machine_name, $version ): array {
 				if ( ! isset( $data['project'] ) || ! is_array( $data['project'] ) ) {
 					$data['project'] = array();
 				}
 
-				$data['project']['name']        = $theme_label;
-				$data['project']['machineName'] = $machine_name;
+				$data['project']['platform']             = 'wordpress';
+				$data['project']['name']                 = $theme_label;
+				$data['project']['machineName']          = $machine_name;
+				$data['project']['generatedFrom']        = self::GENERATED_FROM;
+				$data['project']['generatedFromVersion'] = $version;
 
 				return $data;
 			}
@@ -548,6 +565,22 @@ final class Cli {
 	}
 
 	/**
+	 * Gets the version to record in generated child theme metadata.
+	 *
+	 * @param string $source Starter source path.
+	 * @return string Version string.
+	 */
+	private function get_generated_from_version( string $source ): string {
+		$package = $this->read_json_file( $this->join_path( dirname( $source ), 'package.json' ) );
+
+		if ( isset( $package['version'] ) && is_string( $package['version'] ) && '' !== trim( $package['version'] ) ) {
+			return trim( $package['version'] );
+		}
+
+		return self::GENERATED_FROM_VERSION;
+	}
+
+	/**
 	 * Gets the reason an existing destination should not be force-replaced.
 	 *
 	 * @param string $destination Destination theme root.
@@ -587,6 +620,25 @@ final class Cli {
 
 		if ( ! isset( $project['project']['machineName'] ) || ! is_string( $project['project']['machineName'] ) || '' === trim( $project['project']['machineName'] ) ) {
 			return 'project.emulsify.json is missing project.machineName';
+		}
+
+		$has_generated_from         = array_key_exists( 'generatedFrom', $project['project'] );
+		$has_generated_from_version = array_key_exists( 'generatedFromVersion', $project['project'] );
+
+		if ( $has_generated_from && ( ! is_string( $project['project']['generatedFrom'] ) || '' === trim( $project['project']['generatedFrom'] ) ) ) {
+			return 'project.emulsify.json has an invalid project.generatedFrom';
+		}
+
+		if ( $has_generated_from && self::GENERATED_FROM !== $project['project']['generatedFrom'] ) {
+			return sprintf( 'project.emulsify.json generatedFrom is "%s", expected "%s"', $project['project']['generatedFrom'], self::GENERATED_FROM );
+		}
+
+		if ( $has_generated_from && ( ! $has_generated_from_version || ! is_string( $project['project']['generatedFromVersion'] ) || '' === trim( $project['project']['generatedFromVersion'] ) ) ) {
+			return 'project.emulsify.json is missing project.generatedFromVersion';
+		}
+
+		if ( ! $has_generated_from && $has_generated_from_version ) {
+			return 'project.emulsify.json has project.generatedFromVersion without project.generatedFrom';
 		}
 
 		return null;

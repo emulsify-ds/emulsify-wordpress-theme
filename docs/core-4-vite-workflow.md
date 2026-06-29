@@ -4,9 +4,9 @@ The generated child theme uses Emulsify Core 4, Vite, Storybook, Twig stories, S
 
 ## Project metadata
 
-`whisk/project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter while this parent theme owns the reusable WordPress runtime.
+`whisk/project.emulsify.json` uses `"platform": "wordpress"` so Emulsify Core and Emulsify CLI tooling can load the WordPress platform adapter while this parent theme owns the reusable WordPress runtime. It also records `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion` for future starter upgrades and support diagnostics.
 
-Keep this file in generated child themes. The child theme generator updates `project.name` and `project.machineName`, and Emulsify Core uses the same metadata for component-library behavior.
+Keep this file in generated child themes. The child theme generator updates `project.name`, `project.machineName`, and generated source metadata, and Emulsify Core uses the same metadata for component-library behavior.
 
 If a selected component system needs legacy Twig namespaces, use Core's existing `variant.structureImplementations` array:
 

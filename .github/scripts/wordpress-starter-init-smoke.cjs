@@ -174,6 +174,8 @@ try {
   assert(project.project.platform === 'wordpress', 'project.emulsify.json should keep project.platform: wordpress.');
   assert(project.project.name === 'Acme Theme', 'project.emulsify.json should update project.name.');
   assert(project.project.machineName === 'acme-theme', 'project.emulsify.json should update project.machineName.');
+  assert(project.project.generatedFrom === 'emulsify-wordpress', 'project.emulsify.json should identify the generated child theme source.');
+  assert(project.project.generatedFromVersion === '2.0.0', 'project.emulsify.json should record the generated child theme source version.');
   assert(
     project.starter.repository === 'https://github.com/emulsify-ds/emulsify-wordpress-starter',
     'project.emulsify.json should keep the standalone starter repository.',
