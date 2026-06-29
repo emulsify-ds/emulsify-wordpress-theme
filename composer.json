@@ -14,8 +14,6 @@
         "email": "mike.goulding@fourkitchens.com"
     }
   ],
-  "minimum-stability": "dev",
-  "prefer-stable": true,
   "require": {
       "timber/timber": "^2.3"
   },

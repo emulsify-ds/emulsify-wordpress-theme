@@ -391,6 +391,9 @@ function runStaticChecks() {
     ensure(composer.type === 'wordpress-theme', 'composer.json type should be wordpress-theme.');
     ensure(composer.license === 'GPL-2.0-only', 'composer.json license should be GPL-2.0-only.');
     ensure(composer.homepage === 'https://www.emulsify.info', 'composer.json homepage should use the canonical HTTPS URL.');
+    ensure(!Object.hasOwn(composer, 'minimum-stability'), 'composer.json should not lower release stability for a stable parent theme.');
+    ensure(!Object.hasOwn(composer, 'prefer-stable'), 'composer.json should not keep prefer-stable when stable-only constraints are sufficient.');
+    ensure(composer.require && composer.require['timber/timber'] === '^2.3', 'composer.json should keep the Timber 2 dependency constraint.');
     ensureParentThemeLanguage('composer.json description', composer.description);
     return `Validated root package ${rootPackage.version} and composer metadata.`;
   });
