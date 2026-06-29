@@ -453,11 +453,15 @@ function runStaticChecks() {
     ensure(cli.includes("data['project']['machineName']"), 'Child theme generator should update project.emulsify.json project.machineName.');
     ensure(cli.includes("data['name'] = $machine_name"), 'Child theme generator should update package.json name.');
     ensure(cli.includes('collect_pattern_updates'), 'Child theme generator should update starter pattern namespaces.');
+    ensure(cli.includes('get_destination_replacement_error'), 'Child theme generator should verify existing destinations before force replacement.');
+    ensure(cli.includes('project.platform: wordpress'), 'Child theme generator should require WordPress project metadata before force replacement.');
     ensure(!cli.includes('rename_instances'), 'Child theme generator should not use blind recursive starter string replacement.');
     ensure(smoke.includes("'machine-name' => 'acme-child'"), 'Child theme generator smoke should cover --machine-name.');
     ensure(smoke.includes("'dry-run' => true"), 'Child theme generator smoke should cover --dry-run.');
     ensure(smoke.includes("'force' => true"), 'Child theme generator smoke should cover --force.');
     ensure(smoke.includes("'activate' => true"), 'Child theme generator smoke should cover --activate.');
+    ensure(smoke.includes('unrelated-theme'), 'Child theme generator smoke should prove --force refuses unrelated theme directories.');
+    ensure(smoke.includes('Would replace existing destination because --force was provided'), 'Child theme generator smoke should prove --dry-run --force reports replacement intent.');
     ensure(smoke.includes('project.emulsify.json'), 'Child theme generator smoke should validate project.emulsify.json updates.');
     ensure(smoke.includes("assets/images/.gitkeep"), 'Child theme generator smoke should validate copied image asset placeholders.');
     ensure(smoke.includes("assets/icons/.gitkeep"), 'Child theme generator smoke should validate copied icon asset placeholders.');
@@ -911,6 +915,7 @@ function runStaticChecks() {
     ensure(docs.editorPolicy.includes('emulsify_theme_block_support_overrides'), 'Editor policy doc should document block support overrides.');
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
+    ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');
     ensure(docs.cli.includes('Ignored dependency, cache, Storybook, and Vite output directories are not copied'), 'WP-CLI doc should explain that generated themes do not inherit build output.');
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
     ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');

@@ -58,7 +58,8 @@ final class Cli {
 	 * : Show what would be created or changed without writing files.
 	 *
 	 * [--force]
-	 * : Replace an existing destination directory.
+	 * : Replace an existing destination directory only when it looks like an
+	 * Emulsify-generated child theme.
 	 *
 	 * [--activate]
 	 * : Activate the generated child theme after creation.
@@ -119,6 +120,18 @@ final class Cli {
 		}
 
 		if ( file_exists( $destination ) ) {
+			$replacement_error = $this->get_destination_replacement_error( $destination, $parent );
+
+			if ( null !== $replacement_error ) {
+				\WP_CLI::error(
+					sprintf(
+						'Refusing to replace existing destination because it does not look like an Emulsify-generated child theme: %s (%s). Remove it manually or choose a different --machine-name.',
+						$destination,
+						$replacement_error
+					)
+				);
+			}
+
 			\WP_CLI::warning( sprintf( 'Replacing existing destination because --force was provided: %s', $destination ) );
 
 			if ( ! $this->remove_path( $destination ) ) {
@@ -532,6 +545,98 @@ final class Cli {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Gets the reason an existing destination should not be force-replaced.
+	 *
+	 * @param string $destination Destination theme root.
+	 * @param string $parent      Selected parent theme slug.
+	 * @return string|null Error reason, or NULL when replacement is allowed.
+	 */
+	private function get_destination_replacement_error( string $destination, string $parent ): ?string {
+		if ( ! is_dir( $destination ) ) {
+			return 'destination is not a theme directory';
+		}
+
+		$template = $this->read_theme_header_value( $this->join_path( $destination, 'style.css' ), 'Template' );
+
+		if ( null === $template ) {
+			return 'missing readable style.css Template header';
+		}
+
+		$allowed_templates = array_values( array_unique( array_filter( array( 'emulsify', $parent ) ) ) );
+
+		if ( ! in_array( $template, $allowed_templates, true ) ) {
+			return sprintf( 'style.css Template is "%s", expected "%s"', $template, implode( '" or "', $allowed_templates ) );
+		}
+
+		$project = $this->read_json_file( $this->join_path( $destination, 'project.emulsify.json' ) );
+
+		if ( null === $project ) {
+			return 'missing readable project.emulsify.json';
+		}
+
+		if ( ! isset( $project['project'] ) || ! is_array( $project['project'] ) ) {
+			return 'project.emulsify.json is missing project metadata';
+		}
+
+		if ( 'wordpress' !== ( $project['project']['platform'] ?? null ) ) {
+			return 'project.emulsify.json is missing project.platform: wordpress';
+		}
+
+		if ( ! isset( $project['project']['machineName'] ) || ! is_string( $project['project']['machineName'] ) || '' === trim( $project['project']['machineName'] ) ) {
+			return 'project.emulsify.json is missing project.machineName';
+		}
+
+		return null;
+	}
+
+	/**
+	 * Reads a WordPress theme header value.
+	 *
+	 * @param string $path  File path.
+	 * @param string $field Header field.
+	 * @return string|null Header value, or NULL when unavailable.
+	 */
+	private function read_theme_header_value( string $path, string $field ): ?string {
+		if ( ! is_readable( $path ) ) {
+			return null;
+		}
+
+		$contents = file_get_contents( $path );
+
+		if ( ! is_string( $contents ) ) {
+			return null;
+		}
+
+		if ( ! preg_match( '/^\s*(?:\*\s*)?' . preg_quote( $field, '/' ) . ':\s*(.+?)\s*$/mi', $contents, $matches ) ) {
+			return null;
+		}
+
+		return trim( $matches[1] );
+	}
+
+	/**
+	 * Reads a JSON file.
+	 *
+	 * @param string $path File path.
+	 * @return array|null Decoded JSON data, or NULL when unavailable.
+	 */
+	private function read_json_file( string $path ): ?array {
+		if ( ! is_readable( $path ) ) {
+			return null;
+		}
+
+		$contents = file_get_contents( $path );
+
+		if ( ! is_string( $contents ) ) {
+			return null;
+		}
+
+		$data = json_decode( $contents, true );
+
+		return is_array( $data ) ? $data : null;
 	}
 
 	/**

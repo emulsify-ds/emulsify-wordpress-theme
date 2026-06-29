@@ -17,7 +17,7 @@ wp emulsify "Acme Site" --machine-name=acme-site --activate
 | --- | --- |
 | `--machine-name=<slug>` | Override the generated slug used for paths and package metadata. |
 | `--dry-run` | Show what would be created or changed without writing files. |
-| `--force` | Replace an existing destination. Use this only when replacement is intentional. |
+| `--force` | Replace an existing destination only when it already looks like an Emulsify-generated child theme. |
 | `--activate` | Activate the generated child theme after creation. |
 
 ## What the generator updates
@@ -36,6 +36,17 @@ The generator copies `emulsify/whisk` to a sibling child theme directory and upd
 The generator avoids broad blind string replacement. It targets known metadata files and starter labels.
 
 Ignored dependency, cache, Storybook, and Vite output directories are not copied. A generated child theme should install its own dependencies, install or configure the chosen Emulsify component system, and create its own `dist` output.
+
+## Force replacement safety
+
+`--force` refuses to delete an existing destination unless the directory has Emulsify-generated child theme markers:
+
+- `style.css` declares `Template: emulsify` or the selected parent slug.
+- `project.emulsify.json` exists.
+- `project.emulsify.json` declares `"platform": "wordpress"`.
+- `project.emulsify.json` includes a project `machineName`.
+
+Use `--dry-run --force` to inspect replacement intent without deleting files. If the destination is an unrelated theme, remove or rename it manually before generating a child theme with the same machine name.
 
 ## Emulsify CLI starter hook
 

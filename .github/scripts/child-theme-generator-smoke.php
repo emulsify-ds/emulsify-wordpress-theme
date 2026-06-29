@@ -261,15 +261,50 @@ try {
 	$cli( array( 'Acme Theme' ), array( 'machine-name' => 'acme-child', 'force' => true ) );
 
 	emulsify_cli_smoke_assert( ! file_exists( $destination . '/remove-me.txt' ), '--force should replace the existing destination.' );
+	emulsify_cli_smoke_assert( is_file( $destination . '/project.emulsify.json' ), '--force should replace a generated Emulsify child theme with fresh project metadata.' );
+
+	$unrelated_destination = $theme_root . '/unrelated-theme';
+	$unrelated_refused     = false;
+
+	if ( ! mkdir( $unrelated_destination, 0777, true ) ) {
+		throw new RuntimeException( sprintf( 'Could not create unrelated theme fixture: %s', $unrelated_destination ) );
+	}
+
+	file_put_contents( $unrelated_destination . '/style.css', "/*\n * Theme Name: Unrelated Theme\n * Template: twentytwentysix\n */\n" );
+	file_put_contents( $unrelated_destination . '/keep-me.txt', 'unrelated' );
+
+	try {
+		$cli( array( 'Unrelated Theme' ), array( 'machine-name' => 'unrelated-theme', 'force' => true ) );
+	} catch ( RuntimeException $exception ) {
+		$unrelated_refused = false !== strpos( $exception->getMessage(), 'Refusing to replace existing destination because it does not look like an Emulsify-generated child theme' );
+	}
+
+	emulsify_cli_smoke_assert( $unrelated_refused, '--force should refuse to replace an unrelated theme directory.' );
+	emulsify_cli_smoke_assert( is_file( $unrelated_destination . '/keep-me.txt' ), '--force refusal should not delete unrelated theme files.' );
 
 	WP_CLI::$messages                       = array();
 	$GLOBALS['emulsify_activated_theme']    = null;
 	$dry_run_destination                    = $theme_root . '/dry-run-child';
 
-	$cli( array( 'Dry Run Theme' ), array( 'machine-name' => 'dry-run-child', 'dry-run' => true, 'activate' => true ) );
+	if ( ! mkdir( $dry_run_destination, 0777, true ) ) {
+		throw new RuntimeException( sprintf( 'Could not create dry-run fixture: %s', $dry_run_destination ) );
+	}
 
-	emulsify_cli_smoke_assert( ! file_exists( $dry_run_destination ), '--dry-run should not create a child theme directory.' );
+	file_put_contents( $dry_run_destination . '/keep-me.txt', 'dry-run' );
+
+	$cli( array( 'Dry Run Theme' ), array( 'machine-name' => 'dry-run-child', 'dry-run' => true, 'force' => true, 'activate' => true ) );
+
+	emulsify_cli_smoke_assert( is_file( $dry_run_destination . '/keep-me.txt' ), '--dry-run --force should not delete an existing child theme directory.' );
 	emulsify_cli_smoke_assert( null === $GLOBALS['emulsify_activated_theme'], '--dry-run should not activate the child theme.' );
+	emulsify_cli_smoke_assert(
+		(bool) array_filter(
+			WP_CLI::$messages,
+			static function ( array $message ): bool {
+				return false !== strpos( $message['message'], 'Would replace existing destination because --force was provided' );
+			}
+		),
+		'--dry-run --force should report that it would replace the existing destination.'
+	);
 	emulsify_cli_smoke_assert(
 		(bool) array_filter(
 			WP_CLI::$messages,

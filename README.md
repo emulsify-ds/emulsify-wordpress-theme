@@ -122,6 +122,8 @@ wp emulsify "Acme Site" --machine-name=acme-site --activate
 
 The generator copies `emulsify/whisk` to a sibling child theme directory, updates WordPress theme headers, package metadata, Emulsify project metadata, and visible starter labels, then optionally activates the generated child theme.
 
+`--force` only replaces an existing destination when it already looks like an Emulsify-generated child theme. It refuses unrelated theme directories; use `--dry-run --force` to inspect replacement intent without deleting files.
+
 For Emulsify CLI integration, the standalone starter repository is `https://github.com/emulsify-ds/emulsify-wordpress-starter`. It represents the generated child theme layer from `whisk/`, not the parent runtime theme root, and generated projects still declare `Template: emulsify` so WordPress loads the installed parent theme.
 
 ## Documentation
