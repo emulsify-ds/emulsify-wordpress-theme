@@ -15,9 +15,9 @@ The parent theme provides the WordPress runtime: theme setup, Timber bootstrappi
 - Timber 2, preferably installed with Composer.
 - WP-CLI when generating child themes or running the full WordPress fixture smoke test.
 
-## Quick install
+## Using Emulsify WordPress in a site project
 
-Install the parent theme as `emulsify` and activate a child theme for project work. In Bedrock, that usually means:
+Install the parent theme as `emulsify` and pair it with a child theme for project work. In Bedrock, that usually means:
 
 ```sh
 web/app/themes/emulsify
@@ -31,22 +31,41 @@ wp-content/themes/emulsify
 wp-content/themes/whisk
 ```
 
-Install parent theme dependencies:
+Timber 2 must be loaded before the theme renders. Site projects can satisfy that requirement in either place:
+
+- Require `timber/timber` from the application-level Composer project.
+- Run Composer inside the parent theme when the parent theme owns its PHP dependencies:
 
 ```sh
 cd web/app/themes/emulsify
 composer install
-npm ci --ignore-scripts
 ```
 
-Install the generated child theme frontend dependencies:
+Activate the child theme, not the parent theme. The child theme header includes `Template: emulsify`, which tells WordPress to use Emulsify as the parent runtime.
+
+Do not run root npm commands in the parent theme for normal site implementation. Project frontend work happens in the generated child theme.
+
+## Working inside a generated child theme
+
+Run component, Vite, Storybook, and project lint commands from the generated child theme:
 
 ```sh
 cd web/app/themes/whisk
 npm install
 ```
 
-Activate the child theme, not the parent theme. The child theme header includes `Template: emulsify`, which tells WordPress to use Emulsify as the parent runtime.
+| Command | Purpose |
+| --- | --- |
+| `npm run build` | Build Core 4 assets with Vite. |
+| `npm run vite` | Watch and rebuild Vite assets. |
+| `npm run storybook` | Start Storybook on port 6006. |
+| `npm run develop` | Run the Vite watcher and Storybook together. |
+| `npm run storybook-build` | Build assets and export a static Storybook. |
+| `npm run lint` | Run JavaScript and Sass linting with the Core 4 config. |
+| `npm run audit` | Run the Core migration/static audit. |
+| `npm run audit:twig-stories` | Check Twig story compatibility. |
+| `npm run a11y` | Build Storybook and run the Core accessibility check. |
+| `npm run test` | Run Jest with `--passWithNoTests` for starter projects. |
 
 ## Parent and child themes
 
@@ -72,9 +91,14 @@ Timber is required for frontend template rendering. This repository declares `ti
 
 For Bedrock applications, it is also valid to require Timber from the application-level Composer project as long as WordPress loads that Composer autoloader before the theme renders. If Timber is missing, the parent theme shows an actionable admin notice and stops frontend rendering with a clear runtime error.
 
-## Basic commands
+## Developing or releasing the parent theme
 
-Run parent theme checks from the repository root:
+Parent-theme root commands are for maintainers and release checks, not normal project frontend development. Run them from the parent theme repository root:
+
+```sh
+composer install
+npm ci --ignore-scripts
+```
 
 | Command | Purpose |
 | --- | --- |
@@ -84,23 +108,6 @@ Run parent theme checks from the repository root:
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
 `release:check` includes the full WordPress fixture smoke path. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.
-
-## Core 4, Vite, and Storybook commands
-
-Run component development commands from the generated child theme:
-
-| Command | Purpose |
-| --- | --- |
-| `npm run build` | Build Core 4 assets with Vite. |
-| `npm run vite` | Watch and rebuild Vite assets. |
-| `npm run storybook` | Start Storybook on port 6006. |
-| `npm run develop` | Run the Vite watcher and Storybook together. |
-| `npm run storybook-build` | Build assets and export a static Storybook. |
-| `npm run lint` | Run JavaScript and Sass linting with the Core 4 config. |
-| `npm run audit` | Run the Core migration/static audit. |
-| `npm run audit:twig-stories` | Check Twig story compatibility. |
-| `npm run a11y` | Build Storybook and run the Core accessibility check. |
-| `npm run test` | Run Jest with `--passWithNoTests` for starter projects. |
 
 ## Generate a child theme
 

@@ -837,10 +837,15 @@ function runStaticChecks() {
     ensure(readme.includes('Emulsify WordPress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
     ensure(readme.includes('[LICENSE](LICENSE)'), 'README.md should link to the repository license file.');
     ensure(readme.includes('## Requirements'), 'README.md should keep requirements visible.');
-    ensure(readme.includes('## Quick install'), 'README.md should keep quick install guidance visible.');
+    ensure(readme.includes('## Using Emulsify WordPress in a site project'), 'README.md should keep site project usage guidance visible.');
+    ensure(readme.includes('## Working inside a generated child theme'), 'README.md should keep child theme workflow guidance visible.');
     ensure(readme.includes('## Parent and child themes'), 'README.md should keep the parent/child overview visible.');
-    ensure(readme.includes('## Basic commands'), 'README.md should keep root commands visible.');
+    ensure(readme.includes('## Developing or releasing the parent theme'), 'README.md should keep parent maintainer commands visible.');
     ensure(readme.includes('## Documentation'), 'README.md should link to deeper docs.');
+    ensure(readme.includes('Do not run root npm commands in the parent theme for normal site implementation'), 'README.md should distinguish parent npm tooling from project runtime work.');
+    ensure(readme.includes('Require `timber/timber` from the application-level Composer project'), 'README.md should document application-level Timber installation.');
+    ensure(readme.includes('npm ci --ignore-scripts'), 'README.md should document parent maintainer npm install.');
+    ensure(readme.includes('composer install'), 'README.md should document Composer install usage.');
     ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
     ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');

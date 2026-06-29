@@ -4,14 +4,14 @@ Timber provides the bridge between WordPress data and Twig templates. Emulsify W
 
 ## Bedrock and Timber
 
-Timber is required for frontend rendering. A standalone theme install can use the parent theme `composer.json`:
+Timber is required for frontend rendering. Site projects can install Timber from the application-level Composer project or from the parent theme `composer.json`. If the parent theme owns the dependency, run:
 
 ```sh
 cd web/app/themes/emulsify
 composer install
 ```
 
-In Bedrock, it is also valid to install Timber from the application-level Composer project as long as WordPress loads that Composer autoloader before the theme renders.
+In Bedrock, prefer the application-level Composer project when that is where PHP dependencies are managed. Either approach works as long as WordPress loads the Composer autoloader before the theme renders.
 
 If Timber is missing, the parent theme shows an admin notice and stops frontend rendering with a clear runtime error.
 
