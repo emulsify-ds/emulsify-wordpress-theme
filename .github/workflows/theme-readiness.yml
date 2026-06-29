@@ -1,7 +1,9 @@
 name: WordPress Theme Readiness
 
-# Pull requests run fast, stubbed checks. Manual and scheduled runs can also
-# exercise the full WordPress fixture with WP-CLI and MySQL.
+# Pull requests run practical checks without starting MySQL. Manual and
+# scheduled runs can exercise the full WordPress fixture with WP-CLI and MySQL.
+# For the 2.0 release branch, maintainers should run the manual workflow with
+# wordpress_fixture enabled before merging.
 on:
   pull_request:
     branches:

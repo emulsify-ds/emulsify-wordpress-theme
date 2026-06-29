@@ -24,7 +24,7 @@ npm run release:check
 npm run publish-test -- --no-ci
 ```
 
-`pr:check` runs the practical pull request suite:
+`pr:check` runs the practical, stubbed pull request suite:
 
 - Composer metadata validation.
 - Composer dependency install for Twig smoke coverage.
@@ -38,7 +38,7 @@ npm run publish-test -- --no-ci
 
 `pr:check` does not build the empty Whisk starter. Whisk's build script delegates directly to Emulsify Core, and that build is expected to fail until a project installs or configures a component system with Vite input files.
 
-`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
+`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
 
 ## CI
 
@@ -57,7 +57,20 @@ Normal pull requests do not start MySQL or run the full WordPress fixture. Manua
 
 Manual dispatch can also run the Whisk Storybook build and accessibility audit for extended frontend confidence.
 
-The semantic-release workflow remains release-gated. It still runs release readiness, the full WordPress fixture, a semantic-release dry run, and the final publish job only through the release workflow.
+## 2.0 merge and release gate
+
+Before merging the 2.0 release branch, maintainers should run the full fixture through GitHub Actions:
+
+1. Open GitHub Actions for `emulsify-ds/emulsify-wordpress`.
+2. Select the `WordPress Theme Readiness` workflow.
+3. Choose `Run workflow`.
+4. Select the `release-2.x` branch.
+5. Keep `wordpress_fixture` enabled. It defaults to enabled for manual runs.
+6. Leave `extended_checks` disabled unless Storybook and accessibility coverage is needed for that release decision.
+
+Success means both the `Practical theme readiness` job and the `WordPress fixture smoke` job pass. The fixture job installs WP-CLI, starts MySQL, sets `WP_SMOKE_REQUIRED=1`, and runs `npm run release:check` against the isolated WordPress fixture. Record the successful workflow run in the 2.0 release PR before merging.
+
+The semantic-release workflow remains release-gated. It runs release readiness, requires the full WordPress fixture smoke path with WP-CLI and MySQL, runs a semantic-release dry run, and then allows the final publish job only after the readiness job succeeds. Release publishing must not proceed when the full fixture path is skipped or failed.
 
 ## License
 

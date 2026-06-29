@@ -795,6 +795,7 @@ function runStaticChecks() {
     ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke checks to npm run pr:check.');
     ensure(themeReadinessWorkflow.includes('npm run release:check'), 'theme-readiness.yml should run release readiness checks.');
     ensure(themeReadinessWorkflow.includes("github.event_name != 'pull_request'"), 'theme-readiness.yml should keep the WordPress fixture off normal pull requests.');
+    ensure(themeReadinessWorkflow.includes('wordpress_fixture enabled before merging'), 'theme-readiness.yml should document the 2.0 manual fixture gate.');
     ensure(themeReadinessWorkflow.includes('mysql:'), 'theme-readiness.yml should provide MySQL for the WordPress fixture job.');
     ensure(themeReadinessWorkflow.includes('wp-cli'), 'theme-readiness.yml should install WP-CLI for the WordPress fixture job.');
     ensure(themeReadinessWorkflow.includes('WP_SMOKE_REQUIRED'), 'theme-readiness.yml should require the fixture smoke when the fixture job runs.');
@@ -853,6 +854,8 @@ function runStaticChecks() {
     ensure(readme.includes('whisk/project.emulsify.json') && readme.includes('"platform": "wordpress"'), 'README.md should explain the current project.emulsify.json platform setting.');
     ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
+    ensure(readme.includes('Normal PR checks do not start MySQL or run the full WordPress fixture'), 'README.md should distinguish practical PR checks from the full fixture.');
+    ensure(readme.includes('GitHub Actions > `WordPress Theme Readiness`'), 'README.md should tell maintainers where to run the manual fixture workflow.');
     ensure(readme.includes('WP_SMOKE_REQUIRED=1'), 'README.md should document required WordPress fixture smoke behavior.');
 
     for (const docLink of expectedDocLinks) {
@@ -920,10 +923,14 @@ function runStaticChecks() {
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
     ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');
     ensure(docs.release.includes('Manual and scheduled runs execute the full WordPress fixture smoke test'), 'Release process doc should explain when the full fixture runs.');
+    ensure(docs.release.includes('Open GitHub Actions for `emulsify-ds/emulsify-wordpress`'), 'Release process doc should tell maintainers where to trigger the manual workflow.');
+    ensure(docs.release.includes('Keep `wordpress_fixture` enabled'), 'Release process doc should document the manual workflow fixture input.');
+    ensure(docs.release.includes('Success means both the `Practical theme readiness` job and the `WordPress fixture smoke` job pass'), 'Release process doc should define manual fixture success.');
     ensure(docs.release.includes('generates and activates a child theme from Whisk'), 'Release process doc should document generated child fixture coverage.');
     ensure(docs.release.includes('ACF/Twig and native `block.json` discovery'), 'Release process doc should document block discovery fixture coverage.');
     ensure(docs.release.includes('WP_SMOKE_REQUIRED=1'), 'Release process doc should document required fixture smoke behavior.');
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
+    ensure(pullRequestTemplate.includes('2.0 release branch merge') && pullRequestTemplate.includes('wordpress_fixture'), 'PR template should include the 2.0 manual fixture checklist item.');
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');
     ensure(!/Webpack/i.test(`${readme}\n${docsText}`), 'Docs should not mention Webpack.');

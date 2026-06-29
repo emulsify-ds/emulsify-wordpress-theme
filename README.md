@@ -103,11 +103,13 @@ npm ci --ignore-scripts
 | Command | Purpose |
 | --- | --- |
 | `npm run lint:php` | Lint all PHP files with `php -l`. |
-| `npm run pr:check` | Run the practical pull request validation suite. |
+| `npm run pr:check` | Run the practical, stubbed pull request validation suite. |
 | `npm run release:check` | Run release-readiness checks. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
-`release:check` includes the full WordPress fixture smoke path. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.
+Normal PR checks do not start MySQL or run the full WordPress fixture. `release:check` includes that fixture path, which requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.
+
+Before merging the 2.0 release branch, maintainers should run GitHub Actions > `WordPress Theme Readiness` on `release-2.x` with the `wordpress_fixture` input enabled. Success means both `Practical theme readiness` and `WordPress fixture smoke` pass. Release publishing also requires that full fixture path before semantic-release can publish.
 
 ## Generate a child theme
 
