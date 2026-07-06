@@ -553,7 +553,10 @@ function runStaticChecks() {
     ensure(locator.includes('native_block_name'), 'Component locator should detect duplicate native block names.');
     ensure(fileDiscovery.includes('get_stylesheet_directory()') && fileDiscovery.includes('get_template_directory()'), 'File discovery helper should build child and parent theme roots.');
     ensure(fileDiscovery.indexOf('get_stylesheet_directory()') < fileDiscovery.indexOf('get_template_directory()'), 'File discovery helper should keep child roots before parent roots.');
-    ensure(!/wp_cache_|transient/i.test(locator), 'Component locator should not use persistent caching without invalidation.');
+    ensure(locator.includes('emulsify_theme_component_discovery_cache_enabled') && locator.includes('get_transient') && locator.includes('set_transient'), 'Component locator should expose opt-in transient-backed persistent discovery caching.');
+    ensure(locator.includes('clear_discovery_cache') && locator.includes('delete_transient'), 'Component locator should provide a clear method for the active discovery cache key.');
+    ensure(locator.includes('stylesheet_version') && locator.includes('template_version') && locator.includes('manifest_file_signature'), 'Component locator cache key should include theme versions and manifest filemtime.');
+    ensure(locator.includes('wp_get_environment_type') && locator.includes('WP_DEBUG'), 'Component locator should keep active development uncached unless explicitly enabled.');
     ensure(registry.includes('$components = new ComponentLocator()'), 'Block registry should share one ComponentLocator instance.');
     ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use ComponentLocator.');
     ensure(acfBlocks.includes('acf_block_name'), 'ACF/Twig block registration should skip duplicate final ACF block names.');
@@ -567,7 +570,10 @@ function runStaticChecks() {
     ensure(smoke.includes('duplicate component slugs'), 'Component locator smoke should verify duplicate ACF/Twig component slug reporting.');
     ensure(smoke.includes('duplicate block.json name values'), 'Component locator smoke should verify duplicate native block name reporting.');
     ensure(smoke.includes('emulsify-shared-acf'), 'Component locator smoke should verify duplicate normalized final ACF block name handling.');
-    return 'Component locator memoizes request-local discovery and keeps child-theme-first block priority with duplicate safety.';
+    ensure(smoke.includes('Missing persistent discovery cache should fall back') && smoke.includes('Enabled persistent discovery cache should be reused'), 'Component locator smoke should cover enabled persistent cache behavior.');
+    ensure(smoke.includes('Changing the child theme version should change') && smoke.includes('Changing the asset manifest mtime should change'), 'Component locator smoke should cover cache key invalidation.');
+    ensure(smoke.includes('Invalid persistent discovery cache data should fall back'), 'Component locator smoke should cover invalid cache fallback.');
+    return 'Component locator memoizes request-local discovery and offers opt-in persistent caching with duplicate safety.';
   });
 
   runStaticCheck('Runtime filters', () => {
@@ -587,11 +593,12 @@ function runStaticChecks() {
     const acfJsonSmoke = readFile('.github/scripts/acf-local-json-smoke.php');
     const assetManifestSmoke = readFile('.github/scripts/asset-manifest-smoke.php');
     const blockAssetSmoke = readFile('.github/scripts/block-scoped-assets-smoke.php');
+    const componentLocatorSmoke = readFile('.github/scripts/component-locator-smoke.php');
     const editorEnhancementsSmoke = readFile('.github/scripts/editor-enhancements-smoke.php');
     const smoke = readFile('.github/scripts/theme-filters-smoke.php');
     const editorPolicySmoke = readFile('.github/scripts/editor-policy-smoke.php');
     const patternSmoke = readFile('.github/scripts/pattern-registry-smoke.php');
-    const smokeText = [acfJsonSmoke, assetManifestSmoke, blockAssetSmoke, editorEnhancementsSmoke, smoke, editorPolicySmoke, patternSmoke].join('\n');
+    const smokeText = [acfJsonSmoke, assetManifestSmoke, blockAssetSmoke, componentLocatorSmoke, editorEnhancementsSmoke, smoke, editorPolicySmoke, patternSmoke].join('\n');
     const expectedFilters = [
       'emulsify_theme_acf_json_enabled',
       'emulsify_theme_acf_json_save_path',
@@ -615,6 +622,9 @@ function runStaticChecks() {
       'emulsify_theme_pattern_categories',
       'emulsify_theme_pattern_args',
       'emulsify_theme_component_roots',
+      'emulsify_theme_component_discovery_cache_enabled',
+      'emulsify_theme_component_discovery_cache_key_parts',
+      'emulsify_theme_component_discovery_cache_ttl',
       'emulsify_theme_setup_options',
       'emulsify_theme_editor_policy_options',
       'emulsify_theme_allowed_block_types',
@@ -998,6 +1008,7 @@ function runStaticChecks() {
     ensure(docs.architecture.includes('generatedFrom: "emulsify-wordpress"') && docs.architecture.includes('safer replacement checks'), 'Architecture doc should document generated child theme lineage metadata.');
     ensure(docs.architecture.includes('@emulsify-tpl'), 'Architecture doc should document the parent-only template namespace.');
     ensure(docs.architecture.includes('{% include "project_machine_name:component_name" %}') && docs.architecture.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Architecture doc should document generic project machine-name component includes while preserving @components compatibility.');
+    ensure(docs.architecture.includes('Optional persistent discovery cache') && docs.architecture.includes('clear_discovery_cache'), 'Architecture doc should document the optional component discovery cache and clear method.');
     ensure(docs.twig.includes('@templates') && docs.twig.includes('@components'), 'Twig doc should document core namespaces.');
     ensure(docs.twig.includes('Install or author project components in the structure defined by the selected Emulsify component system'), 'Twig doc should avoid prescribing a component source structure.');
     ensure(docs.twig.includes('The general form is `project_machine_name:component_name`'), 'Twig doc should document the generic project component include form.');
@@ -1067,7 +1078,7 @@ function runStaticChecks() {
     ensure(docs.post2xRoadmap.includes('Build on Composer PSR-4 autoloading with grouped runtime directories'), 'Post-2.x roadmap should include the code organization milestone.');
     ensure(docs.post2xRoadmap.includes('optional manifest-driven asset loading'), 'Post-2.x roadmap should include the asset manifest milestone.');
     ensure(docs.post2xRoadmap.includes('wp emulsify doctor'), 'Post-2.x roadmap should include CLI diagnostics.');
-    ensure(docs.post2xRoadmap.includes('persistent discovery caching after manifest behavior is stable'), 'Post-2.x roadmap should place persistent caching after manifests.');
+    ensure(docs.post2xRoadmap.includes('optional persistent discovery caching') && docs.post2xRoadmap.includes('invalidation guidance'), 'Post-2.x roadmap should keep cache follow-up work focused on diagnostics and guidance.');
     for (const heading of [
       '## Code organization',
       '## Runtime architecture',

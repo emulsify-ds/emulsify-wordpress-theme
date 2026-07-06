@@ -15,7 +15,7 @@ use Emulsify\Theme\Support\FileDiscovery;
  * Discovery is memoized on this object for the lifetime of the current PHP
  * request. The registry shares one locator between ACF/Twig and native block
  * registration, so both paths reuse the same deterministic child-first file
- * index without introducing persistent cache invalidation concerns.
+ * index. Persistent caching is optional and disabled by default.
  */
 final class ComponentLocator {
 
@@ -25,6 +25,27 @@ final class ComponentLocator {
 	 * @var string
 	 */
 	private const COMPONENTS_DIRECTORY = 'dist/components';
+
+	/**
+	 * Theme-relative built asset manifest path.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_MANIFEST_PATH = 'dist/emulsify-assets.json';
+
+	/**
+	 * Transient key prefix for optional persistent discovery caching.
+	 *
+	 * @var string
+	 */
+	private const CACHE_TRANSIENT_PREFIX = 'emulsify_component_discovery_';
+
+	/**
+	 * Default persistent cache lifetime in seconds.
+	 *
+	 * @var int
+	 */
+	private const DEFAULT_CACHE_TTL = 86400;
 
 	/**
 	 * Memoized component root records.
@@ -60,6 +81,15 @@ final class ComponentLocator {
 	 * @var array
 	 */
 	private $skipped_duplicates = array();
+
+	/**
+	 * Clears the optional persistent discovery cache for the current theme state.
+	 *
+	 * @return bool TRUE when WordPress deleted a transient, otherwise false.
+	 */
+	public static function clear_discovery_cache(): bool {
+		return ( new self() )->delete_component_files_cache();
+	}
 
 	/**
 	 * Gets components that can be registered as ACF/Twig blocks.
@@ -249,9 +279,395 @@ final class ComponentLocator {
 			return $this->component_files;
 		}
 
+		$cached = $this->cached_component_files();
+
+		if ( is_array( $cached ) ) {
+			$this->component_files = $cached;
+			return $this->component_files;
+		}
+
 		$this->component_files = FileDiscovery::file_records( $this->component_roots() );
+		$this->cache_component_files( $this->component_files );
 
 		return $this->component_files;
+	}
+
+	/**
+	 * Gets cached component file records when optional caching is enabled.
+	 *
+	 * @return array|null Component file records, or null when scanning should run.
+	 */
+	private function cached_component_files(): ?array {
+		if ( ! $this->persistent_cache_enabled() || ! function_exists( 'get_transient' ) ) {
+			return null;
+		}
+
+		$cached = get_transient( $this->component_files_cache_key() );
+
+		if ( ! is_array( $cached ) || ! isset( $cached['files'] ) || ! is_array( $cached['files'] ) ) {
+			return null;
+		}
+
+		return $this->normalize_cached_component_files( $cached['files'] );
+	}
+
+	/**
+	 * Stores component file records in the optional persistent cache.
+	 *
+	 * @param array $files Component file records.
+	 * @return void
+	 */
+	private function cache_component_files( array $files ): void {
+		if ( ! $this->persistent_cache_enabled() || ! function_exists( 'set_transient' ) ) {
+			return;
+		}
+
+		set_transient(
+			$this->component_files_cache_key(),
+			array(
+				'files' => $files,
+			),
+			$this->component_files_cache_ttl()
+		);
+	}
+
+	/**
+	 * Deletes the optional persistent component file cache.
+	 *
+	 * @return bool TRUE when WordPress deleted a transient, otherwise false.
+	 */
+	private function delete_component_files_cache(): bool {
+		if ( ! function_exists( 'delete_transient' ) ) {
+			return false;
+		}
+
+		return (bool) delete_transient( $this->component_files_cache_key() );
+	}
+
+	/**
+	 * Checks whether optional persistent discovery caching is enabled.
+	 *
+	 * @return bool TRUE when persistent caching should be used.
+	 */
+	private function persistent_cache_enabled(): bool {
+		$enabled = false;
+
+		if ( $this->is_development_environment() ) {
+			$enabled = false;
+		}
+
+		/**
+		 * Filters whether component discovery should use persistent caching.
+		 *
+		 * The default is false. Return true to explicitly enable persistent
+		 * caching, including in local or WP_DEBUG environments.
+		 *
+		 * @param bool             $enabled     Whether persistent caching is enabled.
+		 * @param ComponentLocator $locator     Component locator instance.
+		 * @param string           $environment Current WordPress environment type.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_component_discovery_cache_enabled', $enabled, $this, $this->environment_type() );
+
+		return (bool) $filtered;
+	}
+
+	/**
+	 * Builds the transient cache key for the current theme state.
+	 *
+	 * @return string Transient key.
+	 */
+	private function component_files_cache_key(): string {
+		$stylesheet            = $this->stylesheet();
+		$template              = $this->template();
+		$stylesheet_directory  = function_exists( 'get_stylesheet_directory' ) ? get_stylesheet_directory() : '';
+		$template_directory    = function_exists( 'get_template_directory' ) ? get_template_directory() : '';
+		$key_parts             = array(
+			'stylesheet'         => $stylesheet,
+			'template'           => $template,
+			'stylesheet_version' => $this->theme_version( $stylesheet, $stylesheet_directory ),
+			'template_version'   => $this->theme_version( $template, $template_directory ),
+			'environment'        => $this->environment_type(),
+			'manifest'           => $this->manifest_file_signature(),
+		);
+
+		/**
+		 * Filters the component discovery persistent cache key parts.
+		 *
+		 * Projects that alter component roots dynamically can add their own
+		 * version token here, or change it to invalidate cached discovery.
+		 *
+		 * @param array            $key_parts Cache key parts.
+		 * @param ComponentLocator $locator   Component locator instance.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_component_discovery_cache_key_parts', $key_parts, $this );
+
+		if ( is_array( $filtered ) ) {
+			$key_parts = $filtered;
+		}
+
+		$encoded = function_exists( 'wp_json_encode' ) ? wp_json_encode( $key_parts ) : json_encode( $key_parts );
+
+		if ( ! is_string( $encoded ) ) {
+			$encoded = serialize( $key_parts );
+		}
+
+		return self::CACHE_TRANSIENT_PREFIX . md5( $encoded );
+	}
+
+	/**
+	 * Gets the optional persistent cache lifetime.
+	 *
+	 * @return int Cache lifetime in seconds.
+	 */
+	private function component_files_cache_ttl(): int {
+		$ttl = defined( 'DAY_IN_SECONDS' ) ? (int) DAY_IN_SECONDS : self::DEFAULT_CACHE_TTL;
+
+		/**
+		 * Filters the component discovery persistent cache lifetime.
+		 *
+		 * @param int              $ttl     Cache lifetime in seconds.
+		 * @param ComponentLocator $locator Component locator instance.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_component_discovery_cache_ttl', $ttl, $this );
+
+		return is_numeric( $filtered ) ? max( 0, (int) $filtered ) : $ttl;
+	}
+
+	/**
+	 * Normalizes cached file records and rejects invalid cache payloads.
+	 *
+	 * @param array $files Cached component file records.
+	 * @return array|null Normalized records, or null for invalid cache data.
+	 */
+	private function normalize_cached_component_files( array $files ): ?array {
+		$normalized = array();
+
+		foreach ( $files as $file ) {
+			if (
+				! is_array( $file )
+				|| empty( $file['path'] )
+				|| empty( $file['relative'] )
+				|| empty( $file['root_path'] )
+				|| empty( $file['root_source'] )
+				|| ! is_scalar( $file['path'] )
+				|| ! is_scalar( $file['relative'] )
+				|| ! is_scalar( $file['root_path'] )
+				|| ! is_scalar( $file['root_source'] )
+			) {
+				return null;
+			}
+
+			$record = array(
+				'path'        => (string) $file['path'],
+				'priority'    => isset( $file['priority'] ) ? (int) $file['priority'] : 0,
+				'relative'    => (string) $file['relative'],
+				'root_path'   => (string) $file['root_path'],
+				'root_source' => (string) $file['root_source'],
+			);
+
+			if ( isset( $file['root_uri'] ) && is_scalar( $file['root_uri'] ) ) {
+				$record['root_uri'] = (string) $file['root_uri'];
+			}
+
+			$normalized[] = $record;
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Checks whether active development should keep the default cache disabled.
+	 *
+	 * @return bool TRUE when the environment looks like active development.
+	 */
+	private function is_development_environment(): bool {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			return true;
+		}
+
+		return in_array( $this->environment_type(), array( 'local', 'development' ), true );
+	}
+
+	/**
+	 * Gets the current WordPress environment type.
+	 *
+	 * @return string Environment type.
+	 */
+	private function environment_type(): string {
+		if ( function_exists( 'wp_get_environment_type' ) ) {
+			$environment = wp_get_environment_type();
+
+			if ( is_scalar( $environment ) && '' !== trim( (string) $environment ) ) {
+				return (string) $environment;
+			}
+		}
+
+		return defined( 'WP_ENVIRONMENT_TYPE' ) && is_scalar( WP_ENVIRONMENT_TYPE ) ? (string) WP_ENVIRONMENT_TYPE : 'production';
+	}
+
+	/**
+	 * Gets the active child stylesheet slug.
+	 *
+	 * @return string Stylesheet slug.
+	 */
+	private function stylesheet(): string {
+		if ( function_exists( 'get_stylesheet' ) ) {
+			$stylesheet = get_stylesheet();
+
+			if ( is_scalar( $stylesheet ) && '' !== trim( (string) $stylesheet ) ) {
+				return (string) $stylesheet;
+			}
+		}
+
+		return function_exists( 'get_stylesheet_directory' ) ? basename( get_stylesheet_directory() ) : '';
+	}
+
+	/**
+	 * Gets the active parent template slug.
+	 *
+	 * @return string Template slug.
+	 */
+	private function template(): string {
+		if ( function_exists( 'get_template' ) ) {
+			$template = get_template();
+
+			if ( is_scalar( $template ) && '' !== trim( (string) $template ) ) {
+				return (string) $template;
+			}
+		}
+
+		return function_exists( 'get_template_directory' ) ? basename( get_template_directory() ) : '';
+	}
+
+	/**
+	 * Gets a theme version from WordPress metadata or style.css.
+	 *
+	 * @param string $stylesheet Theme stylesheet slug.
+	 * @param string $directory  Theme directory.
+	 * @return string Theme version.
+	 */
+	private function theme_version( string $stylesheet, string $directory ): string {
+		if ( '' !== $stylesheet && function_exists( 'wp_get_theme' ) ) {
+			$theme = wp_get_theme( $stylesheet );
+
+			if ( is_object( $theme ) && method_exists( $theme, 'get' ) ) {
+				$version = $theme->get( 'Version' );
+
+				if ( is_scalar( $version ) && '' !== trim( (string) $version ) ) {
+					return (string) $version;
+				}
+			}
+		}
+
+		return $this->style_css_version( $directory );
+	}
+
+	/**
+	 * Reads a Version header from a theme style.css file.
+	 *
+	 * @param string $directory Theme directory.
+	 * @return string Version header, or empty string.
+	 */
+	private function style_css_version( string $directory ): string {
+		$path = rtrim( $directory, '/\\' ) . '/style.css';
+
+		if ( '' === $directory || ! is_readable( $path ) ) {
+			return '';
+		}
+
+		$contents = file_get_contents( $path );
+
+		if ( ! is_string( $contents ) || ! preg_match( '/^\s*\*?\s*Version:\s*(.+)$/mi', $contents, $matches ) ) {
+			return '';
+		}
+
+		return trim( $matches[1] );
+	}
+
+	/**
+	 * Gets a child/parent manifest file signature for cache invalidation.
+	 *
+	 * @return string Manifest signature.
+	 */
+	private function manifest_file_signature(): string {
+		$relative_path = $this->manifest_relative_path();
+
+		if ( '' === $relative_path ) {
+			return '';
+		}
+
+		$signatures = array();
+		$themes     = array(
+			'child'  => function_exists( 'get_stylesheet_directory' ) ? get_stylesheet_directory() : '',
+			'parent' => function_exists( 'get_template_directory' ) ? get_template_directory() : '',
+		);
+
+		foreach ( $themes as $source => $directory ) {
+			if ( ! is_scalar( $directory ) || '' === trim( (string) $directory ) ) {
+				continue;
+			}
+
+			$path = rtrim( (string) $directory, '/\\' ) . '/' . $relative_path;
+
+			if ( ! is_readable( $path ) ) {
+				continue;
+			}
+
+			$mtime        = filemtime( $path );
+			$signatures[] = $source . ':' . $relative_path . ':' . ( false === $mtime ? '' : (string) $mtime );
+		}
+
+		return implode( '|', $signatures );
+	}
+
+	/**
+	 * Gets the theme-relative asset manifest path.
+	 *
+	 * @return string Manifest path, or empty string when disabled.
+	 */
+	private function manifest_relative_path(): string {
+		$relative_path = self::DEFAULT_MANIFEST_PATH;
+
+		/**
+		 * Filters the theme-relative asset manifest path.
+		 *
+		 * This mirrors asset loading so changing the manifest path also changes
+		 * the optional component discovery cache key.
+		 *
+		 * @param string $relative_path Theme-relative manifest path.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_asset_manifest_path', $relative_path );
+
+		if ( ! is_scalar( $filtered ) ) {
+			return '';
+		}
+
+		return $this->normalize_relative_path( (string) $filtered );
+	}
+
+	/**
+	 * Normalizes a safe relative path.
+	 *
+	 * @param string $path Candidate path.
+	 * @return string Normalized path, or empty string when invalid.
+	 */
+	private function normalize_relative_path( string $path ): string {
+		$path = trim( str_replace( '\\', '/', $path ) );
+
+		if (
+			'' === $path
+			|| false !== strpos( $path, "\0" )
+			|| 0 === strpos( $path, '/' )
+			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
+		) {
+			return '';
+		}
+
+		while ( 0 === strpos( $path, './' ) ) {
+			$path = substr( $path, 2 );
+		}
+
+		return $path;
 	}
 
 	/**

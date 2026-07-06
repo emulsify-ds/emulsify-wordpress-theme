@@ -10,6 +10,8 @@ The starter does not include an active native block example. Native blocks usual
 
 See [Component recipes](component-recipes.md) for a short `block.json` example and guidance on when to choose native blocks.
 
+Discovery uses request-only memoization by default. See [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache) for the optional persistent discovery cache.
+
 ## Block assets
 
 Native blocks should use standard `block.json` asset fields such as `style`, `script`, `viewScript`, `editorStyle`, `editorScript`, and `viewScriptModule`. The parent theme passes the block directory to `register_block_type()` and does not manually enqueue assets that WordPress can register from `block.json`.

@@ -10,9 +10,49 @@ if ( PHP_SAPI !== 'cli' ) {
 	exit( 1 );
 }
 
+$GLOBALS['emulsify_locator_smoke_hooks'] = array();
+$GLOBALS['emulsify_locator_transients']  = array();
+$GLOBALS['emulsify_locator_environment'] = 'production';
+
+if ( ! function_exists( 'add_filter' ) ) {
+	function add_filter( string $hook, callable $callback, int $priority = 10, int $accepted_args = 1 ): bool {
+		$GLOBALS['emulsify_locator_smoke_hooks'][ $hook ][ $priority ][] = array(
+			'accepted_args' => $accepted_args,
+			'callback'      => $callback,
+		);
+
+		ksort( $GLOBALS['emulsify_locator_smoke_hooks'][ $hook ] );
+
+		return true;
+	}
+}
+
 if ( ! function_exists( 'apply_filters' ) ) {
 	function apply_filters( string $hook, $value, ...$arguments ) {
+		if ( empty( $GLOBALS['emulsify_locator_smoke_hooks'][ $hook ] ) ) {
+			return $value;
+		}
+
+		foreach ( $GLOBALS['emulsify_locator_smoke_hooks'][ $hook ] as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				$value = call_user_func_array(
+					$callback['callback'],
+					array_slice(
+						array_merge( array( $value ), $arguments ),
+						0,
+						$callback['accepted_args']
+					)
+				);
+			}
+		}
+
 		return $value;
+	}
+}
+
+if ( ! function_exists( 'get_stylesheet' ) ) {
+	function get_stylesheet(): string {
+		return $GLOBALS['emulsify_locator_stylesheet'];
 	}
 }
 
@@ -22,9 +62,90 @@ if ( ! function_exists( 'get_stylesheet_directory' ) ) {
 	}
 }
 
+if ( ! function_exists( 'get_template' ) ) {
+	function get_template(): string {
+		return $GLOBALS['emulsify_locator_template'];
+	}
+}
+
 if ( ! function_exists( 'get_template_directory' ) ) {
 	function get_template_directory(): string {
 		return $GLOBALS['emulsify_locator_parent_theme'];
+	}
+}
+
+if ( ! function_exists( 'wp_get_theme' ) ) {
+	function wp_get_theme( string $stylesheet = '' ) {
+		return new class( $stylesheet ) {
+			/**
+			 * Theme stylesheet slug.
+			 *
+			 * @var string
+			 */
+			private $stylesheet;
+
+			/**
+			 * Constructor.
+			 *
+			 * @param string $stylesheet Theme stylesheet slug.
+			 */
+			public function __construct( string $stylesheet ) {
+				$this->stylesheet = $stylesheet;
+			}
+
+			/**
+			 * Gets theme metadata.
+			 *
+			 * @param string $header Metadata header.
+			 * @return string Metadata value.
+			 */
+			public function get( string $header ): string {
+				if ( 'Version' !== $header ) {
+					return '';
+				}
+
+				return isset( $GLOBALS['emulsify_locator_theme_versions'][ $this->stylesheet ] )
+					? $GLOBALS['emulsify_locator_theme_versions'][ $this->stylesheet ]
+					: '';
+			}
+		};
+	}
+}
+
+if ( ! function_exists( 'wp_get_environment_type' ) ) {
+	function wp_get_environment_type(): string {
+		return $GLOBALS['emulsify_locator_environment'];
+	}
+}
+
+if ( ! function_exists( 'get_transient' ) ) {
+	function get_transient( string $key ) {
+		if ( array_key_exists( 'emulsify_locator_transient_override', $GLOBALS ) ) {
+			return $GLOBALS['emulsify_locator_transient_override'];
+		}
+
+		return array_key_exists( $key, $GLOBALS['emulsify_locator_transients'] )
+			? $GLOBALS['emulsify_locator_transients'][ $key ]
+			: false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	function set_transient( string $key, $value, int $expiration = 0 ): bool {
+		unset( $expiration );
+
+		$GLOBALS['emulsify_locator_transients'][ $key ] = $value;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	function delete_transient( string $key ): bool {
+		$exists = array_key_exists( $key, $GLOBALS['emulsify_locator_transients'] );
+		unset( $GLOBALS['emulsify_locator_transients'][ $key ] );
+
+		return $exists;
 	}
 }
 
@@ -167,6 +288,12 @@ $parent = $work_root . '/parent-theme';
 
 $GLOBALS['emulsify_locator_child_theme']  = $child;
 $GLOBALS['emulsify_locator_parent_theme'] = $parent;
+$GLOBALS['emulsify_locator_stylesheet']   = 'child-theme';
+$GLOBALS['emulsify_locator_template']     = 'parent-theme';
+$GLOBALS['emulsify_locator_theme_versions'] = array(
+	'child-theme'  => '1.0.0',
+	'parent-theme' => '2.0.0',
+);
 $GLOBALS['emulsify_locator_acf_registered'] = array();
 $GLOBALS['emulsify_locator_existing_acf_blocks'] = array();
 
@@ -276,6 +403,156 @@ try {
 		emulsify_locator_smoke_has_duplicate( $acf_blocks->skipped_duplicates(), 'acf_block_name', 'emulsify-shared-acf' ),
 		'ACF block registration should report duplicate normalized final block names.'
 	);
+
+	add_filter(
+		'emulsify_theme_component_discovery_cache_enabled',
+		static function (): bool {
+			return true;
+		}
+	);
+	add_filter(
+		'emulsify_theme_component_discovery_cache_key_parts',
+		static function ( array $key_parts ): array {
+			$key_parts['smoke'] = 'component-locator';
+
+			return $key_parts;
+		}
+	);
+	add_filter(
+		'emulsify_theme_component_discovery_cache_ttl',
+		static function (): int {
+			return 3600;
+		}
+	);
+
+	$cache_child  = $work_root . '/cache-child';
+	$cache_parent = $work_root . '/cache-parent';
+	$GLOBALS['emulsify_locator_child_theme']  = $cache_child;
+	$GLOBALS['emulsify_locator_parent_theme'] = $cache_parent;
+	$GLOBALS['emulsify_locator_stylesheet']   = 'cache-child';
+	$GLOBALS['emulsify_locator_template']     = 'cache-parent';
+	$GLOBALS['emulsify_locator_theme_versions'] = array(
+		'cache-child'  => '1.0.0',
+		'cache-parent' => '2.0.0',
+	);
+	$GLOBALS['emulsify_locator_transients'] = array();
+	emulsify_locator_smoke_write( $cache_child . '/dist/components/cache-card/cache-card.component.json', '{"title":"Cache Card"}' );
+	emulsify_locator_smoke_write( $cache_child . '/dist/components/cache-card/cache-card.twig', '<article>Cache card</article>' );
+
+	$cache_locator = new Emulsify\Theme\Blocks\ComponentLocator();
+
+	emulsify_locator_smoke_assert(
+		array( 'cache-card' ) === emulsify_locator_smoke_relatives( $cache_locator->acf_components() ),
+		'Missing persistent discovery cache should fall back to filesystem scanning.'
+	);
+
+	emulsify_locator_smoke_write( $cache_child . '/dist/components/cache-late/cache-late.component.json', '{"title":"Cache Late"}' );
+	emulsify_locator_smoke_write( $cache_child . '/dist/components/cache-late/cache-late.twig', '<article>Cache late</article>' );
+
+	$cached_locator = new Emulsify\Theme\Blocks\ComponentLocator();
+
+	emulsify_locator_smoke_assert(
+		! in_array( 'cache-late', emulsify_locator_smoke_relatives( $cached_locator->acf_components() ), true ),
+		'Enabled persistent discovery cache should be reused across locator instances.'
+	);
+	emulsify_locator_smoke_assert(
+		Emulsify\Theme\Blocks\ComponentLocator::clear_discovery_cache(),
+		'Component discovery cache clear method should delete the active transient.'
+	);
+
+	$cleared_locator = new Emulsify\Theme\Blocks\ComponentLocator();
+
+	emulsify_locator_smoke_assert(
+		in_array( 'cache-late', emulsify_locator_smoke_relatives( $cleared_locator->acf_components() ), true ),
+		'Clearing persistent discovery cache should force the next locator to scan.'
+	);
+
+	$version_child  = $work_root . '/version-child';
+	$version_parent = $work_root . '/version-parent';
+	$GLOBALS['emulsify_locator_child_theme']  = $version_child;
+	$GLOBALS['emulsify_locator_parent_theme'] = $version_parent;
+	$GLOBALS['emulsify_locator_stylesheet']   = 'version-child';
+	$GLOBALS['emulsify_locator_template']     = 'version-parent';
+	$GLOBALS['emulsify_locator_theme_versions'] = array(
+		'version-child'  => '1.0.0',
+		'version-parent' => '2.0.0',
+	);
+	$GLOBALS['emulsify_locator_transients'] = array();
+	emulsify_locator_smoke_write( $version_child . '/dist/components/version-card/version-card.component.json', '{"title":"Version Card"}' );
+	emulsify_locator_smoke_write( $version_child . '/dist/components/version-card/version-card.twig', '<article>Version card</article>' );
+	( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components();
+	emulsify_locator_smoke_write( $version_child . '/dist/components/version-late/version-late.component.json', '{"title":"Version Late"}' );
+	emulsify_locator_smoke_write( $version_child . '/dist/components/version-late/version-late.twig', '<article>Version late</article>' );
+
+	emulsify_locator_smoke_assert(
+		! in_array( 'version-late', emulsify_locator_smoke_relatives( ( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components() ), true ),
+		'Persistent discovery cache should hold until an invalidating key part changes.'
+	);
+
+	$GLOBALS['emulsify_locator_theme_versions']['version-child'] = '1.0.1';
+
+	emulsify_locator_smoke_assert(
+		in_array( 'version-late', emulsify_locator_smoke_relatives( ( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components() ), true ),
+		'Changing the child theme version should change the persistent discovery cache key.'
+	);
+
+	$mtime_child  = $work_root . '/mtime-child';
+	$mtime_parent = $work_root . '/mtime-parent';
+	$GLOBALS['emulsify_locator_child_theme']  = $mtime_child;
+	$GLOBALS['emulsify_locator_parent_theme'] = $mtime_parent;
+	$GLOBALS['emulsify_locator_stylesheet']   = 'mtime-child';
+	$GLOBALS['emulsify_locator_template']     = 'mtime-parent';
+	$GLOBALS['emulsify_locator_theme_versions'] = array(
+		'mtime-child'  => '1.0.0',
+		'mtime-parent' => '2.0.0',
+	);
+	$GLOBALS['emulsify_locator_transients'] = array();
+	emulsify_locator_smoke_write( $mtime_child . '/dist/emulsify-assets.json', '{"assets":{}}' );
+	emulsify_locator_smoke_write( $mtime_child . '/dist/components/mtime-card/mtime-card.component.json', '{"title":"Mtime Card"}' );
+	emulsify_locator_smoke_write( $mtime_child . '/dist/components/mtime-card/mtime-card.twig', '<article>Mtime card</article>' );
+	( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components();
+	emulsify_locator_smoke_write( $mtime_child . '/dist/components/mtime-late/mtime-late.component.json', '{"title":"Mtime Late"}' );
+	emulsify_locator_smoke_write( $mtime_child . '/dist/components/mtime-late/mtime-late.twig', '<article>Mtime late</article>' );
+
+	emulsify_locator_smoke_assert(
+		! in_array( 'mtime-late', emulsify_locator_smoke_relatives( ( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components() ), true ),
+		'Persistent discovery cache should include the manifest mtime in its key.'
+	);
+
+	touch( $mtime_child . '/dist/emulsify-assets.json', time() + 10 );
+	clearstatcache( true, $mtime_child . '/dist/emulsify-assets.json' );
+
+	emulsify_locator_smoke_assert(
+		in_array( 'mtime-late', emulsify_locator_smoke_relatives( ( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components() ), true ),
+		'Changing the asset manifest mtime should change the persistent discovery cache key.'
+	);
+
+	$invalid_child  = $work_root . '/invalid-cache-child';
+	$invalid_parent = $work_root . '/invalid-cache-parent';
+	$GLOBALS['emulsify_locator_child_theme']  = $invalid_child;
+	$GLOBALS['emulsify_locator_parent_theme'] = $invalid_parent;
+	$GLOBALS['emulsify_locator_stylesheet']   = 'invalid-cache-child';
+	$GLOBALS['emulsify_locator_template']     = 'invalid-cache-parent';
+	$GLOBALS['emulsify_locator_theme_versions'] = array(
+		'invalid-cache-child'  => '1.0.0',
+		'invalid-cache-parent' => '2.0.0',
+	);
+	$GLOBALS['emulsify_locator_transients'] = array();
+	$GLOBALS['emulsify_locator_transient_override'] = array(
+		'files' => array(
+			array(
+				'path' => $invalid_child . '/broken.component.json',
+			),
+		),
+	);
+	emulsify_locator_smoke_write( $invalid_child . '/dist/components/invalid-card/invalid-card.component.json', '{"title":"Invalid Card"}' );
+	emulsify_locator_smoke_write( $invalid_child . '/dist/components/invalid-card/invalid-card.twig', '<article>Invalid card</article>' );
+
+	emulsify_locator_smoke_assert(
+		array( 'invalid-card' ) === emulsify_locator_smoke_relatives( ( new Emulsify\Theme\Blocks\ComponentLocator() )->acf_components() ),
+		'Invalid persistent discovery cache data should fall back to filesystem scanning.'
+	);
+	unset( $GLOBALS['emulsify_locator_transient_override'] );
 
 	echo "Component locator smoke checks passed.\n";
 } catch ( Throwable $throwable ) {

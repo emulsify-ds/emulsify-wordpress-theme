@@ -11,6 +11,8 @@ The parent theme scans built component output under `dist/components`. A compone
 
 The Twig template can match the metadata filename or the component directory name.
 
+Discovery uses request-only memoization by default. See [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache) for the optional persistent discovery cache.
+
 ## Example
 
 Whisk does not include an active ACF/Twig block example. A project component system can add metadata like this and build it into `dist/components`:

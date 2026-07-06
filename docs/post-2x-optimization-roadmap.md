@@ -8,7 +8,7 @@ Emulsify WordPress 2.0 should stay focused on the parent and generated child the
 2. Build on Composer PSR-4 autoloading with grouped runtime directories in a minor release.
 3. Add optional manifest-driven asset loading.
 4. Add CLI diagnostics such as `wp emulsify doctor`.
-5. Add optional persistent discovery caching after manifest behavior is stable.
+5. Expand diagnostics around optional persistent discovery caching once projects have real-world cache invalidation feedback.
 
 ## Code organization
 
@@ -31,7 +31,7 @@ Emulsify WordPress 2.0 should stay focused on the parent and generated child the
 ## Component/block discovery
 
 - Refine child-first discovery diagnostics for duplicate ACF/Twig and native block definitions.
-- Consider persistent discovery caching only after manifest behavior is stable and cache invalidation is explicit.
+- Keep optional persistent discovery caching filter-controlled; future work should focus on diagnostics and invalidation guidance, not UI.
 - Keep discovery safe when ACF or native block APIs are unavailable.
 
 ## CLI diagnostics

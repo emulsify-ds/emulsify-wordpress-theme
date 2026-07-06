@@ -48,7 +48,25 @@ The parent-only `@emulsify-tpl` namespace points at parent templates. Use it whe
 
 Built child theme components are discovered before built parent theme components. When a child and parent component use the same relative path under `dist/components`, the child component wins for both ACF/Twig `*.component.json` metadata and native `block.json` metadata.
 
-Discovery is memoized for the current PHP request. ACF/Twig and native block registration share one filesystem scan without adding persistent cache invalidation problems.
+Discovery is memoized for the current PHP request. ACF/Twig and native block registration share one filesystem scan by default.
+
+## Optional persistent discovery cache
+
+Persistent component discovery caching is available but disabled by default. Enable it only when a project has stable build/version invalidation:
+
+```php
+add_filter( 'emulsify_theme_component_discovery_cache_enabled', '__return_true' );
+```
+
+The transient cache key includes the active stylesheet, parent template, child theme version, parent theme version, WordPress environment type, and `dist/emulsify-assets.json` filemtime when that manifest exists. Local and `WP_DEBUG` environments stay uncached unless the filter above explicitly enables caching.
+
+Projects that customize component roots dynamically can add their own invalidation token with `emulsify_theme_component_discovery_cache_key_parts`. The default cache lifetime can be adjusted with `emulsify_theme_component_discovery_cache_ttl`.
+
+To clear the current cache key from project code or a maintenance command, call:
+
+```php
+\Emulsify\Theme\Blocks\ComponentLocator::clear_discovery_cache();
+```
 
 For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 
@@ -68,6 +86,9 @@ Child themes and project plugins can extend parent behavior with focused WordPre
 - `emulsify_theme_acf_json_load_paths`
 - `emulsify_theme_acf_json_remove_default_load_path`
 - `emulsify_theme_component_roots`
+- `emulsify_theme_component_discovery_cache_enabled`
+- `emulsify_theme_component_discovery_cache_key_parts`
+- `emulsify_theme_component_discovery_cache_ttl`
 - `emulsify_theme_acf_block_metadata`
 - `emulsify_theme_acf_block_args`
 - `emulsify_theme_native_block_directories`
