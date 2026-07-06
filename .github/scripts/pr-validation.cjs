@@ -35,6 +35,7 @@ run('Run PHP lint', 'npm', ['run', 'lint:php']);
 run('Run ACF Local JSON smoke test', 'npm', ['run', 'smoke:acf-json']);
 run('Run asset manifest smoke test', 'npm', ['run', 'smoke:asset-manifest']);
 run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);
+run('Run block scoped asset smoke test', 'npm', ['run', 'smoke:block-assets']);
 run('Run child theme generator smoke test', 'npm', ['run', 'smoke:child-theme-generator']);
 run('Run component locator smoke test', 'npm', ['run', 'smoke:component-locator']);
 run('Run core block Twig renderer smoke test', 'npm', ['run', 'smoke:core-block-twig']);

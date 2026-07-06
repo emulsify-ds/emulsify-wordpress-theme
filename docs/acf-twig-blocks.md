@@ -55,6 +55,48 @@ add_filter(
 
 Component metadata can be adjusted before defaults are merged with `emulsify_theme_acf_block_metadata`.
 
+## Scoped assets
+
+ACF/Twig blocks can declare block-scoped frontend and editor assets. Prefer `dist/emulsify-assets.json` when build tooling can write one, because it keeps hashed filenames and dependencies in one place. If no matching manifest entry exists, the parent reads optional `assets` metadata from `*.component.json`.
+
+Component metadata paths are relative to the built component directory:
+
+```json
+{
+	"title": "Example Card",
+	"assets": {
+		"frontend": {
+			"css": [{ "path": "example-card.css", "version": "card-css-123" }],
+			"js": [{ "path": "example-card.js", "module": true }]
+		},
+		"editor": {
+			"css": [{ "path": "example-card.editor.css" }],
+			"js": [{ "path": "example-card.editor.js", "dependencies": ["wp-blocks"] }]
+		}
+	}
+}
+```
+
+When scoped assets are declared, they are enqueued from the ACF block `enqueue_assets` callback instead of being loaded globally for every page. Components without scoped metadata continue to use the global `dist/components` scanner fallback.
+
+Manifest block entries can target the final ACF block name:
+
+```json
+{
+	"assets": {
+		"blocks": {
+			"acf/emulsify-example-card": {
+				"frontend": {
+					"css": [{ "path": "components/example-card/example-card.css" }]
+				}
+			}
+		}
+	}
+}
+```
+
+Scoped asset records can be adjusted before registration with `emulsify_theme_acf_block_asset_records`.
+
 ## Duplicate handling
 
 The child theme is scanned before the parent theme. Duplicate component paths, duplicate component slugs, and duplicate final ACF block `name` values are skipped instead of being registered twice.

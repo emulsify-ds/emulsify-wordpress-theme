@@ -327,8 +327,8 @@ try {
 	);
 	emulsify_asset_manifest_smoke_assert(
 		isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-component-card'] )
-		&& isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-component-blocks-hero'] ),
-		'Valid manifest should enqueue component and block-specific CSS records.'
+		&& ! isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-component-blocks-hero'] ),
+		'Valid manifest should enqueue broad component CSS without auto-loading block-specific CSS records.'
 	);
 	emulsify_asset_manifest_smoke_assert(
 		isset( $GLOBALS['emulsify_asset_manifest_smoke_scripts']['emulsify-global-app'] )

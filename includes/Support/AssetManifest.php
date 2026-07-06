@@ -36,16 +36,93 @@ final class AssetManifest {
 			return null;
 		}
 
-		$assets = isset( $manifest['data']['assets'] ) && is_array( $manifest['data']['assets'] )
-			? $manifest['data']['assets']
-			: $manifest['data'];
-		$records = $this->scope_records( $scope, $extensions, $assets, $manifest );
+		$records = $this->scope_records( $scope, $extensions, $this->asset_data( $manifest ), $manifest );
 
 		if ( null === $records ) {
 			return null;
 		}
 
 		return FileDiscovery::sort_by_priority_and_relative( $records );
+	}
+
+	/**
+	 * Gets manifest-backed asset records for specific block/component keys.
+	 *
+	 * A null return means the manifest does not declare any matching scoped
+	 * assets and callers may use component metadata or scanner fallbacks.
+	 *
+	 * @param array $identifiers Block and component identifiers.
+	 * @return array|null Asset records grouped by frontend/editor and css/js.
+	 */
+	public function scoped_asset_records( array $identifiers ): ?array {
+		$manifest = $this->manifest();
+
+		if ( null === $manifest ) {
+			return null;
+		}
+
+		$assets      = $this->asset_data( $manifest );
+		$identifiers = $this->normalize_identifiers( $identifiers );
+		$records     = $this->empty_context_records();
+		$declared    = false;
+
+		foreach ( $identifiers as $identifier ) {
+			if ( isset( $assets['blocks'] ) && is_array( $assets['blocks'] ) && array_key_exists( $identifier, $assets['blocks'] ) ) {
+				$declared = true;
+				$records  = $this->merge_context_records(
+					$records,
+					$this->context_section_records( $assets['blocks'][ $identifier ], $manifest, $identifier )
+				);
+			}
+
+			if ( isset( $assets['components'] ) && is_array( $assets['components'] ) && array_key_exists( $identifier, $assets['components'] ) ) {
+				$declared = true;
+				$records  = $this->merge_context_records(
+					$records,
+					$this->context_section_records( $assets['components'][ $identifier ], $manifest, $identifier )
+				);
+			}
+		}
+
+		return $declared ? $this->sort_context_records( $records ) : null;
+	}
+
+	/**
+	 * Gets manifest-scoped component asset paths.
+	 *
+	 * These paths are relative to dist/components and are used by the recursive
+	 * scanner to avoid globally loading files that a block/component manifest
+	 * entry will load only when the block renders.
+	 *
+	 * @return array Scoped component asset paths keyed by relative path.
+	 */
+	public function scoped_component_asset_paths(): array {
+		$manifest = $this->manifest();
+
+		if ( null === $manifest ) {
+			return array();
+		}
+
+		$assets = $this->asset_data( $manifest );
+		$paths  = array();
+
+		if ( isset( $assets['blocks'] ) && is_array( $assets['blocks'] ) ) {
+			foreach ( $assets['blocks'] as $section ) {
+				foreach ( $this->context_section_paths( $section ) as $path ) {
+					$paths[ $path ] = true;
+				}
+			}
+		}
+
+		if ( isset( $assets['components'] ) && is_array( $assets['components'] ) && ! $this->is_asset_section( $assets['components'] ) ) {
+			foreach ( $assets['components'] as $section ) {
+				foreach ( $this->context_section_paths( $section ) as $path ) {
+					$paths[ $path ] = true;
+				}
+			}
+		}
+
+		return $paths;
 	}
 
 	/**
@@ -64,23 +141,9 @@ final class AssetManifest {
 
 			if ( array_key_exists( 'components', $assets ) ) {
 				$declared = true;
-				$records  = array_merge( $records, $this->section_records( $assets['components'], $extensions, $manifest ) );
-			}
-
-			if ( array_key_exists( 'blocks', $assets ) && is_array( $assets['blocks'] ) ) {
-				$declared = true;
-
-				foreach ( $assets['blocks'] as $block_name => $section ) {
-					$records = array_merge(
-						$records,
-						$this->section_records(
-							$section,
-							$extensions,
-							$manifest,
-							is_scalar( $block_name ) ? (string) $block_name : ''
-						)
-					);
-				}
+				$records  = $this->is_asset_section( $assets['components'] )
+					? array_merge( $records, $this->section_records( $assets['components'], $extensions, $manifest ) )
+					: $records;
 			}
 
 			return $declared ? $records : null;
@@ -130,6 +193,208 @@ final class AssetManifest {
 		}
 
 		return $records;
+	}
+
+	/**
+	 * Gets frontend/editor records from a manifest section.
+	 *
+	 * @param mixed  $section    Manifest section.
+	 * @param array  $manifest   Active manifest record.
+	 * @param string $block_name Optional block/component identifier.
+	 * @return array Context asset records.
+	 */
+	private function context_section_records( $section, array $manifest, string $block_name = '' ): array {
+		$records = $this->empty_context_records();
+
+		if ( ! is_array( $section ) ) {
+			return $records;
+		}
+
+		if ( isset( $section['frontend'] ) || isset( $section['editor'] ) ) {
+			if ( isset( $section['frontend'] ) && is_array( $section['frontend'] ) ) {
+				$records['frontend']['css'] = $this->section_records( $section['frontend'], array( 'css' ), $manifest, $block_name );
+				$records['frontend']['js']  = $this->section_records( $section['frontend'], array( 'js' ), $manifest, $block_name );
+			}
+
+			if ( isset( $section['editor'] ) && is_array( $section['editor'] ) ) {
+				$records['editor']['css'] = $this->section_records( $section['editor'], array( 'css' ), $manifest, $block_name );
+				$records['editor']['js']  = $this->section_records( $section['editor'], array( 'js' ), $manifest, $block_name );
+			}
+
+			return $records;
+		}
+
+		$records['frontend']['css'] = $this->section_records( $section, array( 'css' ), $manifest, $block_name );
+		$records['frontend']['js']  = $this->section_records( $section, array( 'js' ), $manifest, $block_name );
+
+		return $records;
+	}
+
+	/**
+	 * Gets scoped asset paths from a frontend/editor manifest section.
+	 *
+	 * @param mixed $section Manifest section.
+	 * @return array Component-relative paths.
+	 */
+	private function context_section_paths( $section ): array {
+		if ( ! is_array( $section ) ) {
+			return array();
+		}
+
+		$paths = array();
+
+		if ( isset( $section['frontend'] ) || isset( $section['editor'] ) ) {
+			foreach ( array( 'frontend', 'editor' ) as $context ) {
+				if ( isset( $section[ $context ] ) && is_array( $section[ $context ] ) ) {
+					$paths = array_merge( $paths, $this->section_paths( $section[ $context ] ) );
+				}
+			}
+
+			return array_values( array_unique( $paths ) );
+		}
+
+		return $this->section_paths( $section );
+	}
+
+	/**
+	 * Gets scoped asset paths from a css/js manifest section.
+	 *
+	 * @param array $section Manifest section.
+	 * @return array Component-relative paths.
+	 */
+	private function section_paths( array $section ): array {
+		$paths = array();
+
+		foreach ( array( 'css', 'js' ) as $type ) {
+			if ( empty( $section[ $type ] ) || ! is_array( $section[ $type ] ) ) {
+				continue;
+			}
+
+			foreach ( $section[ $type ] as $entry ) {
+				$data = is_array( $entry ) ? $entry : array( 'path' => $entry );
+				$path = $this->component_relative_path( $this->entry_path( $data ) );
+
+				if ( '' !== $path ) {
+					$paths[] = $path;
+				}
+			}
+		}
+
+		return array_values( array_unique( $paths ) );
+	}
+
+	/**
+	 * Converts a manifest entry path into a dist/components-relative path.
+	 *
+	 * @param string $path Manifest entry path.
+	 * @return string Component-relative path.
+	 */
+	private function component_relative_path( string $path ): string {
+		if ( 0 === strpos( $path, 'components/' ) ) {
+			return substr( $path, strlen( 'components/' ) );
+		}
+
+		return $path;
+	}
+
+	/**
+	 * Gets manifest asset data.
+	 *
+	 * @param array $manifest Active manifest record.
+	 * @return array Asset data.
+	 */
+	private function asset_data( array $manifest ): array {
+		return isset( $manifest['data']['assets'] ) && is_array( $manifest['data']['assets'] )
+			? $manifest['data']['assets']
+			: $manifest['data'];
+	}
+
+	/**
+	 * Checks whether a section directly declares css/js records.
+	 *
+	 * @param mixed $section Manifest section.
+	 * @return bool TRUE when the section is a broad asset section.
+	 */
+	private function is_asset_section( $section ): bool {
+		return is_array( $section ) && ( array_key_exists( 'css', $section ) || array_key_exists( 'js', $section ) );
+	}
+
+	/**
+	 * Gets an empty frontend/editor record set.
+	 *
+	 * @return array Empty context records.
+	 */
+	private function empty_context_records(): array {
+		return array(
+			'frontend' => array(
+				'css' => array(),
+				'js'  => array(),
+			),
+			'editor'   => array(
+				'css' => array(),
+				'js'  => array(),
+			),
+		);
+	}
+
+	/**
+	 * Merges two context asset record sets.
+	 *
+	 * @param array $base Base records.
+	 * @param array $add  Records to add.
+	 * @return array Merged records.
+	 */
+	private function merge_context_records( array $base, array $add ): array {
+		foreach ( array( 'frontend', 'editor' ) as $context ) {
+			foreach ( array( 'css', 'js' ) as $type ) {
+				$base[ $context ][ $type ] = array_merge(
+					$base[ $context ][ $type ] ?? array(),
+					$add[ $context ][ $type ] ?? array()
+				);
+			}
+		}
+
+		return $base;
+	}
+
+	/**
+	 * Sorts context asset records.
+	 *
+	 * @param array $records Context records.
+	 * @return array Sorted context records.
+	 */
+	private function sort_context_records( array $records ): array {
+		foreach ( array( 'frontend', 'editor' ) as $context ) {
+			foreach ( array( 'css', 'js' ) as $type ) {
+				$records[ $context ][ $type ] = FileDiscovery::sort_by_priority_and_relative( $records[ $context ][ $type ] ?? array() );
+			}
+		}
+
+		return $records;
+	}
+
+	/**
+	 * Normalizes scoped asset identifiers.
+	 *
+	 * @param array $identifiers Candidate identifiers.
+	 * @return array Normalized identifiers.
+	 */
+	private function normalize_identifiers( array $identifiers ): array {
+		$normalized = array();
+
+		foreach ( $identifiers as $identifier ) {
+			if ( ! is_scalar( $identifier ) ) {
+				continue;
+			}
+
+			$identifier = trim( (string) $identifier );
+
+			if ( '' !== $identifier ) {
+				$normalized[] = $identifier;
+			}
+		}
+
+		return array_values( array_unique( $normalized ) );
 	}
 
 	/**

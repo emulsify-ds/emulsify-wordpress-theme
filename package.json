@@ -35,6 +35,7 @@
     "smoke:acf-json": "php .github/scripts/acf-local-json-smoke.php",
     "smoke:asset-manifest": "php .github/scripts/asset-manifest-smoke.php",
     "smoke:attributes": "php .github/scripts/attribute-helper-smoke.php",
+    "smoke:block-assets": "php .github/scripts/block-scoped-assets-smoke.php",
     "smoke:bootstrap-loader": "php .github/scripts/bootstrap-loader-smoke.php",
     "smoke:child-theme-generator": "php .github/scripts/child-theme-generator-smoke.php",
     "smoke:component-locator": "php .github/scripts/component-locator-smoke.php",

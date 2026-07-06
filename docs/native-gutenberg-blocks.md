@@ -10,6 +10,12 @@ The starter does not include an active native block example. Native blocks usual
 
 See [Component recipes](component-recipes.md) for a short `block.json` example and guidance on when to choose native blocks.
 
+## Block assets
+
+Native blocks should use standard `block.json` asset fields such as `style`, `script`, `viewScript`, `editorStyle`, `editorScript`, and `viewScriptModule`. The parent theme passes the block directory to `register_block_type()` and does not manually enqueue assets that WordPress can register from `block.json`.
+
+Use `dist/emulsify-assets.json` or ACF/Twig component metadata only for ACF/Twig blocks. Native block asset loading should stay in native block metadata so WordPress can load assets only when the block is present.
+
 ## When to use native blocks
 
 Use native blocks when the project needs block editor APIs such as:

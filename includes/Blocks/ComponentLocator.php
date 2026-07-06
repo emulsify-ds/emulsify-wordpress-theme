@@ -123,8 +123,11 @@ final class ComponentLocator {
 			$seen_slugs[ $slug ] = $record;
 
 			$components[] = array(
+				'path'          => $directory,
 				'metadata_path' => $path,
 				'relative'      => $relative,
+				'root_path'     => $file['root_path'],
+				'root_uri'      => $file['root_uri'] ?? '',
 				'slug'          => $slug,
 				'source'        => $file['root_source'],
 				'template'      => $template,
@@ -198,6 +201,8 @@ final class ComponentLocator {
 			$directories[] = array(
 				'path'          => $directory,
 				'relative'      => $relative,
+				'root_path'     => $file['root_path'],
+				'root_uri'      => $file['root_uri'] ?? '',
 				'source'        => $file['root_source'],
 				'metadata_path' => $path,
 				'name'          => $name,
@@ -263,7 +268,7 @@ final class ComponentLocator {
 			return $this->component_roots;
 		}
 
-		$candidates = FileDiscovery::theme_roots( self::COMPONENTS_DIRECTORY );
+		$candidates = FileDiscovery::theme_roots( self::COMPONENTS_DIRECTORY, true );
 
 		/**
 		 * Filters built component discovery roots before scanning.
@@ -303,6 +308,8 @@ final class ComponentLocator {
 		return array(
 			'path'          => $directory,
 			'relative'      => $relative,
+			'root_path'     => $file['root_path'],
+			'root_uri'      => $file['root_uri'] ?? '',
 			'source'        => $file['root_source'],
 			'metadata_path' => $metadata_path,
 		);

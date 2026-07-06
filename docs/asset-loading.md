@@ -15,6 +15,8 @@ Global frontend CSS and JavaScript are loaded from `dist/global`. Component CSS 
 
 Scanner asset versions use `filemtime()` so browsers receive updated files after a rebuild. If the child and parent themes both contain a built asset with the same relative path, the child asset wins. Assets are sorted by root priority and relative path before they are enqueued.
 
+For ACF/Twig components, files declared in `*.component.json` `assets` metadata or keyed manifest block/component entries are treated as block-scoped assets and skipped by the global component scanner. Component files without scoped metadata still load through the global `dist/components` scanner.
+
 ## Manifest behavior
 
 Projects can optionally ship `dist/emulsify-assets.json` to avoid recursive discovery on every request. The manifest is child-first: a valid child manifest is used before a parent manifest. If no manifest exists, if the manifest is invalid JSON, or if a scope is not declared, the current scanner path remains the fallback for that scope.
@@ -69,7 +71,7 @@ Manifest records may include:
 - `dependencies` or `deps`
 - `module` or `"type": "module"` for frontend scripts
 
-Block-specific entries are accepted under `blocks` and are enqueued with component assets today. That keeps the manifest format ready for more precise block-aware loading later without making it a 2.0 requirement.
+Block-specific entries are accepted under `blocks` and are used by ACF/Twig block registration when a matching block is rendered. Broad `components.css` and `components.js` entries still load globally. Keyed `components` or `blocks` entries are not auto-loaded on pages that do not render those blocks. If a manifest only declares keyed block/component entries, undeclared component files still use the scanner fallback.
 
 ## Performance
 
@@ -128,3 +130,5 @@ add_filter(
 ```
 
 Final frontend asset records still pass through `emulsify_theme_asset_files`. Editor asset records pass through `emulsify_theme_editor_asset_files`.
+
+ACF/Twig block-scoped asset records pass through `emulsify_theme_acf_block_asset_records` before the block registration callback is attached.
