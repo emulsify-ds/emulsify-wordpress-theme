@@ -269,6 +269,7 @@ function runStaticChecks() {
     assets: readFile('docs/asset-loading.md'),
     cli: readFile('docs/wp-cli-child-theme-generation.md'),
     release: readFile('docs/release-process.md'),
+    post2xRoadmap: readFile('docs/post-2x-optimization-roadmap.md'),
   };
   const docsText = Object.values(docs).join('\n');
   const license = readFile('LICENSE');
@@ -311,6 +312,7 @@ function runStaticChecks() {
       'docs/native-gutenberg-blocks.md',
       'docs/editor-policy.md',
       'docs/parent-child-architecture.md',
+      'docs/post-2x-optimization-roadmap.md',
       'docs/release-process.md',
       'docs/sister-project-parity.md',
       'docs/timber-and-twig-authoring.md',
@@ -855,6 +857,7 @@ function runStaticChecks() {
       'docs/wp-cli-child-theme-generation.md',
       'docs/component-recipes.md',
       'docs/release-process.md',
+      'docs/post-2x-optimization-roadmap.md',
     ];
 
     ensure(readme.includes('Emulsify WordPress 2.0.0 is a Timber-first WordPress parent theme'), 'README.md should describe the 2.0.0 Timber-first parent theme.');
@@ -970,6 +973,23 @@ function runStaticChecks() {
     ensure(docs.release.includes('ACF/Twig and native `block.json` discovery'), 'Release process doc should document block discovery fixture coverage.');
     ensure(docs.release.includes('WP_SMOKE_REQUIRED=1'), 'Release process doc should document required fixture smoke behavior.');
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
+    ensure(docs.post2xRoadmap.includes('follow-up opportunities for focused minor releases, not 2.0 blockers'), 'Post-2.x roadmap should frame items as follow-up opportunities.');
+    ensure(docs.post2xRoadmap.includes('Ship 2.0 without adding new runtime features'), 'Post-2.x roadmap should keep 2.0 focused.');
+    ensure(docs.post2xRoadmap.includes('PSR-4 autoloading and grouped runtime directories'), 'Post-2.x roadmap should include the code organization milestone.');
+    ensure(docs.post2xRoadmap.includes('optional manifest-driven asset loading'), 'Post-2.x roadmap should include the asset manifest milestone.');
+    ensure(docs.post2xRoadmap.includes('wp emulsify doctor'), 'Post-2.x roadmap should include CLI diagnostics.');
+    ensure(docs.post2xRoadmap.includes('persistent discovery caching after manifest behavior is stable'), 'Post-2.x roadmap should place persistent caching after manifests.');
+    for (const heading of [
+      '## Code organization',
+      '## Runtime architecture',
+      '## Asset loading and performance',
+      '## Component/block discovery',
+      '## CLI diagnostics',
+      '## Editor and block feature modules',
+      '## Documentation and support tooling',
+    ]) {
+      ensure(docs.post2xRoadmap.includes(heading), `Post-2.x roadmap should include ${heading}.`);
+    }
     ensure(pullRequestTemplate.includes('2.0 release branch merge') && pullRequestTemplate.includes('wordpress_fixture'), 'PR template should include the 2.0 manual fixture checklist item.');
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');
     ensure(docsText.includes('normal frontend visitors') || docsText.includes('Normal frontend visitors'), 'Docs should document that duplicate diagnostics avoid frontend noise.');

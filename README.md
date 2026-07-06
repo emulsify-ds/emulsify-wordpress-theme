@@ -146,6 +146,7 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 - [Asset loading](docs/asset-loading.md)
 - [WP-CLI child theme generation](docs/wp-cli-child-theme-generation.md)
 - [Release process](docs/release-process.md)
+- [Post-2.x optimization roadmap](docs/post-2x-optimization-roadmap.md)
 
 ## License
 
