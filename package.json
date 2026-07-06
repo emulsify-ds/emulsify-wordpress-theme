@@ -33,6 +33,7 @@
     "pr:check": "node .github/scripts/pr-validation.cjs",
     "release:check": "node .github/scripts/release-check.cjs",
     "smoke:acf-json": "php .github/scripts/acf-local-json-smoke.php",
+    "smoke:asset-manifest": "php .github/scripts/asset-manifest-smoke.php",
     "smoke:attributes": "php .github/scripts/attribute-helper-smoke.php",
     "smoke:bootstrap-loader": "php .github/scripts/bootstrap-loader-smoke.php",
     "smoke:child-theme-generator": "php .github/scripts/child-theme-generator-smoke.php",

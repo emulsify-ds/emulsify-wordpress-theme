@@ -7,6 +7,7 @@
 
 namespace Emulsify\Theme\Runtime;
 
+use Emulsify\Theme\Support\AssetManifest;
 use Emulsify\Theme\Support\FileDiscovery;
 
 /**
@@ -40,6 +41,7 @@ final class Assets {
 	 * @return void
 	 */
 	public function frontend_scripts(): void {
+		$this->enqueue_scripts( 'emulsify-global', 'dist/global' );
 		$this->enqueue_scripts( 'emulsify-component', 'dist/components' );
 	}
 
@@ -57,7 +59,7 @@ final class Assets {
 			wp_enqueue_style(
 				$handle,
 				$asset['uri'],
-				array(),
+				$this->dependencies( $asset ),
 				$asset['version']
 			);
 		}
@@ -74,11 +76,11 @@ final class Assets {
 		foreach ( $this->asset_files( $directory, array( 'js' ) ) as $asset ) {
 			$handle = $this->handle( $prefix, $asset['relative'] );
 
-			if ( function_exists( 'wp_enqueue_script_module' ) ) {
+			if ( $this->is_module_script( $asset ) && function_exists( 'wp_enqueue_script_module' ) ) {
 				wp_enqueue_script_module(
 					$handle,
 					$asset['uri'],
-					array(),
+					$this->dependencies( $asset ),
 					$asset['version']
 				);
 				continue;
@@ -87,7 +89,7 @@ final class Assets {
 			wp_enqueue_script(
 				$handle,
 				$asset['uri'],
-				array(),
+				$this->dependencies( $asset ),
 				$asset['version'],
 				array(
 					'in_footer' => true,
@@ -104,6 +106,69 @@ final class Assets {
 	 * @return array Built asset records.
 	 */
 	private function asset_files( string $directory, array $extensions ): array {
+		$manifest_assets = $this->manifest_asset_files( $directory, $extensions );
+		$assets          = null === $manifest_assets ? $this->scanned_asset_files( $directory, $extensions ) : $manifest_assets;
+
+		/**
+		 * Filters built asset files before they are enqueued.
+		 *
+		 * Child themes and project plugins can add, remove, or reorder records.
+		 * Asset records should include path, relative, uri, and version keys.
+		 *
+		 * @param array  $assets     Built asset records.
+		 * @param string $directory  Theme-relative asset directory being scanned.
+		 * @param array  $extensions Allowed file extensions for the current enqueue pass.
+		 */
+		$filtered = apply_filters( 'emulsify_theme_asset_files', $assets, $directory, $extensions );
+
+		return is_array( $filtered ) ? $filtered : $assets;
+	}
+
+	/**
+	 * Gets manifest-backed assets when a manifest declares the current scope.
+	 *
+	 * @param string $directory  Theme-relative asset directory.
+	 * @param array  $extensions Allowed file extensions.
+	 * @return array|null Manifest-backed records, or null for scanner fallback.
+	 */
+	private function manifest_asset_files( string $directory, array $extensions ): ?array {
+		$scope = $this->manifest_scope( $directory );
+
+		if ( null === $scope ) {
+			return null;
+		}
+
+		return ( new AssetManifest() )->asset_records( $scope, $extensions );
+	}
+
+	/**
+	 * Maps a scanned asset directory to a manifest scope.
+	 *
+	 * @param string $directory Theme-relative asset directory.
+	 * @return string|null Manifest scope, or null when unsupported.
+	 */
+	private function manifest_scope( string $directory ): ?string {
+		$directory = trim( $directory, '/\\' );
+
+		if ( 'dist/global' === $directory ) {
+			return 'global';
+		}
+
+		if ( 'dist/components' === $directory ) {
+			return 'components';
+		}
+
+		return null;
+	}
+
+	/**
+	 * Finds built assets below a theme-relative directory through filesystem scans.
+	 *
+	 * @param string $directory  Theme-relative asset directory.
+	 * @param array  $extensions Allowed file extensions.
+	 * @return array Built asset records.
+	 */
+	private function scanned_asset_files( string $directory, array $extensions ): array {
 		$assets = array();
 		$seen   = array();
 
@@ -133,21 +198,7 @@ final class Assets {
 			);
 		}
 
-		$assets = FileDiscovery::sort_by_priority_and_relative( $assets );
-
-		/**
-		 * Filters built asset files before they are enqueued.
-		 *
-		 * Child themes and project plugins can add, remove, or reorder records.
-		 * Asset records should include path, relative, uri, and version keys.
-		 *
-		 * @param array  $assets     Built asset records.
-		 * @param string $directory  Theme-relative asset directory being scanned.
-		 * @param array  $extensions Allowed file extensions for the current enqueue pass.
-		 */
-		$filtered = apply_filters( 'emulsify_theme_asset_files', $assets, $directory, $extensions );
-
-		return is_array( $filtered ) ? $filtered : $assets;
+		return FileDiscovery::sort_by_priority_and_relative( $assets );
 	}
 
 	/**
@@ -195,6 +246,26 @@ final class Assets {
 		$name = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
 
 		return sanitize_key( $prefix . '-' . trim( (string) $name, '-' ) );
+	}
+
+	/**
+	 * Gets dependency handles from an asset record.
+	 *
+	 * @param array $asset Asset record.
+	 * @return array Dependency handles.
+	 */
+	private function dependencies( array $asset ): array {
+		return isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
+	}
+
+	/**
+	 * Checks whether a script should be enqueued as a script module.
+	 *
+	 * @param array $asset Asset record.
+	 * @return bool TRUE when script module enqueueing should be used.
+	 */
+	private function is_module_script( array $asset ): bool {
+		return ! array_key_exists( 'module', $asset ) || null === $asset['module'] ? true : (bool) $asset['module'];
 	}
 
 	/**

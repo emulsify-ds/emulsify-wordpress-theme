@@ -306,6 +306,7 @@ try {
 	emulsify_filter_smoke_write( $extra . '/native/block.json', '{"name":"emulsify/filter-native"}' );
 
 	require_once $repo_root . '/includes/Support/AttributeBag.php';
+	require_once $repo_root . '/includes/Support/AssetManifest.php';
 	require_once $repo_root . '/includes/Support/FileDiscovery.php';
 	require_once $repo_root . '/includes/Runtime/Assets.php';
 	require_once $repo_root . '/includes/Runtime/Context.php';

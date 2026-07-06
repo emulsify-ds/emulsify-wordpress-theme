@@ -33,6 +33,7 @@ run('Install Composer dependencies for Twig smoke coverage', 'composer', [
 run('Run Bootstrap loader smoke test', 'npm', ['run', 'smoke:bootstrap-loader']);
 run('Run PHP lint', 'npm', ['run', 'lint:php']);
 run('Run ACF Local JSON smoke test', 'npm', ['run', 'smoke:acf-json']);
+run('Run asset manifest smoke test', 'npm', ['run', 'smoke:asset-manifest']);
 run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);
 run('Run child theme generator smoke test', 'npm', ['run', 'smoke:child-theme-generator']);
 run('Run component locator smoke test', 'npm', ['run', 'smoke:component-locator']);

@@ -338,6 +338,7 @@ function runStaticChecks() {
       'includes/Runtime/Setup.php',
       'includes/Runtime/TimberIntegration.php',
       'includes/Runtime/Twig.php',
+      'includes/Support/AssetManifest.php',
       'includes/Support/AttributeBag.php',
       'includes/Support/FileDiscovery.php',
       'package.json',
@@ -352,6 +353,7 @@ function runStaticChecks() {
       'templates/single-password.twig',
       'templates/single.twig',
       '.github/scripts/acf-local-json-smoke.php',
+      '.github/scripts/asset-manifest-smoke.php',
       '.github/scripts/attribute-helper-smoke.php',
       '.github/scripts/bootstrap-loader-smoke.php',
       '.github/scripts/child-theme-generator-smoke.php',
@@ -395,6 +397,7 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['pr:check'] === 'node .github/scripts/pr-validation.cjs', 'package.json should expose npm run pr:check.');
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
     ensure(rootPackage.scripts['smoke:acf-json'] === 'php .github/scripts/acf-local-json-smoke.php', 'package.json should expose npm run smoke:acf-json.');
+    ensure(rootPackage.scripts['smoke:asset-manifest'] === 'php .github/scripts/asset-manifest-smoke.php', 'package.json should expose npm run smoke:asset-manifest.');
     ensure(rootPackage.scripts['smoke:attributes'] === 'php .github/scripts/attribute-helper-smoke.php', 'package.json should expose npm run smoke:attributes.');
     ensure(rootPackage.scripts['smoke:bootstrap-loader'] === 'php .github/scripts/bootstrap-loader-smoke.php', 'package.json should expose npm run smoke:bootstrap-loader.');
     ensure(rootPackage.scripts['smoke:child-theme-generator'] === 'php .github/scripts/child-theme-generator-smoke.php', 'package.json should expose npm run smoke:child-theme-generator.');
@@ -575,15 +578,17 @@ function runStaticChecks() {
     const editorPolicy = readFile('includes/Editor/Policy.php');
     const patterns = readFile('includes/Blocks/Patterns.php');
     const locator = readFile('includes/Blocks/ComponentLocator.php');
+    const assetManifest = readFile('includes/Support/AssetManifest.php');
     const fileDiscovery = readFile('includes/Support/FileDiscovery.php');
     const acfBlocks = readFile('includes/Blocks/AcfBlocks.php');
     const nativeBlocks = readFile('includes/Blocks/NativeBlocks.php');
     const acfJsonSmoke = readFile('.github/scripts/acf-local-json-smoke.php');
+    const assetManifestSmoke = readFile('.github/scripts/asset-manifest-smoke.php');
     const editorEnhancementsSmoke = readFile('.github/scripts/editor-enhancements-smoke.php');
     const smoke = readFile('.github/scripts/theme-filters-smoke.php');
     const editorPolicySmoke = readFile('.github/scripts/editor-policy-smoke.php');
     const patternSmoke = readFile('.github/scripts/pattern-registry-smoke.php');
-    const smokeText = [acfJsonSmoke, editorEnhancementsSmoke, smoke, editorPolicySmoke, patternSmoke].join('\n');
+    const smokeText = [acfJsonSmoke, assetManifestSmoke, editorEnhancementsSmoke, smoke, editorPolicySmoke, patternSmoke].join('\n');
     const expectedFilters = [
       'emulsify_theme_acf_json_enabled',
       'emulsify_theme_acf_json_save_path',
@@ -591,6 +596,8 @@ function runStaticChecks() {
       'emulsify_theme_acf_json_remove_default_load_path',
       'emulsify_theme_asset_directories',
       'emulsify_theme_asset_files',
+      'emulsify_theme_asset_manifest_path',
+      'emulsify_theme_asset_manifest_data',
       'emulsify_theme_editor_enhancements_config',
       'emulsify_theme_editor_asset_directories',
       'emulsify_theme_editor_asset_files',
@@ -610,7 +617,7 @@ function runStaticChecks() {
       'emulsify_theme_pattern_namespaces',
       'emulsify_theme_block_support_overrides',
     ];
-    const runtimeText = [acfJson, assets, twig, context, setup, editorEnhancements, editorPolicy, patterns, locator, acfBlocks, nativeBlocks].join('\n');
+    const runtimeText = [acfJson, assets, twig, context, setup, editorEnhancements, editorPolicy, patterns, locator, assetManifest, acfBlocks, nativeBlocks].join('\n');
 
     for (const filter of expectedFilters) {
       ensure(runtimeText.includes(filter), `${filter} should be registered in runtime PHP code.`);
@@ -619,6 +626,7 @@ function runStaticChecks() {
     }
 
     ensure(acfJsonSmoke.includes('ACF Local JSON smoke checks passed'), 'ACF Local JSON smoke should have a clear success message.');
+    ensure(assetManifestSmoke.includes('Asset manifest smoke checks passed'), 'Asset manifest smoke should have a clear success message.');
     ensure(editorEnhancementsSmoke.includes('Editor enhancements smoke checks passed'), 'Editor enhancements smoke should have a clear success message.');
     ensure(smoke.includes('Theme filter smoke checks passed'), 'Runtime filter smoke should have a clear success message.');
     ensure(editorPolicySmoke.includes('Editor policy smoke checks passed'), 'Editor policy smoke should have a clear success message.');
@@ -630,14 +638,20 @@ function runStaticChecks() {
     ensure(fileDiscovery.includes('function directory_files'), 'File discovery helper should support shallow directory scans.');
     ensure(fileDiscovery.includes('function relative_path'), 'File discovery helper should normalize POSIX relative paths.');
     ensure(fileDiscovery.includes('function sort_by_priority_and_relative'), 'File discovery helper should provide stable priority sorting.');
+    ensure(assetManifest.includes('dist/emulsify-assets.json'), 'Asset manifest helper should default to dist/emulsify-assets.json.');
+    ensure(assetManifest.includes('emulsify_theme_asset_manifest_path') && assetManifest.includes('emulsify_theme_asset_manifest_data'), 'Asset manifest helper should expose path and parsed data filters.');
+    ensure(assets.includes("'global'") && editorEnhancements.includes("'editor'") && assetManifest.includes("'components'") && assetManifest.includes("'blocks'"), 'Asset manifest support should cover global, editor, component, and block-specific sections.');
     ensure(assets.includes('FileDiscovery::theme_roots') && assets.includes('FileDiscovery::file_records'), 'Runtime assets should use shared filesystem discovery helpers.');
+    ensure(assets.includes('AssetManifest') && assets.includes('manifest_asset_files') && assets.includes("enqueue_scripts( 'emulsify-global', 'dist/global' )"), 'Runtime assets should support manifest-backed global and component assets.');
     ensure(editorEnhancements.includes('FileDiscovery::theme_roots') && editorEnhancements.includes('FileDiscovery::file_records'), 'Editor assets should use shared filesystem discovery helpers.');
+    ensure(editorEnhancements.includes('AssetManifest') && editorEnhancements.includes("asset_records( 'editor'"), 'Editor assets should support manifest-backed editor assets.');
     ensure(locator.includes('FileDiscovery::theme_roots') && locator.includes('FileDiscovery::file_records'), 'Component locator should use shared filesystem discovery helpers.');
     ensure(patterns.includes('FileDiscovery::theme_roots') && patterns.includes("FileDiscovery::file_records( $this->pattern_directories(), array( 'json' ), false )"), 'Pattern discovery should use shared helpers while staying shallow.');
     ensure(twig.includes('FileDiscovery::normalize_roots'), 'Twig project component roots should use shared root normalization.');
     ensure(smoke.includes('Asset discovery should keep child roots before parent fallback roots'), 'Runtime filter smoke should verify asset root priority.');
     ensure(editorEnhancementsSmoke.includes('skip duplicate parent relative paths'), 'Editor enhancements smoke should verify editor asset duplicate handling.');
     ensure(patternSmoke.includes('Child pattern JSON files should override parent files with the same basename'), 'Pattern smoke should verify child-first pattern discovery.');
+    ensure(assetManifestSmoke.includes('No manifest should fall back') && assetManifestSmoke.includes('Invalid manifest should fall back') && assetManifestSmoke.includes('Child manifest should take priority'), 'Asset manifest smoke should cover fallback, invalid, and child-priority paths.');
     return 'Parent runtime exposes documented filters with smoke coverage.';
   });
 
@@ -883,6 +897,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('composer') && prValidationScript.includes('install'), 'PR validation should install Composer dependencies for Twig smoke coverage.');
     ensure(prValidationScript.includes('lint:php'), 'PR validation should run PHP lint.');
     ensure(prValidationScript.includes('smoke:acf-json'), 'PR validation should run the ACF Local JSON smoke test.');
+    ensure(prValidationScript.includes('smoke:asset-manifest'), 'PR validation should run the asset manifest smoke test.');
     ensure(prValidationScript.includes('smoke:attributes'), 'PR validation should run the attribute helper smoke test.');
     ensure(prValidationScript.includes('smoke:bootstrap-loader'), 'PR validation should run the Bootstrap loader smoke test.');
     ensure(prValidationScript.indexOf('composer') < prValidationScript.indexOf('smoke:bootstrap-loader'), 'PR validation should install Composer dependencies before checking runtime autoloading.');
@@ -1018,6 +1033,7 @@ function runStaticChecks() {
     ensure(docs.editorPolicy.includes('auto_allow_pattern_blocks'), 'Editor policy doc should document pattern JSON auto-allow behavior.');
     ensure(docs.editorPolicy.includes('emulsify_theme_block_support_overrides'), 'Editor policy doc should document block support overrides.');
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
+    ensure(docs.assets.includes('dist/emulsify-assets.json') && docs.assets.includes('emulsify_theme_asset_manifest_path'), 'Asset loading doc should document optional manifest loading.');
     ensure(docs.coreBlockTwig.includes('[Component recipes](component-recipes.md)'), 'Core block Twig rendering doc should link to component recipes.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');

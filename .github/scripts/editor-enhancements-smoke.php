@@ -218,6 +218,7 @@ $GLOBALS['emulsify_editor_enhancements_smoke_child']  = $child;
 $GLOBALS['emulsify_editor_enhancements_smoke_parent'] = $parent;
 
 try {
+	require_once $repo_root . '/includes/Support/AssetManifest.php';
 	require_once $repo_root . '/includes/Support/FileDiscovery.php';
 	require_once $repo_root . '/includes/Editor/Enhancements.php';
 
