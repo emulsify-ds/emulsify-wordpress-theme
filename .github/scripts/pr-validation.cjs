@@ -30,6 +30,7 @@ run('Install Composer dependencies for Twig smoke coverage', 'composer', [
   '--no-progress',
   '--prefer-dist',
 ]);
+run('Run Bootstrap loader smoke test', 'npm', ['run', 'smoke:bootstrap-loader']);
 run('Run PHP lint', 'npm', ['run', 'lint:php']);
 run('Run ACF Local JSON smoke test', 'npm', ['run', 'smoke:acf-json']);
 run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);

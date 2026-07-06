@@ -100,6 +100,8 @@ composer install
 npm ci --ignore-scripts
 ```
 
+Composer install creates the runtime autoloader. After adding or renaming parent runtime classes, run `composer dump-autoload` so Composer's optimized classmap sees the current files. Manual theme installs without Composer still use the Bootstrap fallback loader.
+
 | Command | Purpose |
 | --- | --- |
 | `npm run lint:php` | Lint all PHP files with `php -l`. |

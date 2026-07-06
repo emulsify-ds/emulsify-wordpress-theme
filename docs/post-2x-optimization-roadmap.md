@@ -5,7 +5,7 @@ Emulsify WordPress 2.0 should stay focused on the parent and generated child the
 ## Recommended implementation order
 
 1. Ship 2.0 without adding new runtime features.
-2. Add PSR-4 autoloading and grouped runtime directories in a minor release.
+2. Build on Composer PSR-4 autoloading with grouped runtime directories in a minor release.
 3. Add optional manifest-driven asset loading.
 4. Add CLI diagnostics such as `wp emulsify doctor`.
 5. Add optional persistent discovery caching after manifest behavior is stable.
@@ -13,7 +13,7 @@ Emulsify WordPress 2.0 should stay focused on the parent and generated child the
 ## Code organization
 
 - Move runtime PHP classes into grouped directories such as setup, assets, blocks, editor, and CLI while preserving public hooks and filters.
-- Add Composer PSR-4 autoloading for namespaced classes in a minor release.
+- Move current legacy class filenames toward clean PSR-4 paths in a minor release.
 - Keep compatibility shims or clear upgrade notes for any class-loading paths that existing child themes may reference.
 
 ## Runtime architecture

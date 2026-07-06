@@ -94,30 +94,65 @@ final class Bootstrap {
 	 * @return void
 	 */
 	private function load_classes(): void {
-		// Keep load order explicit. Shared value objects and block discovery
-		// helpers are required before the services that instantiate them.
-		$files = array(
-			'class-acf-local-json.php',
-			'class-attribute-bag.php',
-			'class-assets.php',
-			'Blocks/class-component-locator.php',
-			'Blocks/class-acf-blocks.php',
-			'Blocks/class-native-blocks.php',
-			'Blocks/class-registry.php',
-			'class-cli.php',
-			'class-context.php',
-			'class-core-block-twig-renderer.php',
-			'class-editor-enhancements.php',
-			'class-editor-policy.php',
-			'class-missing-timber.php',
-			'class-patterns.php',
-			'class-setup.php',
-			'class-timber-integration.php',
-			'class-twig.php',
+		spl_autoload_register(
+			function ( string $class ): void {
+				$this->autoload_runtime_class( $class );
+			}
 		);
+	}
 
-		foreach ( $files as $file ) {
-			require_once __DIR__ . '/' . $file;
+	/**
+	 * Loads runtime classes when Composer autoloading is unavailable.
+	 *
+	 * @param string $class Fully qualified class name.
+	 * @return void
+	 */
+	private function autoload_runtime_class( string $class ): void {
+		$file = $this->runtime_class_file( $class );
+
+		if ( null !== $file && is_readable( $file ) ) {
+			require_once $file;
 		}
+	}
+
+	/**
+	 * Resolves runtime class files for PSR-4 paths and legacy class-* filenames.
+	 *
+	 * @param string $class Fully qualified class name.
+	 * @return string|null Runtime class file path, or null for another namespace.
+	 */
+	private function runtime_class_file( string $class ): ?string {
+		$prefix = __NAMESPACE__ . '\\';
+
+		if ( 0 !== strpos( $class, $prefix ) ) {
+			return null;
+		}
+
+		$relative_class = substr( $class, strlen( $prefix ) );
+		$relative_path  = str_replace( '\\', '/', $relative_class );
+		$psr4_file      = $this->theme_dir . '/includes/' . $relative_path . '.php';
+
+		if ( is_readable( $psr4_file ) ) {
+			return $psr4_file;
+		}
+
+		$parts      = explode( '/', $relative_path );
+		$class_name = array_pop( $parts );
+		$directory  = empty( $parts ) ? '' : implode( '/', $parts ) . '/';
+
+		return $this->theme_dir . '/includes/' . $directory . 'class-' . $this->class_file_slug( $class_name ) . '.php';
+	}
+
+	/**
+	 * Converts a runtime class name to the legacy class-* file slug.
+	 *
+	 * @param string $class_name Short class name.
+	 * @return string File slug.
+	 */
+	private function class_file_slug( string $class_name ): string {
+		$slug = str_replace( '_', '-', $class_name );
+		$slug = preg_replace( '/(?<=[a-z0-9])([A-Z])/', '-$1', $slug );
+
+		return strtolower( (string) $slug );
 	}
 }

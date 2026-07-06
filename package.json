@@ -34,6 +34,7 @@
     "release:check": "node .github/scripts/release-check.cjs",
     "smoke:acf-json": "php .github/scripts/acf-local-json-smoke.php",
     "smoke:attributes": "php .github/scripts/attribute-helper-smoke.php",
+    "smoke:bootstrap-loader": "php .github/scripts/bootstrap-loader-smoke.php",
     "smoke:child-theme-generator": "php .github/scripts/child-theme-generator-smoke.php",
     "smoke:component-locator": "php .github/scripts/component-locator-smoke.php",
     "smoke:core-block-twig": "php .github/scripts/core-block-twig-renderer-smoke.php",

@@ -17,6 +17,14 @@
   "require": {
       "timber/timber": "^2.3"
   },
+  "autoload": {
+    "psr-4": {
+      "Emulsify\\Theme\\": "includes/"
+    },
+    "classmap": [
+      "includes/"
+    ]
+  },
   "config": {
     "optimize-autoloader": true,
     "sort-packages": true,

@@ -340,6 +340,7 @@ function runStaticChecks() {
       'templates/single.twig',
       '.github/scripts/acf-local-json-smoke.php',
       '.github/scripts/attribute-helper-smoke.php',
+      '.github/scripts/bootstrap-loader-smoke.php',
       '.github/scripts/child-theme-generator-smoke.php',
       '.github/scripts/component-locator-smoke.php',
       '.github/scripts/editor-enhancements-smoke.php',
@@ -382,6 +383,7 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
     ensure(rootPackage.scripts['smoke:acf-json'] === 'php .github/scripts/acf-local-json-smoke.php', 'package.json should expose npm run smoke:acf-json.');
     ensure(rootPackage.scripts['smoke:attributes'] === 'php .github/scripts/attribute-helper-smoke.php', 'package.json should expose npm run smoke:attributes.');
+    ensure(rootPackage.scripts['smoke:bootstrap-loader'] === 'php .github/scripts/bootstrap-loader-smoke.php', 'package.json should expose npm run smoke:bootstrap-loader.');
     ensure(rootPackage.scripts['smoke:child-theme-generator'] === 'php .github/scripts/child-theme-generator-smoke.php', 'package.json should expose npm run smoke:child-theme-generator.');
     ensure(rootPackage.scripts['smoke:component-locator'] === 'php .github/scripts/component-locator-smoke.php', 'package.json should expose npm run smoke:component-locator.');
     ensure(rootPackage.scripts['smoke:editor-enhancements'] === 'php .github/scripts/editor-enhancements-smoke.php', 'package.json should expose npm run smoke:editor-enhancements.');
@@ -400,6 +402,8 @@ function runStaticChecks() {
     ensure(!Object.hasOwn(composer, 'minimum-stability'), 'composer.json should not lower release stability for a stable parent theme.');
     ensure(!Object.hasOwn(composer, 'prefer-stable'), 'composer.json should not keep prefer-stable when stable-only constraints are sufficient.');
     ensure(composer.require && composer.require['timber/timber'] === '^2.3', 'composer.json should keep the Timber 2 dependency constraint.');
+    ensure(composer.autoload && composer.autoload['psr-4'] && composer.autoload['psr-4']['Emulsify\\Theme\\'] === 'includes/', 'composer.json should expose the runtime namespace through PSR-4 autoloading.');
+    ensure(Array.isArray(composer.autoload.classmap) && composer.autoload.classmap.includes('includes/'), 'composer.json should classmap current runtime files until all filenames are PSR-4-shaped.');
     ensureParentThemeLanguage('composer.json description', composer.description);
     return `Validated root package ${rootPackage.version} and composer metadata.`;
   });
@@ -432,7 +436,11 @@ function runStaticChecks() {
     const attributeBag = readFile('includes/class-attribute-bag.php');
     const smoke = readFile('.github/scripts/attribute-helper-smoke.php');
 
-    ensure(bootstrap.includes('class-attribute-bag.php'), 'Bootstrap should load AttributeBag before Twig helpers.');
+    ensure(bootstrap.includes('load_vendor_autoload();') && bootstrap.includes('load_classes();'), 'Bootstrap should load Composer before registering fallback runtime loading.');
+    ensure(bootstrap.indexOf('load_vendor_autoload();') < bootstrap.indexOf('load_classes();'), 'Bootstrap should try Composer autoloading before fallback runtime loading.');
+    ensure(bootstrap.includes('spl_autoload_register'), 'Bootstrap should register a fallback runtime autoloader.');
+    ensure(bootstrap.includes('runtime_class_file'), 'Bootstrap should resolve runtime classes through a fallback file mapper.');
+    ensure(bootstrap.includes('class_file_slug'), 'Bootstrap should support legacy class-* runtime filenames.');
     ensure(attributeBag.includes('implements \\Stringable'), 'AttributeBag should serialize safely in Twig string contexts.');
     ensure(attributeBag.includes('function addClass'), 'AttributeBag should support Core-style class merging.');
     ensure(attributeBag.includes('function toString'), 'AttributeBag should expose explicit serialization.');
@@ -441,6 +449,19 @@ function runStaticChecks() {
     ensure(smoke.includes('{{ bem("example-card", ["featured"]) }}'), 'Attribute helper smoke script should render a bem() Twig fixture.');
     ensure(smoke.includes('{{ add_attributes({ class: ["foo"] }) }}'), 'Attribute helper smoke script should render an add_attributes() Twig fixture.');
     return 'Attribute helper runtime and smoke fixture are wired.';
+  });
+
+  runStaticCheck('Bootstrap runtime autoloading', () => {
+    const bootstrap = readFile('includes/class-bootstrap.php');
+    const smoke = readFile('.github/scripts/bootstrap-loader-smoke.php');
+
+    ensure(bootstrap.includes('$psr4_file'), 'Bootstrap fallback loader should check PSR-4-shaped runtime paths.');
+    ensure(bootstrap.includes("'class-' . $this->class_file_slug"), 'Bootstrap fallback loader should preserve legacy class-* filename support.');
+    ensure(smoke.includes("require_once \\$repo_root . '/vendor/autoload.php'"), 'Bootstrap loader smoke should verify Composer autoloading.');
+    ensure(smoke.includes("require_once \\$repo_root . '/includes/class-bootstrap.php'"), 'Bootstrap loader smoke should verify fallback loading without Composer.');
+    ensure(smoke.includes('Emulsify\\\\Theme\\\\Blocks\\\\Registry'), 'Bootstrap loader smoke should cover nested block runtime classes.');
+    ensure(smoke.includes('Fallback loader did not load'), 'Bootstrap loader smoke should fail clearly when fallback loading breaks.');
+    return 'Composer autoloading and Bootstrap fallback loading are covered.';
   });
 
   runStaticCheck('Child theme generator', () => {
@@ -826,6 +847,8 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('lint:php'), 'PR validation should run PHP lint.');
     ensure(prValidationScript.includes('smoke:acf-json'), 'PR validation should run the ACF Local JSON smoke test.');
     ensure(prValidationScript.includes('smoke:attributes'), 'PR validation should run the attribute helper smoke test.');
+    ensure(prValidationScript.includes('smoke:bootstrap-loader'), 'PR validation should run the Bootstrap loader smoke test.');
+    ensure(prValidationScript.indexOf('composer') < prValidationScript.indexOf('smoke:bootstrap-loader'), 'PR validation should install Composer dependencies before checking runtime autoloading.');
     ensure(prValidationScript.includes('smoke:child-theme-generator'), 'PR validation should run the child theme generator smoke test.');
     ensure(prValidationScript.includes('smoke:component-locator'), 'PR validation should run the component locator smoke test.');
     ensure(prValidationScript.includes('smoke:editor-enhancements'), 'PR validation should run the editor enhancements smoke test.');
@@ -975,7 +998,7 @@ function runStaticChecks() {
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
     ensure(docs.post2xRoadmap.includes('follow-up opportunities for focused minor releases, not 2.0 blockers'), 'Post-2.x roadmap should frame items as follow-up opportunities.');
     ensure(docs.post2xRoadmap.includes('Ship 2.0 without adding new runtime features'), 'Post-2.x roadmap should keep 2.0 focused.');
-    ensure(docs.post2xRoadmap.includes('PSR-4 autoloading and grouped runtime directories'), 'Post-2.x roadmap should include the code organization milestone.');
+    ensure(docs.post2xRoadmap.includes('Build on Composer PSR-4 autoloading with grouped runtime directories'), 'Post-2.x roadmap should include the code organization milestone.');
     ensure(docs.post2xRoadmap.includes('optional manifest-driven asset loading'), 'Post-2.x roadmap should include the asset manifest milestone.');
     ensure(docs.post2xRoadmap.includes('wp emulsify doctor'), 'Post-2.x roadmap should include CLI diagnostics.');
     ensure(docs.post2xRoadmap.includes('persistent discovery caching after manifest behavior is stable'), 'Post-2.x roadmap should place persistent caching after manifests.');
