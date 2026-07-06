@@ -50,39 +50,66 @@ $repo_root = dirname( __DIR__, 2 );
 $autoload  = $repo_root . '/vendor/autoload.php';
 $classes   = array(
 	'Emulsify\\Theme\\Bootstrap',
+	'Emulsify\\Theme\\Runtime\\Setup',
+	'Emulsify\\Theme\\Runtime\\Assets',
+	'Emulsify\\Theme\\Runtime\\Context',
+	'Emulsify\\Theme\\Runtime\\Twig',
+	'Emulsify\\Theme\\Runtime\\TimberIntegration',
+	'Emulsify\\Theme\\Runtime\\MissingTimber',
+	'Emulsify\\Theme\\Blocks\\Registry',
+	'Emulsify\\Theme\\Blocks\\ComponentLocator',
+	'Emulsify\\Theme\\Blocks\\AcfBlocks',
+	'Emulsify\\Theme\\Blocks\\NativeBlocks',
+	'Emulsify\\Theme\\Blocks\\CoreBlockTwigRenderer',
+	'Emulsify\\Theme\\Blocks\\Patterns',
+	'Emulsify\\Theme\\Editor\\Enhancements',
+	'Emulsify\\Theme\\Editor\\Policy',
+	'Emulsify\\Theme\\Acf\\LocalJson',
+	'Emulsify\\Theme\\Cli\\GenerateChildThemeCommand',
+	'Emulsify\\Theme\\Support\\AttributeBag',
+);
+$legacy_classes = array(
 	'Emulsify\\Theme\\Setup',
 	'Emulsify\\Theme\\Assets',
-	'Emulsify\\Theme\\Acf_Local_JSON',
-	'Emulsify\\Theme\\AttributeBag',
-	'Emulsify\\Theme\\Cli',
 	'Emulsify\\Theme\\Context',
-	'Emulsify\\Theme\\Core_Block_Twig_Renderer',
-	'Emulsify\\Theme\\Editor_Enhancements',
-	'Emulsify\\Theme\\Editor_Policy',
-	'Emulsify\\Theme\\Missing_Timber',
-	'Emulsify\\Theme\\Patterns',
-	'Emulsify\\Theme\\Timber_Integration',
 	'Emulsify\\Theme\\Twig',
+	'Emulsify\\Theme\\Timber_Integration',
+	'Emulsify\\Theme\\Missing_Timber',
+	'Emulsify\\Theme\\Blocks\\Registry',
 	'Emulsify\\Theme\\Blocks\\Component_Locator',
 	'Emulsify\\Theme\\Blocks\\Acf_Blocks',
 	'Emulsify\\Theme\\Blocks\\Native_Blocks',
-	'Emulsify\\Theme\\Blocks\\Registry',
+	'Emulsify\\Theme\\Core_Block_Twig_Renderer',
+	'Emulsify\\Theme\\Patterns',
+	'Emulsify\\Theme\\Editor_Enhancements',
+	'Emulsify\\Theme\\Editor_Policy',
+	'Emulsify\\Theme\\Acf_Local_JSON',
+	'Emulsify\\Theme\\Cli',
+	'Emulsify\\Theme\\AttributeBag',
 );
 
 emulsify_bootstrap_loader_assert( is_readable( $autoload ), 'Run composer install or composer dump-autoload before the Bootstrap loader smoke test.' );
 
 $classes_export = var_export( $classes, true );
+$legacy_export  = var_export( $legacy_classes, true );
 $repo_export    = var_export( $repo_root, true );
 
 emulsify_bootstrap_loader_run_php(
 	<<<PHP
 \$repo_root = {$repo_export};
 \$classes = {$classes_export};
+\$legacy_classes = {$legacy_export};
 require_once \$repo_root . '/vendor/autoload.php';
 
 foreach ( \$classes as \$class ) {
 	if ( ! class_exists( \$class, true ) ) {
 		throw new RuntimeException( sprintf( 'Composer autoload did not load %s.', \$class ) );
+	}
+}
+
+foreach ( \$legacy_classes as \$class ) {
+	if ( ! class_exists( \$class, true ) ) {
+		throw new RuntimeException( sprintf( 'Composer compatibility alias did not load %s.', \$class ) );
 	}
 }
 PHP
@@ -92,7 +119,8 @@ emulsify_bootstrap_loader_run_php(
 	<<<PHP
 \$repo_root = {$repo_export};
 \$classes = {$classes_export};
-require_once \$repo_root . '/includes/class-bootstrap.php';
+\$legacy_classes = {$legacy_export};
+require_once \$repo_root . '/includes/Bootstrap.php';
 
 \$reflection = new ReflectionClass( 'Emulsify\\\\Theme\\\\Bootstrap' );
 \$bootstrap = \$reflection->newInstanceWithoutConstructor();
@@ -106,6 +134,12 @@ require_once \$repo_root . '/includes/class-bootstrap.php';
 foreach ( \$classes as \$class ) {
 	if ( ! class_exists( \$class, true ) ) {
 		throw new RuntimeException( sprintf( 'Fallback loader did not load %s.', \$class ) );
+	}
+}
+
+foreach ( \$legacy_classes as \$class ) {
+	if ( ! class_exists( \$class, true ) ) {
+		throw new RuntimeException( sprintf( 'Compatibility alias did not load %s.', \$class ) );
 	}
 }
 PHP

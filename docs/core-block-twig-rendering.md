@@ -1,6 +1,6 @@
 # Core block Twig rendering
 
-The parent theme includes an experimental `Core_Block_Twig_Renderer` service that can render explicitly mapped WordPress blocks through Twig templates. It is disabled by default and does not change frontend output unless a child theme or project plugin opts in.
+The parent theme includes an experimental `CoreBlockTwigRenderer` service that can render explicitly mapped WordPress blocks through Twig templates. It is disabled by default and does not change frontend output unless a child theme or project plugin opts in.
 
 Use this carefully. Replacing core block output can affect block validation, style supports, accessibility attributes, plugin integrations, and future WordPress markup changes. Keep Twig output compatible with the saved block attributes and test editing, saving, reloading, and frontend rendering for every mapped block.
 

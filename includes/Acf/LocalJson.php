@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Acf;
 
 /**
  * ACF Local JSON integration.
  */
-final class Acf_Local_JSON {
+final class LocalJson {
 
 	/**
 	 * Registers ACF Local JSON hooks.

@@ -21,8 +21,8 @@
     "psr-4": {
       "Emulsify\\Theme\\": "includes/"
     },
-    "classmap": [
-      "includes/"
+    "files": [
+      "includes/Compatibility.php"
     ]
   },
   "config": {

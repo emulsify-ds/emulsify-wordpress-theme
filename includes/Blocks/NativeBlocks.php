@@ -10,22 +10,22 @@ namespace Emulsify\Theme\Blocks;
 /**
  * Native WordPress Block API integration.
  */
-final class Native_Blocks {
+final class NativeBlocks {
 
 	/**
 	 * Component locator.
 	 *
-	 * @var Component_Locator
+	 * @var ComponentLocator
 	 */
 	private $components;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param Component_Locator|null $components Component locator.
+	 * @param ComponentLocator|null $components Component locator.
 	 */
-	public function __construct( ?Component_Locator $components = null ) {
-		$this->components = $components ?? new Component_Locator();
+	public function __construct( ?ComponentLocator $components = null ) {
+		$this->components = $components ?? new ComponentLocator();
 	}
 
 	/**
@@ -59,7 +59,7 @@ final class Native_Blocks {
 		 * this filter runs.
 		 *
 		 * @param array             $directories Native block directory records.
-		 * @param Component_Locator $components  Component locator instance.
+		 * @param ComponentLocator $components  Component locator instance.
 		 */
 		$filtered = apply_filters( 'emulsify_theme_native_block_directories', $directories, $this->components );
 

@@ -15,7 +15,7 @@ namespace Emulsify\Theme\Blocks;
  * registration, so both paths reuse the same deterministic child-first file
  * index without introducing persistent cache invalidation concerns.
  */
-final class Component_Locator {
+final class ComponentLocator {
 
 	/**
 	 * Theme-relative component build directory.

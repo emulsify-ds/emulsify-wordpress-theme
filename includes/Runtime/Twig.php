@@ -5,7 +5,9 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Runtime;
+
+use Emulsify\Theme\Support\AttributeBag;
 
 /**
  * Twig integration for Timber.

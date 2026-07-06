@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Runtime;
 
 /**
  * Missing Timber error handling.
  */
-final class Missing_Timber {
+final class MissingTimber {
 
 	/**
 	 * Registers admin and runtime notices.

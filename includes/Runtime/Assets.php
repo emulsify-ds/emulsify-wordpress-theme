@@ -5,7 +5,7 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Runtime;
 
 /**
  * Global asset registration.
@@ -118,7 +118,7 @@ final class Assets {
 				$relative = $this->relative_path( $root['path'], $file->getPathname() );
 
 				if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
-					// Editor-only assets are handled by Editor_Enhancements so they
+					// Editor-only assets are handled by Editor\Enhancements so they
 					// receive editor dependencies and configuration before enqueue.
 					continue;
 				}

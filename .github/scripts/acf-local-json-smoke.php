@@ -105,9 +105,9 @@ $extra     = $work_root . '/extra-acf-json';
 $GLOBALS['emulsify_acf_json_smoke_child'] = $child;
 
 try {
-	require_once $repo_root . '/includes/class-acf-local-json.php';
+	require_once $repo_root . '/includes/Acf/LocalJson.php';
 
-	$inactive = new Emulsify\Theme\Acf_Local_JSON();
+	$inactive = new Emulsify\Theme\Acf\LocalJson();
 	$inactive->register();
 
 	emulsify_acf_json_smoke_assert(
@@ -122,7 +122,7 @@ try {
 		}
 	}
 
-	$service = new Emulsify\Theme\Acf_Local_JSON();
+	$service = new Emulsify\Theme\Acf\LocalJson();
 	$service->register();
 
 	emulsify_acf_json_smoke_assert(

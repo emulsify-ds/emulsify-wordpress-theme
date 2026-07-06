@@ -179,9 +179,9 @@ $GLOBALS['emulsify_pattern_smoke_child']  = $child;
 $GLOBALS['emulsify_pattern_smoke_parent'] = $parent;
 
 try {
-	require_once $repo_root . '/includes/class-patterns.php';
+	require_once $repo_root . '/includes/Blocks/Patterns.php';
 
-	$patterns = new Emulsify\Theme\Patterns();
+	$patterns = new Emulsify\Theme\Blocks\Patterns();
 	$patterns->register();
 
 	emulsify_pattern_smoke_assert(

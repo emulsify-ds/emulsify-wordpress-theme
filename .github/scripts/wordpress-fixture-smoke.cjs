@@ -387,7 +387,7 @@ if ( function_exists( 'acf_register_block_type' ) ) {
   emulsify_smoke_fail( 'ACF block API should not be present before the fixture stub is installed.' );
 }
 
-$locator = new \Emulsify\Theme\Blocks\Component_Locator();
+$locator = new \Emulsify\Theme\Blocks\ComponentLocator();
 $components = $locator->acf_components();
 $fixture = null;
 
@@ -406,7 +406,7 @@ if ( 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['template'] ) {
   emulsify_smoke_fail( 'Generated child ACF/Twig fixture template was not resolved.' );
 }
 
-( new \Emulsify\Theme\Blocks\Acf_Blocks( $locator ) )->register_blocks();
+( new \Emulsify\Theme\Blocks\AcfBlocks( $locator ) )->register_blocks();
 `;
 
   wp(wpPath, ['eval', code]);
@@ -466,7 +466,7 @@ if ( ! $registry->is_registered( 'emulsify/smoke-native' ) ) {
   emulsify_smoke_fail( 'Generated child native block.json fixture was not registered.' );
 }
 
-$locator = new \Emulsify\Theme\Blocks\Component_Locator();
+$locator = new \Emulsify\Theme\Blocks\ComponentLocator();
 $native = $locator->native_block_directories();
 $found = false;
 

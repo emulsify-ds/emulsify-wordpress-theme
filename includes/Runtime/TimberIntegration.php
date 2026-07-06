@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Runtime;
 
 /**
  * Timber runtime guard.
  */
-final class Timber_Integration {
+final class TimberIntegration {
 
 	/**
 	 * Initializes Timber.

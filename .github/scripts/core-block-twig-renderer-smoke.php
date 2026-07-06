@@ -300,7 +300,7 @@ namespace {
 	$GLOBALS['emulsify_core_block_twig_smoke_parent'] = $parent;
 
 	try {
-		require_once $repo_root . '/includes/class-core-block-twig-renderer.php';
+		require_once $repo_root . '/includes/Blocks/CoreBlockTwigRenderer.php';
 
 		emulsify_core_block_twig_smoke_write( $child . '/dist/components/paragraph/paragraph.twig', 'paragraph twig' );
 		emulsify_core_block_twig_smoke_write( $child . '/dist/components/error/throws.twig', 'throws twig' );
@@ -315,7 +315,7 @@ namespace {
 			'innerBlocks'  => array(),
 		);
 
-		$disabled = new \Emulsify\Theme\Core_Block_Twig_Renderer();
+		$disabled = new \Emulsify\Theme\Blocks\CoreBlockTwigRenderer();
 		$disabled->register();
 
 		emulsify_core_block_twig_smoke_assert(
@@ -351,7 +351,7 @@ namespace {
 			'site' => 'Smoke Site',
 		);
 
-		$enabled = new \Emulsify\Theme\Core_Block_Twig_Renderer();
+		$enabled = new \Emulsify\Theme\Blocks\CoreBlockTwigRenderer();
 		$enabled->register();
 
 		emulsify_core_block_twig_smoke_assert(

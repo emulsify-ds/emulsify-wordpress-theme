@@ -320,13 +320,25 @@ function runStaticChecks() {
       'docs/wp-cli-child-theme-generation.md',
       'composer.json',
       'functions.php',
-      'includes/class-acf-local-json.php',
-      'includes/class-attribute-bag.php',
-      'includes/class-cli.php',
-      'includes/class-editor-enhancements.php',
-      'includes/class-editor-policy.php',
-      'includes/class-patterns.php',
-      'includes/class-twig.php',
+      'includes/Bootstrap.php',
+      'includes/Compatibility.php',
+      'includes/Acf/LocalJson.php',
+      'includes/Blocks/AcfBlocks.php',
+      'includes/Blocks/ComponentLocator.php',
+      'includes/Blocks/CoreBlockTwigRenderer.php',
+      'includes/Blocks/NativeBlocks.php',
+      'includes/Blocks/Patterns.php',
+      'includes/Blocks/Registry.php',
+      'includes/Cli/GenerateChildThemeCommand.php',
+      'includes/Editor/Enhancements.php',
+      'includes/Editor/Policy.php',
+      'includes/Runtime/Assets.php',
+      'includes/Runtime/Context.php',
+      'includes/Runtime/MissingTimber.php',
+      'includes/Runtime/Setup.php',
+      'includes/Runtime/TimberIntegration.php',
+      'includes/Runtime/Twig.php',
+      'includes/Support/AttributeBag.php',
       'package.json',
       'release.config.js',
       'style.css',
@@ -403,7 +415,8 @@ function runStaticChecks() {
     ensure(!Object.hasOwn(composer, 'prefer-stable'), 'composer.json should not keep prefer-stable when stable-only constraints are sufficient.');
     ensure(composer.require && composer.require['timber/timber'] === '^2.3', 'composer.json should keep the Timber 2 dependency constraint.');
     ensure(composer.autoload && composer.autoload['psr-4'] && composer.autoload['psr-4']['Emulsify\\Theme\\'] === 'includes/', 'composer.json should expose the runtime namespace through PSR-4 autoloading.');
-    ensure(Array.isArray(composer.autoload.classmap) && composer.autoload.classmap.includes('includes/'), 'composer.json should classmap current runtime files until all filenames are PSR-4-shaped.');
+    ensure(!Object.hasOwn(composer.autoload, 'classmap'), 'composer.json should rely on PSR-4 runtime paths instead of classmap loading.');
+    ensure(Array.isArray(composer.autoload.files) && composer.autoload.files.includes('includes/Compatibility.php'), 'composer.json should load runtime compatibility aliases for Composer installs.');
     ensureParentThemeLanguage('composer.json description', composer.description);
     return `Validated root package ${rootPackage.version} and composer metadata.`;
   });
@@ -431,16 +444,16 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Timber attribute helpers', () => {
-    const bootstrap = readFile('includes/class-bootstrap.php');
-    const twig = readFile('includes/class-twig.php');
-    const attributeBag = readFile('includes/class-attribute-bag.php');
+    const bootstrap = readFile('includes/Bootstrap.php');
+    const twig = readFile('includes/Runtime/Twig.php');
+    const attributeBag = readFile('includes/Support/AttributeBag.php');
     const smoke = readFile('.github/scripts/attribute-helper-smoke.php');
 
     ensure(bootstrap.includes('load_vendor_autoload();') && bootstrap.includes('load_classes();'), 'Bootstrap should load Composer before registering fallback runtime loading.');
     ensure(bootstrap.indexOf('load_vendor_autoload();') < bootstrap.indexOf('load_classes();'), 'Bootstrap should try Composer autoloading before fallback runtime loading.');
     ensure(bootstrap.includes('spl_autoload_register'), 'Bootstrap should register a fallback runtime autoloader.');
     ensure(bootstrap.includes('runtime_class_file'), 'Bootstrap should resolve runtime classes through a fallback file mapper.');
-    ensure(bootstrap.includes('class_file_slug'), 'Bootstrap should support legacy class-* runtime filenames.');
+    ensure(bootstrap.includes('Compatibility.php'), 'Bootstrap should load compatibility aliases after registering fallback runtime loading.');
     ensure(attributeBag.includes('implements \\Stringable'), 'AttributeBag should serialize safely in Twig string contexts.');
     ensure(attributeBag.includes('function addClass'), 'AttributeBag should support Core-style class merging.');
     ensure(attributeBag.includes('function toString'), 'AttributeBag should expose explicit serialization.');
@@ -452,20 +465,25 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Bootstrap runtime autoloading', () => {
-    const bootstrap = readFile('includes/class-bootstrap.php');
+    const bootstrap = readFile('includes/Bootstrap.php');
+    const compatibility = readFile('includes/Compatibility.php');
     const smoke = readFile('.github/scripts/bootstrap-loader-smoke.php');
 
-    ensure(bootstrap.includes('$psr4_file'), 'Bootstrap fallback loader should check PSR-4-shaped runtime paths.');
-    ensure(bootstrap.includes("'class-' . $this->class_file_slug"), 'Bootstrap fallback loader should preserve legacy class-* filename support.');
+    ensure(bootstrap.includes("str_replace( '\\\\', '/', $relative_class )"), 'Bootstrap fallback loader should resolve PSR-4-shaped runtime paths.');
+    ensure(compatibility.includes('class_alias'), 'Compatibility should preserve old runtime class names with aliases.');
+    ensure(compatibility.includes('Runtime\\Twig::class') && compatibility.includes("'\\\\Twig'"), 'Compatibility should alias old root Twig class names.');
+    ensure(compatibility.includes('Blocks\\ComponentLocator::class') && compatibility.includes("'\\\\Blocks\\\\Component_Locator'"), 'Compatibility should alias old block service class names.');
     ensure(smoke.includes("require_once \\$repo_root . '/vendor/autoload.php'"), 'Bootstrap loader smoke should verify Composer autoloading.');
-    ensure(smoke.includes("require_once \\$repo_root . '/includes/class-bootstrap.php'"), 'Bootstrap loader smoke should verify fallback loading without Composer.');
+    ensure(smoke.includes('Composer compatibility alias did not load'), 'Bootstrap loader smoke should verify Composer-loaded compatibility aliases.');
+    ensure(smoke.includes("require_once \\$repo_root . '/includes/Bootstrap.php'"), 'Bootstrap loader smoke should verify fallback loading without Composer.');
     ensure(smoke.includes('Emulsify\\\\Theme\\\\Blocks\\\\Registry'), 'Bootstrap loader smoke should cover nested block runtime classes.');
+    ensure(smoke.includes('Emulsify\\\\Theme\\\\Blocks\\\\Component_Locator'), 'Bootstrap loader smoke should cover legacy compatibility aliases.');
     ensure(smoke.includes('Fallback loader did not load'), 'Bootstrap loader smoke should fail clearly when fallback loading breaks.');
     return 'Composer autoloading and Bootstrap fallback loading are covered.';
   });
 
   runStaticCheck('Child theme generator', () => {
-    const cli = readFile('includes/class-cli.php');
+    const cli = readFile('includes/Cli/GenerateChildThemeCommand.php');
     const smoke = readFile('.github/scripts/child-theme-generator-smoke.php');
 
     ensure(cli.includes('[--machine-name=<slug>]'), 'WP-CLI help should document --machine-name.');
@@ -510,10 +528,10 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Component locator memoization', () => {
-    const locator = readFile('includes/Blocks/class-component-locator.php');
-    const registry = readFile('includes/Blocks/class-registry.php');
-    const acfBlocks = readFile('includes/Blocks/class-acf-blocks.php');
-    const nativeBlocks = readFile('includes/Blocks/class-native-blocks.php');
+    const locator = readFile('includes/Blocks/ComponentLocator.php');
+    const registry = readFile('includes/Blocks/Registry.php');
+    const acfBlocks = readFile('includes/Blocks/AcfBlocks.php');
+    const nativeBlocks = readFile('includes/Blocks/NativeBlocks.php');
     const smoke = readFile('.github/scripts/component-locator-smoke.php');
 
     ensure(locator.includes('private $component_roots'), 'Component locator should memoize component roots per request.');
@@ -528,11 +546,11 @@ function runStaticChecks() {
     ensure(locator.includes('get_stylesheet_directory()') && locator.includes('get_template_directory()'), 'Component locator should keep child and parent component roots.');
     ensure(locator.indexOf('get_stylesheet_directory()') < locator.indexOf('get_template_directory()'), 'Component locator should keep child roots before parent roots.');
     ensure(!/wp_cache_|transient/i.test(locator), 'Component locator should not use persistent caching without invalidation.');
-    ensure(registry.includes('$components = new Component_Locator()'), 'Block registry should share one Component_Locator instance.');
-    ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use Component_Locator.');
+    ensure(registry.includes('$components = new ComponentLocator()'), 'Block registry should share one ComponentLocator instance.');
+    ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use ComponentLocator.');
     ensure(acfBlocks.includes('acf_block_name'), 'ACF/Twig block registration should skip duplicate final ACF block names.');
     ensure(acfBlocks.includes('acf_get_block_type'), 'ACF/Twig block registration should avoid already registered ACF block names.');
-    ensure(nativeBlocks.includes('$this->components->native_block_directories()'), 'Native block discovery should use Component_Locator.');
+    ensure(nativeBlocks.includes('$this->components->native_block_directories()'), 'Native block discovery should use ComponentLocator.');
     ensure(nativeBlocks.includes('native_registered_block_name'), 'Native block registration should avoid already registered native block names.');
     ensure(smoke.includes('late-native'), 'Component locator smoke should prove native discovery reuses the memoized file index.');
     ensure(smoke.includes('late-card'), 'Component locator smoke should prove repeated ACF/Twig discovery is memoized per locator instance.');
@@ -545,17 +563,17 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Runtime filters', () => {
-    const acfJson = readFile('includes/class-acf-local-json.php');
-    const assets = readFile('includes/class-assets.php');
-    const twig = readFile('includes/class-twig.php');
-    const context = readFile('includes/class-context.php');
-    const setup = readFile('includes/class-setup.php');
-    const editorEnhancements = readFile('includes/class-editor-enhancements.php');
-    const editorPolicy = readFile('includes/class-editor-policy.php');
-    const patterns = readFile('includes/class-patterns.php');
-    const locator = readFile('includes/Blocks/class-component-locator.php');
-    const acfBlocks = readFile('includes/Blocks/class-acf-blocks.php');
-    const nativeBlocks = readFile('includes/Blocks/class-native-blocks.php');
+    const acfJson = readFile('includes/Acf/LocalJson.php');
+    const assets = readFile('includes/Runtime/Assets.php');
+    const twig = readFile('includes/Runtime/Twig.php');
+    const context = readFile('includes/Runtime/Context.php');
+    const setup = readFile('includes/Runtime/Setup.php');
+    const editorEnhancements = readFile('includes/Editor/Enhancements.php');
+    const editorPolicy = readFile('includes/Editor/Policy.php');
+    const patterns = readFile('includes/Blocks/Patterns.php');
+    const locator = readFile('includes/Blocks/ComponentLocator.php');
+    const acfBlocks = readFile('includes/Blocks/AcfBlocks.php');
+    const nativeBlocks = readFile('includes/Blocks/NativeBlocks.php');
     const acfJsonSmoke = readFile('.github/scripts/acf-local-json-smoke.php');
     const editorEnhancementsSmoke = readFile('.github/scripts/editor-enhancements-smoke.php');
     const smoke = readFile('.github/scripts/theme-filters-smoke.php');
@@ -682,7 +700,7 @@ function runStaticChecks() {
   });
 
   runStaticCheck('Template fallback model', () => {
-    const twigIntegration = readFile('includes/class-twig.php');
+    const twigIntegration = readFile('includes/Runtime/Twig.php');
     const twigNamespaceSmoke = readFile('.github/scripts/twig-project-namespace-smoke.php');
     const childFunctions = readFile('whisk/functions.php');
     const childPageTemplate = readFile('whisk/templates/page.twig');

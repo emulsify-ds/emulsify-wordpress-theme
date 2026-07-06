@@ -5,11 +5,11 @@
  * @package Emulsify
  */
 
-require_once __DIR__ . '/../../includes/class-attribute-bag.php';
-require_once __DIR__ . '/../../includes/class-twig.php';
+require_once __DIR__ . '/../../includes/Support/AttributeBag.php';
+require_once __DIR__ . '/../../includes/Runtime/Twig.php';
 
-use Emulsify\Theme\AttributeBag;
-use Emulsify\Theme\Twig;
+use Emulsify\Theme\Support\AttributeBag;
+use Emulsify\Theme\Runtime\Twig;
 
 /**
  * Asserts two values are identical.

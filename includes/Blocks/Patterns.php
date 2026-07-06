@@ -5,7 +5,7 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Blocks;
 
 /**
  * Discovers child-first JSON block patterns.

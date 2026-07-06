@@ -75,8 +75,8 @@ if ( ! function_exists( 'get_template_directory' ) ) {
 	}
 }
 
-require_once $repo_root . '/includes/class-attribute-bag.php';
-require_once $repo_root . '/includes/class-twig.php';
+require_once $repo_root . '/includes/Support/AttributeBag.php';
+require_once $repo_root . '/includes/Runtime/Twig.php';
 
 /**
  * Fails the smoke script when an assertion is false.
@@ -171,7 +171,7 @@ function emulsify_twig_project_smoke_environment( string $child, string $parent 
 	$GLOBALS['emulsify_twig_project_smoke_parent'] = $parent;
 
 	$loader = new \Twig\Loader\FilesystemLoader();
-	$loader = ( new \Emulsify\Theme\Twig() )->loader_paths( $loader );
+	$loader = ( new \Emulsify\Theme\Runtime\Twig() )->loader_paths( $loader );
 
 	return new \Twig\Environment(
 		$loader,

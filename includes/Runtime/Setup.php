@@ -5,7 +5,7 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Runtime;
 
 /**
  * Theme setup hooks.

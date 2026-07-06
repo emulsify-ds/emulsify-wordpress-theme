@@ -186,9 +186,9 @@ try {
 	emulsify_locator_smoke_write( $parent . '/dist/components/native/block.json', '{"name":"emulsify/native-parent"}' );
 	emulsify_locator_smoke_write( $parent . '/dist/components/parent-native/block.json', '{"name":"emulsify/parent-native"}' );
 
-	require_once $repo_root . '/includes/Blocks/class-component-locator.php';
+	require_once $repo_root . '/includes/Blocks/ComponentLocator.php';
 
-	$locator = new Emulsify\Theme\Blocks\Component_Locator();
+	$locator = new Emulsify\Theme\Blocks\ComponentLocator();
 	$acf = $locator->acf_components();
 
 	emulsify_locator_smoke_assert(
@@ -244,7 +244,7 @@ try {
 		'ACF/Twig discovery should return the per-request memoized result on repeated calls.'
 	);
 
-	$fresh_locator = new Emulsify\Theme\Blocks\Component_Locator();
+	$fresh_locator = new Emulsify\Theme\Blocks\ComponentLocator();
 
 	emulsify_locator_smoke_assert(
 		in_array( 'late-card', emulsify_locator_smoke_relatives( $fresh_locator->acf_components() ), true ),
@@ -260,9 +260,9 @@ try {
 	emulsify_locator_smoke_write( $child . '/dist/components/acf-name-b/acf-name-b.component.json', '{"name":"emulsify/shared-acf","title":"Shared B"}' );
 	emulsify_locator_smoke_write( $child . '/dist/components/acf-name-b/acf-name-b.twig', '<article>Shared B</article>' );
 
-	require_once $repo_root . '/includes/Blocks/class-acf-blocks.php';
+	require_once $repo_root . '/includes/Blocks/AcfBlocks.php';
 
-	$acf_blocks = new Emulsify\Theme\Blocks\Acf_Blocks( new Emulsify\Theme\Blocks\Component_Locator() );
+	$acf_blocks = new Emulsify\Theme\Blocks\AcfBlocks( new Emulsify\Theme\Blocks\ComponentLocator() );
 	$acf_blocks->register_blocks();
 	$registered_names = emulsify_locator_smoke_acf_registered_names();
 

@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Editor;
 
 /**
  * Parent-theme block editor policy hooks.
  */
-final class Editor_Policy {
+final class Policy {
 
 	/**
 	 * Registers block editor policy hooks.

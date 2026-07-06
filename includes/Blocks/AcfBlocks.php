@@ -10,12 +10,12 @@ namespace Emulsify\Theme\Blocks;
 /**
  * ACF/Twig block integration.
  */
-final class Acf_Blocks {
+final class AcfBlocks {
 
 	/**
 	 * Component locator.
 	 *
-	 * @var Component_Locator
+	 * @var ComponentLocator
 	 */
 	private $components;
 
@@ -29,10 +29,10 @@ final class Acf_Blocks {
 	/**
 	 * Constructor.
 	 *
-	 * @param Component_Locator|null $components Component locator.
+	 * @param ComponentLocator|null $components Component locator.
 	 */
-	public function __construct( ?Component_Locator $components = null ) {
-		$this->components = $components ?? new Component_Locator();
+	public function __construct( ?ComponentLocator $components = null ) {
+		$this->components = $components ?? new ComponentLocator();
 	}
 
 	/**

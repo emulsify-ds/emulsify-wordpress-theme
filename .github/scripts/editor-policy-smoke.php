@@ -147,9 +147,9 @@ $GLOBALS['emulsify_editor_policy_smoke_child']  = $child;
 $GLOBALS['emulsify_editor_policy_smoke_parent'] = $parent;
 
 try {
-	require_once $repo_root . '/includes/class-editor-policy.php';
+	require_once $repo_root . '/includes/Editor/Policy.php';
 
-	$policy = new Emulsify\Theme\Editor_Policy();
+	$policy = new Emulsify\Theme\Editor\Policy();
 	$policy->register();
 
 	foreach ( array( 'allowed_block_types_all', 'block_editor_settings_all', 'register_post_type_args', 'block_type_metadata_settings', 'register_block_type_args' ) as $hook ) {

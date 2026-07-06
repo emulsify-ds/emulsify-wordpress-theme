@@ -202,9 +202,9 @@ try {
 		) . "\n"
 	);
 
-	require_once $repo_root . '/includes/class-cli.php';
+	require_once $repo_root . '/includes/Cli/GenerateChildThemeCommand.php';
 
-	$cli = new Emulsify\Theme\Cli();
+	$cli = new Emulsify\Theme\Cli\GenerateChildThemeCommand();
 
 	$cli( array( 'Acme Theme' ), array( 'machine-name' => 'acme-child' ) );
 

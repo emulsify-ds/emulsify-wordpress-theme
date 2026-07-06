@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Blocks;
 
 /**
  * Opt-in core block to Twig rendering bridge.
  */
-final class Core_Block_Twig_Renderer {
+final class CoreBlockTwigRenderer {
 
 	/**
 	 * Registers block rendering hooks when explicitly enabled.

@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Cli;
 
 /**
  * Provides the `wp emulsify` command.
  */
-final class Cli {
+final class GenerateChildThemeCommand {
 
 	/**
 	 * Bundled starter child theme directory.

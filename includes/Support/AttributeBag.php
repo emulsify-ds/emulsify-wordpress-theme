@@ -5,7 +5,7 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Support;
 
 /**
  * Small AttributeBag implementation for Twig helper output.

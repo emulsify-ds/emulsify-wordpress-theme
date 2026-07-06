@@ -304,14 +304,14 @@ try {
 	emulsify_filter_smoke_write( $extra . '/components/filter-card/filter-card.twig', '<article>Filter card</article>' );
 	emulsify_filter_smoke_write( $extra . '/native/block.json', '{"name":"emulsify/filter-native"}' );
 
-	require_once $repo_root . '/includes/class-attribute-bag.php';
-	require_once $repo_root . '/includes/class-assets.php';
-	require_once $repo_root . '/includes/class-context.php';
-	require_once $repo_root . '/includes/class-setup.php';
-	require_once $repo_root . '/includes/class-twig.php';
-	require_once $repo_root . '/includes/Blocks/class-component-locator.php';
-	require_once $repo_root . '/includes/Blocks/class-acf-blocks.php';
-	require_once $repo_root . '/includes/Blocks/class-native-blocks.php';
+	require_once $repo_root . '/includes/Support/AttributeBag.php';
+	require_once $repo_root . '/includes/Runtime/Assets.php';
+	require_once $repo_root . '/includes/Runtime/Context.php';
+	require_once $repo_root . '/includes/Runtime/Setup.php';
+	require_once $repo_root . '/includes/Runtime/Twig.php';
+	require_once $repo_root . '/includes/Blocks/ComponentLocator.php';
+	require_once $repo_root . '/includes/Blocks/AcfBlocks.php';
+	require_once $repo_root . '/includes/Blocks/NativeBlocks.php';
 
 	add_filter(
 		'emulsify_theme_asset_directories',
@@ -431,7 +431,7 @@ try {
 		}
 	);
 
-	( new Emulsify\Theme\Assets() )->styles();
+	( new Emulsify\Theme\Runtime\Assets() )->styles();
 
 	emulsify_filter_smoke_assert(
 		isset( $GLOBALS['emulsify_filter_smoke_styles']['emulsify-global-extra'] ),
@@ -461,21 +461,21 @@ try {
 		}
 	};
 
-	( new Emulsify\Theme\Twig() )->loader_paths( $loader );
+	( new Emulsify\Theme\Runtime\Twig() )->loader_paths( $loader );
 
 	emulsify_filter_smoke_assert(
 		in_array( array( 'path' => $extra . '/twig', 'namespace' => 'project' ), $loader->paths, true ),
 		'Twig namespace filter should add a project namespace.'
 	);
 
-	$context = ( new Emulsify\Theme\Context() )->add( array() );
+	$context = ( new Emulsify\Theme\Runtime\Context() )->add( array() );
 
 	emulsify_filter_smoke_assert(
 		true === $context['project_flag'],
 		'Context filter should add project context values.'
 	);
 
-	( new Emulsify\Theme\Setup() )->theme_supports();
+	( new Emulsify\Theme\Runtime\Setup() )->theme_supports();
 
 	emulsify_filter_smoke_assert(
 		array_key_exists( 'custom-spacing', $GLOBALS['emulsify_filter_smoke_theme_support'] ),
@@ -486,14 +486,14 @@ try {
 		'Setup options filter should add custom image sizes.'
 	);
 
-	$locator = new Emulsify\Theme\Blocks\Component_Locator();
+	$locator = new Emulsify\Theme\Blocks\ComponentLocator();
 
 	emulsify_filter_smoke_assert(
 		in_array( 'filter-card', array_column( $locator->acf_components(), 'relative' ), true ),
 		'Component roots filter should add an extra component discovery root.'
 	);
 
-	( new Emulsify\Theme\Blocks\Acf_Blocks( new Emulsify\Theme\Blocks\Component_Locator() ) )->register_blocks();
+	( new Emulsify\Theme\Blocks\AcfBlocks( new Emulsify\Theme\Blocks\ComponentLocator() ) )->register_blocks();
 
 	emulsify_filter_smoke_assert(
 		'emulsify-filtered-card' === $GLOBALS['emulsify_filter_smoke_acf_blocks'][0]['name'],
@@ -504,7 +504,7 @@ try {
 		'ACF block metadata filter should alter metadata before defaults are merged.'
 	);
 
-	( new Emulsify\Theme\Blocks\Native_Blocks( new Emulsify\Theme\Blocks\Component_Locator() ) )->register_blocks();
+	( new Emulsify\Theme\Blocks\NativeBlocks( new Emulsify\Theme\Blocks\ComponentLocator() ) )->register_blocks();
 
 	emulsify_filter_smoke_assert(
 		in_array( $extra . '/native', $GLOBALS['emulsify_filter_smoke_native_blocks'], true ),

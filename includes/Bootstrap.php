@@ -7,6 +7,19 @@
 
 namespace Emulsify\Theme;
 
+use Emulsify\Theme\Acf\LocalJson;
+use Emulsify\Theme\Blocks\CoreBlockTwigRenderer;
+use Emulsify\Theme\Blocks\Patterns;
+use Emulsify\Theme\Cli\GenerateChildThemeCommand;
+use Emulsify\Theme\Editor\Enhancements;
+use Emulsify\Theme\Editor\Policy;
+use Emulsify\Theme\Runtime\Assets;
+use Emulsify\Theme\Runtime\Context;
+use Emulsify\Theme\Runtime\MissingTimber;
+use Emulsify\Theme\Runtime\Setup;
+use Emulsify\Theme\Runtime\TimberIntegration;
+use Emulsify\Theme\Runtime\Twig;
+
 /**
  * Coordinates theme services.
  */
@@ -49,19 +62,19 @@ final class Bootstrap {
 		$this->load_classes();
 
 		// These services use WordPress APIs directly and must stay available even
-		// when Timber is missing. The Missing_Timber service owns frontend failure
+		// when Timber is missing. The MissingTimber service owns frontend failure
 		// handling later in this method.
 		( new Setup() )->register();
 		( new Assets() )->register();
-		( new Acf_Local_JSON() )->register();
-		( new Core_Block_Twig_Renderer() )->register();
-		( new Editor_Enhancements() )->register();
-		( new Editor_Policy() )->register();
+		( new LocalJson() )->register();
+		( new CoreBlockTwigRenderer() )->register();
+		( new Enhancements() )->register();
+		( new Policy() )->register();
 		( new Patterns() )->register();
 		( new Blocks\Registry() )->register();
-		( new Cli() )->register();
+		( new GenerateChildThemeCommand() )->register();
 
-		$timber = new Timber_Integration();
+		$timber = new TimberIntegration();
 
 		if ( $timber->register() ) {
 			// Timber-dependent services are registered only after Timber has
@@ -72,7 +85,7 @@ final class Bootstrap {
 			return;
 		}
 
-		( new Missing_Timber() )->register();
+		( new MissingTimber() )->register();
 	}
 
 	/**
@@ -99,6 +112,12 @@ final class Bootstrap {
 				$this->autoload_runtime_class( $class );
 			}
 		);
+
+		$compatibility = $this->theme_dir . '/includes/Compatibility.php';
+
+		if ( is_readable( $compatibility ) ) {
+			require_once $compatibility;
+		}
 	}
 
 	/**
@@ -116,7 +135,7 @@ final class Bootstrap {
 	}
 
 	/**
-	 * Resolves runtime class files for PSR-4 paths and legacy class-* filenames.
+	 * Resolves runtime class files for PSR-4 paths.
 	 *
 	 * @param string $class Fully qualified class name.
 	 * @return string|null Runtime class file path, or null for another namespace.
@@ -130,29 +149,7 @@ final class Bootstrap {
 
 		$relative_class = substr( $class, strlen( $prefix ) );
 		$relative_path  = str_replace( '\\', '/', $relative_class );
-		$psr4_file      = $this->theme_dir . '/includes/' . $relative_path . '.php';
 
-		if ( is_readable( $psr4_file ) ) {
-			return $psr4_file;
-		}
-
-		$parts      = explode( '/', $relative_path );
-		$class_name = array_pop( $parts );
-		$directory  = empty( $parts ) ? '' : implode( '/', $parts ) . '/';
-
-		return $this->theme_dir . '/includes/' . $directory . 'class-' . $this->class_file_slug( $class_name ) . '.php';
-	}
-
-	/**
-	 * Converts a runtime class name to the legacy class-* file slug.
-	 *
-	 * @param string $class_name Short class name.
-	 * @return string File slug.
-	 */
-	private function class_file_slug( string $class_name ): string {
-		$slug = str_replace( '_', '-', $class_name );
-		$slug = preg_replace( '/(?<=[a-z0-9])([A-Z])/', '-$1', $slug );
-
-		return strtolower( (string) $slug );
+		return $this->theme_dir . '/includes/' . $relative_path . '.php';
 	}
 }

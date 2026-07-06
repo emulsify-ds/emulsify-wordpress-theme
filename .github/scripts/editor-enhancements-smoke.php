@@ -218,9 +218,9 @@ $GLOBALS['emulsify_editor_enhancements_smoke_child']  = $child;
 $GLOBALS['emulsify_editor_enhancements_smoke_parent'] = $parent;
 
 try {
-	require_once $repo_root . '/includes/class-editor-enhancements.php';
+	require_once $repo_root . '/includes/Editor/Enhancements.php';
 
-	$service = new Emulsify\Theme\Editor_Enhancements();
+	$service = new Emulsify\Theme\Editor\Enhancements();
 	$service->register();
 
 	foreach ( array( 'enqueue_block_editor_assets', 'render_block_data', 'render_block' ) as $hook ) {

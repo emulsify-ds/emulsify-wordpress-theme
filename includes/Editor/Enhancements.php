@@ -5,12 +5,12 @@
  * @package Emulsify
  */
 
-namespace Emulsify\Theme;
+namespace Emulsify\Theme\Editor;
 
 /**
  * Optional editor enhancement runtime.
  */
-final class Editor_Enhancements {
+final class Enhancements {
 
 	/**
 	 * Registers editor enhancement hooks.
