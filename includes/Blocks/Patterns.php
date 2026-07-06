@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Blocks;
 
+use Emulsify\Theme\Support\FileDiscovery;
+
 /**
  * Discovers child-first JSON block patterns.
  */
@@ -102,48 +104,35 @@ final class Patterns {
 		$seen_relative  = array();
 		$seen_file_path = array();
 
-		foreach ( $this->pattern_directories() as $directory ) {
-			$paths = glob( $directory['path'] . '/*.json' );
+		foreach ( FileDiscovery::file_records( $this->pattern_directories(), array( 'json' ), false ) as $file ) {
+			$path     = $file['path'];
+			$relative = basename( $path );
+			$real     = realpath( $path ) ?: $path;
 
-			if ( ! is_array( $paths ) ) {
+			if ( isset( $seen_file_path[ $real ] ) ) {
 				continue;
 			}
 
-			sort( $paths );
-
-			foreach ( $paths as $path ) {
-				if ( ! is_file( $path ) || ! is_readable( $path ) ) {
-					continue;
-				}
-
-				$relative = basename( $path );
-				$real     = realpath( $path ) ?: $path;
-
-				if ( isset( $seen_file_path[ $real ] ) ) {
-					continue;
-				}
-
-				if ( isset( $seen_relative[ $relative ] ) ) {
-					// Directories are scanned child-first. A child JSON file with the
-					// same basename intentionally overrides the parent starter file.
-					$this->debug(
-						sprintf(
-							'Skipped duplicate block pattern JSON file "%s" from %s.',
-							$relative,
-							$path
-						)
-					);
-					continue;
-				}
-
-				$seen_file_path[ $real ] = true;
-				$seen_relative[ $relative ] = true;
-				$files[]                 = array(
-					'path'     => $path,
-					'relative' => $relative,
-					'source'   => $directory['source'],
+			if ( isset( $seen_relative[ $relative ] ) ) {
+				// Directories are scanned child-first. A child JSON file with the
+				// same basename intentionally overrides the parent starter file.
+				$this->debug(
+					sprintf(
+						'Skipped duplicate block pattern JSON file "%s" from %s.',
+						$relative,
+						$path
+					)
 				);
+				continue;
 			}
+
+			$seen_file_path[ $real ] = true;
+			$seen_relative[ $relative ] = true;
+			$files[]                 = array(
+				'path'     => $path,
+				'relative' => $relative,
+				'source'   => $file['root_source'],
+			);
 		}
 
 		return $files;
@@ -155,21 +144,7 @@ final class Patterns {
 	 * @return array Pattern directory records.
 	 */
 	private function pattern_directories(): array {
-		$directories = array();
-
-		if ( function_exists( 'get_stylesheet_directory' ) ) {
-			$directories[] = array(
-				'path'   => rtrim( get_stylesheet_directory(), '/\\' ) . '/patterns',
-				'source' => 'child',
-			);
-		}
-
-		if ( function_exists( 'get_template_directory' ) ) {
-			$directories[] = array(
-				'path'   => rtrim( get_template_directory(), '/\\' ) . '/patterns',
-				'source' => 'parent',
-			);
-		}
+		$directories = FileDiscovery::theme_roots( 'patterns' );
 
 		/**
 		 * Filters directories scanned for JSON block patterns.
@@ -185,46 +160,21 @@ final class Patterns {
 			$directories = $filtered;
 		}
 
-		return $this->normalize_directories( $directories );
-	}
-
-	/**
-	 * Normalizes configured pattern directory records.
-	 *
-	 * @param array $directories Directory candidates.
-	 * @return array Valid directory records.
-	 */
-	private function normalize_directories( array $directories ): array {
-		$normalized = array();
-		$seen       = array();
-
 		foreach ( $directories as $index => $directory ) {
 			if ( is_string( $directory ) ) {
-				$directory = array(
+				$directories[ $index ] = array(
 					'path'   => $directory,
 					'source' => 'filtered',
 				);
 			}
-
-			if ( ! is_array( $directory ) || empty( $directory['path'] ) || ! is_scalar( $directory['path'] ) ) {
-				continue;
-			}
-
-			$path = rtrim( (string) $directory['path'], '/\\' );
-			$real = realpath( $path );
-
-			if ( false === $real || isset( $seen[ $real ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
-				continue;
-			}
-
-			$seen[ $real ] = true;
-			$normalized[]  = array(
-				'path'   => $path,
-				'source' => isset( $directory['source'] ) && is_scalar( $directory['source'] ) ? (string) $directory['source'] : (string) $index,
-			);
 		}
 
-		return $normalized;
+		return FileDiscovery::normalize_roots(
+			$directories,
+			array(
+				'default_source' => null,
+			)
+		);
 	}
 
 	/**

@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Editor;
 
+use Emulsify\Theme\Support\FileDiscovery;
+
 /**
  * Optional editor enhancement runtime.
  */
@@ -254,41 +256,24 @@ final class Enhancements {
 		$assets = array();
 		$seen   = array();
 
-		foreach ( $this->asset_roots( $directory ) as $root ) {
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator( $root['path'], \RecursiveDirectoryIterator::SKIP_DOTS )
-			);
+		foreach ( FileDiscovery::file_records( $this->asset_roots( $directory ), $extensions ) as $file ) {
+			$relative = $file['relative'];
 
-			foreach ( $iterator as $file ) {
-				if ( ! $file->isFile() || ! in_array( strtolower( $file->getExtension() ), $extensions, true ) ) {
-					continue;
-				}
-
-				$relative = $this->relative_path( $root['path'], $file->getPathname() );
-
-				if ( isset( $seen[ $relative ] ) ) {
-					continue;
-				}
-
-				$seen[ $relative ] = true;
-				$assets[]          = array(
-					'path'     => $file->getPathname(),
-					'priority' => $root['priority'],
-					'relative' => $relative,
-					'uri'      => $root['uri'] . '/' . $relative,
-					'version'  => $this->version( $file->getPathname() ),
-				);
+			if ( isset( $seen[ $relative ] ) ) {
+				continue;
 			}
+
+			$seen[ $relative ] = true;
+			$assets[]          = array(
+				'path'     => $file['path'],
+				'priority' => $file['priority'],
+				'relative' => $relative,
+				'uri'      => $file['root_uri'] . '/' . $relative,
+				'version'  => $this->version( $file['path'] ),
+			);
 		}
 
-		usort(
-			$assets,
-			static function ( array $left, array $right ): int {
-				$priority = $left['priority'] <=> $right['priority'];
-
-				return 0 === $priority ? strcmp( $left['relative'], $right['relative'] ) : $priority;
-			}
-		);
+		$assets = FileDiscovery::sort_by_priority_and_relative( $assets );
 
 		/**
 		 * Filters built editor asset files before they are enqueued.
@@ -311,22 +296,7 @@ final class Enhancements {
 	 * @return array Asset root records.
 	 */
 	private function asset_roots( string $directory ): array {
-		$roots       = array();
-		$seen_paths  = array();
-		$directories = array(
-			array(
-				'path'     => rtrim( get_stylesheet_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
-				'priority' => 0,
-				'source'   => 'child',
-				'uri'      => rtrim( get_stylesheet_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
-			),
-			array(
-				'path'     => rtrim( get_template_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
-				'priority' => 1,
-				'source'   => 'parent',
-				'uri'      => rtrim( get_template_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
-			),
-		);
+		$directories = FileDiscovery::theme_roots( $directory, true );
 
 		/**
 		 * Filters built editor asset directories before discovery.
@@ -344,30 +314,12 @@ final class Enhancements {
 			$directories = $filtered;
 		}
 
-		foreach ( $directories as $priority => $candidate ) {
-			if ( ! is_array( $candidate ) || empty( $candidate['path'] ) || empty( $candidate['uri'] ) ) {
-				continue;
-			}
-
-			$path = rtrim( (string) $candidate['path'], '/\\' );
-			$uri  = rtrim( (string) $candidate['uri'], '/' );
-			$key  = realpath( $path );
-
-			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
-				// Missing editor build output is normal for an agnostic starter. Only
-				// enqueue assets after a project has opted into building them.
-				continue;
-			}
-
-			$seen_paths[ $key ] = true;
-			$roots[]           = array(
-				'path'     => rtrim( $path, '/\\' ),
-				'priority' => isset( $candidate['priority'] ) ? (int) $candidate['priority'] : (int) $priority,
-				'uri'      => $uri,
-			);
-		}
-
-		return $roots;
+		return FileDiscovery::normalize_roots(
+			$directories,
+			array(
+				'require_uri' => true,
+			)
+		);
 	}
 
 	/**
@@ -498,19 +450,6 @@ final class Enhancements {
 		$name = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
 
 		return sanitize_key( $prefix . '-' . trim( (string) $name, '-' ) );
-	}
-
-	/**
-	 * Builds a POSIX relative path.
-	 *
-	 * @param string $base_path Base directory.
-	 * @param string $path      Absolute file path.
-	 * @return string Relative path.
-	 */
-	private function relative_path( string $base_path, string $path ): string {
-		$relative = ltrim( str_replace( rtrim( $base_path, '/\\' ), '', $path ), '/\\' );
-
-		return str_replace( '\\', '/', $relative );
 	}
 
 	/**

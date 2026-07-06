@@ -8,6 +8,7 @@
 namespace Emulsify\Theme\Runtime;
 
 use Emulsify\Theme\Support\AttributeBag;
+use Emulsify\Theme\Support\FileDiscovery;
 
 /**
  * Twig integration for Timber.
@@ -405,34 +406,7 @@ final class Twig {
 	 * @return array Component root paths.
 	 */
 	private function normalize_project_component_roots( array $roots ): array {
-		$paths = array();
-		$seen  = array();
-
-		foreach ( $roots as $root ) {
-			$path = is_array( $root ) ? ( $root['path'] ?? '' ) : $root;
-
-			if ( ! is_scalar( $path ) ) {
-				continue;
-			}
-
-			$path = rtrim( (string) $path, '/\\' );
-
-			if ( '' === $path || ! is_dir( $path ) || ! is_readable( $path ) ) {
-				continue;
-			}
-
-			$key = realpath( $path );
-			$key = false !== $key ? $key : $path;
-
-			if ( isset( $seen[ $key ] ) ) {
-				continue;
-			}
-
-			$seen[ $key ] = true;
-			$paths[]      = $path;
-		}
-
-		return $paths;
+		return array_column( FileDiscovery::normalize_roots( $roots ), 'path' );
 	}
 
 	/**

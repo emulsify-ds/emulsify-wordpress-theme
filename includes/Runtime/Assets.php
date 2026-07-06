@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Runtime;
 
+use Emulsify\Theme\Support\FileDiscovery;
+
 /**
  * Global asset registration.
  */
@@ -105,50 +107,33 @@ final class Assets {
 		$assets = array();
 		$seen   = array();
 
-		foreach ( $this->asset_roots( $directory ) as $root ) {
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator( $root['path'], \RecursiveDirectoryIterator::SKIP_DOTS )
-			);
+		foreach ( FileDiscovery::file_records( $this->asset_roots( $directory ), $extensions ) as $file ) {
+			$relative = $file['relative'];
 
-			foreach ( $iterator as $file ) {
-				if ( ! $file->isFile() || ! in_array( strtolower( $file->getExtension() ), $extensions, true ) ) {
-					continue;
-				}
-
-				$relative = $this->relative_path( $root['path'], $file->getPathname() );
-
-				if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
-					// Editor-only assets are handled by Editor\Enhancements so they
-					// receive editor dependencies and configuration before enqueue.
-					continue;
-				}
-
-				if ( isset( $seen[ $relative ] ) ) {
-					// Discovery roots are child-first. Once a relative path is seen,
-					// later parent files with the same name are intentional fallbacks
-					// and should not be enqueued twice.
-					continue;
-				}
-
-				$seen[ $relative ] = true;
-				$assets[]          = array(
-					'path'     => $file->getPathname(),
-					'priority' => $root['priority'],
-					'relative' => $relative,
-					'uri'      => $root['uri'] . '/' . $relative,
-					'version'  => $this->version( $file->getPathname() ),
-				);
+			if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
+				// Editor-only assets are handled by Editor\Enhancements so they
+				// receive editor dependencies and configuration before enqueue.
+				continue;
 			}
+
+			if ( isset( $seen[ $relative ] ) ) {
+				// Discovery roots are child-first. Once a relative path is seen,
+				// later parent files with the same name are intentional fallbacks
+				// and should not be enqueued twice.
+				continue;
+			}
+
+			$seen[ $relative ] = true;
+			$assets[]          = array(
+				'path'     => $file['path'],
+				'priority' => $file['priority'],
+				'relative' => $relative,
+				'uri'      => $file['root_uri'] . '/' . $relative,
+				'version'  => $this->version( $file['path'] ),
+			);
 		}
 
-		usort(
-			$assets,
-			static function ( array $left, array $right ): int {
-				$priority = $left['priority'] <=> $right['priority'];
-
-				return 0 === $priority ? strcmp( $left['relative'], $right['relative'] ) : $priority;
-			}
-		);
+		$assets = FileDiscovery::sort_by_priority_and_relative( $assets );
 
 		/**
 		 * Filters built asset files before they are enqueued.
@@ -172,22 +157,7 @@ final class Assets {
 	 * @return array Asset root records.
 	 */
 	private function asset_roots( string $directory ): array {
-		$roots      = array();
-		$seen_paths = array();
-		$directories = array(
-			array(
-				'path'     => rtrim( get_stylesheet_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
-				'priority' => 0,
-				'source'   => 'child',
-				'uri'      => rtrim( get_stylesheet_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
-			),
-			array(
-				'path'     => rtrim( get_template_directory(), '/\\' ) . '/' . ltrim( $directory, '/\\' ),
-				'priority' => 1,
-				'source'   => 'parent',
-				'uri'      => rtrim( get_template_directory_uri(), '/' ) . '/' . trim( $directory, '/' ),
-			),
-		);
+		$directories = FileDiscovery::theme_roots( $directory, true );
 
 		/**
 		 * Filters built asset directories before files are discovered.
@@ -205,30 +175,12 @@ final class Assets {
 			$directories = $filtered;
 		}
 
-		foreach ( $directories as $priority => $candidate ) {
-			if ( ! is_array( $candidate ) || empty( $candidate['path'] ) || empty( $candidate['uri'] ) ) {
-				continue;
-			}
-
-			$path = rtrim( (string) $candidate['path'], '/\\' );
-			$uri  = rtrim( (string) $candidate['uri'], '/' );
-			$key  = realpath( $path );
-
-			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
-				// Ignore missing build directories silently. Generated child themes
-				// may not have installed a component system or produced Vite output yet.
-				continue;
-			}
-
-			$seen_paths[ $key ] = true;
-			$roots[]           = array(
-				'path'     => rtrim( $path, '/\\' ),
-				'priority' => isset( $candidate['priority'] ) ? (int) $candidate['priority'] : (int) $priority,
-				'uri'      => $uri,
-			);
-		}
-
-		return $roots;
+		return FileDiscovery::normalize_roots(
+			$directories,
+			array(
+				'require_uri' => true,
+			)
+		);
 	}
 
 	/**
@@ -243,19 +195,6 @@ final class Assets {
 		$name = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
 
 		return sanitize_key( $prefix . '-' . trim( (string) $name, '-' ) );
-	}
-
-	/**
-	 * Builds a POSIX relative path.
-	 *
-	 * @param string $base_path Base directory.
-	 * @param string $path      Absolute file path.
-	 * @return string Relative path.
-	 */
-	private function relative_path( string $base_path, string $path ): string {
-		$relative = ltrim( str_replace( rtrim( $base_path, '/\\' ), '', $path ), '/\\' );
-
-		return str_replace( '\\', '/', $relative );
 	}
 
 	/**

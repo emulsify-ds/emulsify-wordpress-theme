@@ -298,6 +298,7 @@ $GLOBALS['emulsify_filter_smoke_parent'] = $parent;
 try {
 	emulsify_filter_smoke_write( $child . '/dist/global/child.css', 'body { color: black; }' );
 	emulsify_filter_smoke_write( $child . '/dist/global/editor/css/index.css', '.editor-only { display: block; }' );
+	emulsify_filter_smoke_write( $parent . '/dist/global/child.css', 'body { color: parent; }' );
 	emulsify_filter_smoke_write( $extra . '/assets/extra.css', 'body { color: red; }' );
 	emulsify_filter_smoke_write( $extra . '/twig/example.twig', 'Example' );
 	emulsify_filter_smoke_write( $extra . '/components/filter-card/filter-card.component.json', '{"title":"Filter Card"}' );
@@ -305,6 +306,7 @@ try {
 	emulsify_filter_smoke_write( $extra . '/native/block.json', '{"name":"emulsify/filter-native"}' );
 
 	require_once $repo_root . '/includes/Support/AttributeBag.php';
+	require_once $repo_root . '/includes/Support/FileDiscovery.php';
 	require_once $repo_root . '/includes/Runtime/Assets.php';
 	require_once $repo_root . '/includes/Runtime/Context.php';
 	require_once $repo_root . '/includes/Runtime/Setup.php';
@@ -433,6 +435,10 @@ try {
 
 	( new Emulsify\Theme\Runtime\Assets() )->styles();
 
+	emulsify_filter_smoke_assert(
+		'https://example.test/wp-content/themes/child/dist/global/child.css' === $GLOBALS['emulsify_filter_smoke_styles']['emulsify-global-child']['src'],
+		'Asset discovery should keep child roots before parent fallback roots for duplicate relative paths.'
+	);
 	emulsify_filter_smoke_assert(
 		isset( $GLOBALS['emulsify_filter_smoke_styles']['emulsify-global-extra'] ),
 		'Asset directory filter should add an extra CSS asset root.'

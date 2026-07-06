@@ -339,6 +339,7 @@ function runStaticChecks() {
       'includes/Runtime/TimberIntegration.php',
       'includes/Runtime/Twig.php',
       'includes/Support/AttributeBag.php',
+      'includes/Support/FileDiscovery.php',
       'package.json',
       'release.config.js',
       'style.css',
@@ -529,6 +530,7 @@ function runStaticChecks() {
 
   runStaticCheck('Component locator memoization', () => {
     const locator = readFile('includes/Blocks/ComponentLocator.php');
+    const fileDiscovery = readFile('includes/Support/FileDiscovery.php');
     const registry = readFile('includes/Blocks/Registry.php');
     const acfBlocks = readFile('includes/Blocks/AcfBlocks.php');
     const nativeBlocks = readFile('includes/Blocks/NativeBlocks.php');
@@ -541,10 +543,11 @@ function runStaticChecks() {
     ensure(locator.includes('private $skipped_duplicates'), 'Component locator should track skipped duplicate component records.');
     ensure(locator.includes('function component_files'), 'Component locator should expose a shared internal component file index.');
     ensure(locator.includes('$this->component_files()'), 'ACF/Twig and native discovery should use the shared component file index.');
+    ensure(locator.includes('FileDiscovery::theme_roots') && locator.includes('FileDiscovery::file_records'), 'Component locator should use shared filesystem discovery helpers.');
     ensure(locator.includes('acf_component_slug'), 'Component locator should detect duplicate ACF/Twig component slugs.');
     ensure(locator.includes('native_block_name'), 'Component locator should detect duplicate native block names.');
-    ensure(locator.includes('get_stylesheet_directory()') && locator.includes('get_template_directory()'), 'Component locator should keep child and parent component roots.');
-    ensure(locator.indexOf('get_stylesheet_directory()') < locator.indexOf('get_template_directory()'), 'Component locator should keep child roots before parent roots.');
+    ensure(fileDiscovery.includes('get_stylesheet_directory()') && fileDiscovery.includes('get_template_directory()'), 'File discovery helper should build child and parent theme roots.');
+    ensure(fileDiscovery.indexOf('get_stylesheet_directory()') < fileDiscovery.indexOf('get_template_directory()'), 'File discovery helper should keep child roots before parent roots.');
     ensure(!/wp_cache_|transient/i.test(locator), 'Component locator should not use persistent caching without invalidation.');
     ensure(registry.includes('$components = new ComponentLocator()'), 'Block registry should share one ComponentLocator instance.');
     ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use ComponentLocator.');
@@ -572,6 +575,7 @@ function runStaticChecks() {
     const editorPolicy = readFile('includes/Editor/Policy.php');
     const patterns = readFile('includes/Blocks/Patterns.php');
     const locator = readFile('includes/Blocks/ComponentLocator.php');
+    const fileDiscovery = readFile('includes/Support/FileDiscovery.php');
     const acfBlocks = readFile('includes/Blocks/AcfBlocks.php');
     const nativeBlocks = readFile('includes/Blocks/NativeBlocks.php');
     const acfJsonSmoke = readFile('.github/scripts/acf-local-json-smoke.php');
@@ -619,6 +623,21 @@ function runStaticChecks() {
     ensure(smoke.includes('Theme filter smoke checks passed'), 'Runtime filter smoke should have a clear success message.');
     ensure(editorPolicySmoke.includes('Editor policy smoke checks passed'), 'Editor policy smoke should have a clear success message.');
     ensure(patternSmoke.includes('Pattern registry smoke checks passed'), 'Pattern registry smoke should have a clear success message.');
+    ensure(fileDiscovery.includes('function theme_roots'), 'File discovery helper should create child-first theme roots.');
+    ensure(fileDiscovery.includes('function normalize_roots'), 'File discovery helper should normalize readable unique roots.');
+    ensure(fileDiscovery.includes('function file_records'), 'File discovery helper should create file records for service-specific filtering.');
+    ensure(fileDiscovery.includes('function recursive_files'), 'File discovery helper should support recursive scans.');
+    ensure(fileDiscovery.includes('function directory_files'), 'File discovery helper should support shallow directory scans.');
+    ensure(fileDiscovery.includes('function relative_path'), 'File discovery helper should normalize POSIX relative paths.');
+    ensure(fileDiscovery.includes('function sort_by_priority_and_relative'), 'File discovery helper should provide stable priority sorting.');
+    ensure(assets.includes('FileDiscovery::theme_roots') && assets.includes('FileDiscovery::file_records'), 'Runtime assets should use shared filesystem discovery helpers.');
+    ensure(editorEnhancements.includes('FileDiscovery::theme_roots') && editorEnhancements.includes('FileDiscovery::file_records'), 'Editor assets should use shared filesystem discovery helpers.');
+    ensure(locator.includes('FileDiscovery::theme_roots') && locator.includes('FileDiscovery::file_records'), 'Component locator should use shared filesystem discovery helpers.');
+    ensure(patterns.includes('FileDiscovery::theme_roots') && patterns.includes("FileDiscovery::file_records( $this->pattern_directories(), array( 'json' ), false )"), 'Pattern discovery should use shared helpers while staying shallow.');
+    ensure(twig.includes('FileDiscovery::normalize_roots'), 'Twig project component roots should use shared root normalization.');
+    ensure(smoke.includes('Asset discovery should keep child roots before parent fallback roots'), 'Runtime filter smoke should verify asset root priority.');
+    ensure(editorEnhancementsSmoke.includes('skip duplicate parent relative paths'), 'Editor enhancements smoke should verify editor asset duplicate handling.');
+    ensure(patternSmoke.includes('Child pattern JSON files should override parent files with the same basename'), 'Pattern smoke should verify child-first pattern discovery.');
     return 'Parent runtime exposes documented filters with smoke coverage.';
   });
 

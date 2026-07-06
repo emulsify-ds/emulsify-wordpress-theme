@@ -6,6 +6,7 @@
  */
 
 require_once __DIR__ . '/../../includes/Support/AttributeBag.php';
+require_once __DIR__ . '/../../includes/Support/FileDiscovery.php';
 require_once __DIR__ . '/../../includes/Runtime/Twig.php';
 
 use Emulsify\Theme\Support\AttributeBag;

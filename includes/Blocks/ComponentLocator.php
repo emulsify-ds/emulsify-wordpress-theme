@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Blocks;
 
+use Emulsify\Theme\Support\FileDiscovery;
+
 /**
  * Finds component metadata in child and parent theme build output.
  *
@@ -81,7 +83,7 @@ final class ComponentLocator {
 			}
 
 			$directory = dirname( $path );
-			$relative  = $this->relative_path( $file['root_path'], $directory );
+			$relative  = FileDiscovery::relative_path( $file['root_path'], $directory );
 			$key       = '' === $relative ? '.' : $relative;
 			$record    = $this->component_record( $file, $directory, $relative, $path );
 
@@ -156,7 +158,7 @@ final class ComponentLocator {
 			}
 
 			$directory = dirname( $path );
-			$relative  = $this->relative_path( $file['root_path'], $directory );
+			$relative  = FileDiscovery::relative_path( $file['root_path'], $directory );
 			$key       = '' === $relative ? '.' : $relative;
 			$name      = $this->native_block_name( $path );
 			$record    = $this->component_record( $file, $directory, $relative, $path );
@@ -242,19 +244,7 @@ final class ComponentLocator {
 			return $this->component_files;
 		}
 
-		$files = array();
-
-		foreach ( $this->component_roots() as $root ) {
-			foreach ( $this->recursive_files( $root['path'] ) as $path ) {
-				$files[] = array(
-					'path'        => $path,
-					'root_path'   => $root['path'],
-					'root_source' => $root['source'],
-				);
-			}
-		}
-
-		$this->component_files = $files;
+		$this->component_files = FileDiscovery::file_records( $this->component_roots() );
 
 		return $this->component_files;
 	}
@@ -273,18 +263,7 @@ final class ComponentLocator {
 			return $this->component_roots;
 		}
 
-		$roots      = array();
-		$seen_paths = array();
-		$candidates = array(
-			array(
-				'path'   => rtrim( get_stylesheet_directory(), '/\\' ) . '/' . self::COMPONENTS_DIRECTORY,
-				'source' => 'child',
-			),
-			array(
-				'path'   => rtrim( get_template_directory(), '/\\' ) . '/' . self::COMPONENTS_DIRECTORY,
-				'source' => 'parent',
-			),
-		);
+		$candidates = FileDiscovery::theme_roots( self::COMPONENTS_DIRECTORY );
 
 		/**
 		 * Filters built component discovery roots before scanning.
@@ -301,28 +280,12 @@ final class ComponentLocator {
 			$candidates = $filtered;
 		}
 
-		foreach ( $candidates as $candidate ) {
-			if ( ! is_array( $candidate ) || empty( $candidate['path'] ) ) {
-				continue;
-			}
-
-			$path = rtrim( (string) $candidate['path'], '/\\' );
-			$key  = realpath( $path );
-
-			if ( false === $key || isset( $seen_paths[ $key ] ) || ! is_dir( $path ) || ! is_readable( $path ) ) {
-				// Missing build output is expected before a project installs and runs
-				// its chosen component system.
-				continue;
-			}
-
-			$seen_paths[ $key ] = true;
-			$roots[]           = array(
-				'path'   => rtrim( $path, '/\\' ),
-				'source' => isset( $candidate['source'] ) ? (string) $candidate['source'] : 'filtered',
-			);
-		}
-
-		$this->component_roots = $roots;
+		$this->component_roots = FileDiscovery::normalize_roots(
+			$candidates,
+			array(
+				'default_source' => 'filtered',
+			)
+		);
 
 		return $this->component_roots;
 	}
@@ -363,29 +326,6 @@ final class ComponentLocator {
 			'kept'    => $kept,
 			'skipped' => $skipped,
 		);
-	}
-
-	/**
-	 * Gets all files below a directory in deterministic order.
-	 *
-	 * @param string $directory Absolute directory path.
-	 * @return array Absolute file paths.
-	 */
-	private function recursive_files( string $directory ): array {
-		$files    = array();
-		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator( $directory, \RecursiveDirectoryIterator::SKIP_DOTS )
-		);
-
-		foreach ( $iterator as $file ) {
-			if ( $file->isFile() ) {
-				$files[] = $file->getPathname();
-			}
-		}
-
-		sort( $files );
-
-		return $files;
 	}
 
 	/**
@@ -448,19 +388,6 @@ final class ComponentLocator {
 	}
 
 	/**
-	 * Builds a POSIX path relative to the component root.
-	 *
-	 * @param string $base_path Base directory.
-	 * @param string $path      Absolute path.
-	 * @return string Relative path.
-	 */
-	private function relative_path( string $base_path, string $path ): string {
-		$relative = ltrim( str_replace( rtrim( $base_path, '/\\' ), '', $path ), '/\\' );
-
-		return str_replace( '\\', '/', $relative );
-	}
-
-	/**
 	 * Builds a theme-relative path for Timber rendering.
 	 *
 	 * @param string $root_path Absolute component root path.
@@ -468,7 +395,7 @@ final class ComponentLocator {
 	 * @return string Theme-relative template path.
 	 */
 	private function theme_relative_path( string $root_path, string $path ): string {
-		$relative = $this->relative_path( $root_path, $path );
+		$relative = FileDiscovery::relative_path( $root_path, $path );
 
 		return self::COMPONENTS_DIRECTORY . '/' . $relative;
 	}
