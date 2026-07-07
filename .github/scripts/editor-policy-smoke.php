@@ -147,6 +147,12 @@ $GLOBALS['emulsify_editor_policy_smoke_child']  = $child;
 $GLOBALS['emulsify_editor_policy_smoke_parent'] = $parent;
 
 try {
+	require_once $repo_root . '/includes/Editor/BlockNames.php';
+	require_once $repo_root . '/includes/Editor/PolicyOptions.php';
+	require_once $repo_root . '/includes/Editor/PatternGovernance.php';
+	require_once $repo_root . '/includes/Editor/AllowedBlockTypes.php';
+	require_once $repo_root . '/includes/Editor/UserPatternPermissions.php';
+	require_once $repo_root . '/includes/Editor/BlockSupportOverrides.php';
 	require_once $repo_root . '/includes/Editor/Policy.php';
 
 	$policy = new Emulsify\Theme\Editor\Policy();

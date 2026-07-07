@@ -1,6 +1,6 @@
 # Editor policy
 
-The parent theme includes an `Editor\Policy` service for project-specific block editor governance. It is intentionally no-op by default, so activating the parent theme does not change allowed blocks, visible patterns, user-created pattern behavior, `wp_block` capabilities, or registered block supports unless a child theme or project plugin configures the policy with filters.
+The parent theme includes an `Editor\Policy` coordinator for project-specific block editor governance. It is intentionally no-op by default, so activating the parent theme does not change allowed blocks, visible patterns, user-created pattern behavior, `wp_block` capabilities, or registered block supports unless a child theme or project plugin configures the policy with filters.
 
 ## Configure policy options
 

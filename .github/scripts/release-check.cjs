@@ -330,8 +330,14 @@ function runStaticChecks() {
       'includes/Blocks/Patterns.php',
       'includes/Blocks/Registry.php',
       'includes/Cli/GenerateChildThemeCommand.php',
+      'includes/Editor/AllowedBlockTypes.php',
+      'includes/Editor/BlockNames.php',
+      'includes/Editor/BlockSupportOverrides.php',
       'includes/Editor/Enhancements.php',
+      'includes/Editor/PatternGovernance.php',
       'includes/Editor/Policy.php',
+      'includes/Editor/PolicyOptions.php',
+      'includes/Editor/UserPatternPermissions.php',
       'includes/Runtime/Assets.php',
       'includes/Runtime/Context.php',
       'includes/Runtime/MissingTimber.php',
@@ -584,6 +590,11 @@ function runStaticChecks() {
     const setup = readFile('includes/Runtime/Setup.php');
     const editorEnhancements = readFile('includes/Editor/Enhancements.php');
     const editorPolicy = readFile('includes/Editor/Policy.php');
+    const editorAllowedBlocks = readFile('includes/Editor/AllowedBlockTypes.php');
+    const editorBlockSupport = readFile('includes/Editor/BlockSupportOverrides.php');
+    const editorPatterns = readFile('includes/Editor/PatternGovernance.php');
+    const editorPolicyOptions = readFile('includes/Editor/PolicyOptions.php');
+    const editorUserPatterns = readFile('includes/Editor/UserPatternPermissions.php');
     const patterns = readFile('includes/Blocks/Patterns.php');
     const locator = readFile('includes/Blocks/ComponentLocator.php');
     const assetManifest = readFile('includes/Support/AssetManifest.php');
@@ -631,7 +642,25 @@ function runStaticChecks() {
       'emulsify_theme_pattern_namespaces',
       'emulsify_theme_block_support_overrides',
     ];
-    const runtimeText = [acfJson, assets, twig, context, setup, editorEnhancements, editorPolicy, patterns, locator, assetManifest, acfBlocks, nativeBlocks].join('\n');
+    const runtimeText = [
+      acfJson,
+      assets,
+      twig,
+      context,
+      setup,
+      editorEnhancements,
+      editorPolicy,
+      editorAllowedBlocks,
+      editorBlockSupport,
+      editorPatterns,
+      editorPolicyOptions,
+      editorUserPatterns,
+      patterns,
+      locator,
+      assetManifest,
+      acfBlocks,
+      nativeBlocks,
+    ].join('\n');
 
     for (const filter of expectedFilters) {
       ensure(runtimeText.includes(filter), `${filter} should be registered in runtime PHP code.`);
