@@ -213,6 +213,30 @@ try {
 		)
 	);
 	emulsify_pattern_smoke_write(
+		$parent . '/patterns/categories.json',
+		(string) json_encode(
+			array(
+				'starter' => array(
+					'label'       => 'Parent Starter',
+					'description' => 'Parent starter patterns.',
+				),
+			)
+		)
+	);
+	emulsify_pattern_smoke_write(
+		$child . '/patterns/categories.json',
+		(string) json_encode(
+			array(
+				'name'    => 'child/categories',
+				'title'   => 'Category Metadata Should Not Register',
+				'content' => '<!-- wp:paragraph --><p>Not a block pattern.</p><!-- /wp:paragraph -->',
+				'starter' => array(
+					'label' => 'Child Starter',
+				),
+			)
+		)
+	);
+	emulsify_pattern_smoke_write(
 		$child . '/patterns/override.json',
 		(string) json_encode(
 			array(
@@ -307,7 +331,7 @@ try {
 
 	emulsify_pattern_smoke_assert(
 		array( 'child/hero', 'child/override', 'extra/promo' ) === array_keys( $GLOBALS['emulsify_pattern_smoke_patterns'] ),
-		'Patterns service should register valid child-first and filtered JSON patterns.'
+		'Patterns service should register valid child-first and filtered JSON patterns without registering category metadata files.'
 	);
 	emulsify_pattern_smoke_assert(
 		! isset( $GLOBALS['emulsify_pattern_smoke_patterns']['parent/override'] ),
@@ -326,8 +350,16 @@ try {
 		'Patterns service should register categories discovered from valid pattern metadata.'
 	);
 	emulsify_pattern_smoke_assert(
+		'Child Starter' === $GLOBALS['emulsify_pattern_smoke_categories']['starter']['label'],
+		'Child pattern category metadata should override parent category labels.'
+	);
+	emulsify_pattern_smoke_assert(
 		'Starter category from smoke coverage.' === $GLOBALS['emulsify_pattern_smoke_categories']['starter']['description'],
 		'Pattern categories filter should alter category registration args.'
+	);
+	emulsify_pattern_smoke_assert(
+		'Extra' === $GLOBALS['emulsify_pattern_smoke_categories']['extra']['label'],
+		'Pattern categories without metadata should fall back to a readable slug label.'
 	);
 	emulsify_pattern_smoke_assert(
 		in_array( 'filtered', $GLOBALS['emulsify_pattern_smoke_patterns']['extra/promo']['keywords'], true ),

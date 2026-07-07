@@ -15,6 +15,13 @@ use Emulsify\Theme\Support\FileDiscovery;
 final class Patterns {
 
 	/**
+	 * Supported pattern category metadata filenames.
+	 *
+	 * @var array
+	 */
+	private const CATEGORY_METADATA_FILES = array( 'categories.json', '_categories.json' );
+
+	/**
 	 * Registers pattern hooks.
 	 *
 	 * @return void
@@ -108,6 +115,10 @@ final class Patterns {
 			$path     = $file['path'];
 			$relative = basename( $path );
 			$real     = realpath( $path ) ?: $path;
+
+			if ( $this->is_category_metadata_file( $relative ) ) {
+				continue;
+			}
 
 			if ( isset( $seen_file_path[ $real ] ) ) {
 				continue;
@@ -322,6 +333,7 @@ final class Patterns {
 	 */
 	private function category_records( array $patterns ): array {
 		$categories = array();
+		$metadata   = $this->category_metadata();
 
 		foreach ( $patterns as $pattern ) {
 			foreach ( $pattern['args']['categories'] ?? array() as $category ) {
@@ -335,6 +347,10 @@ final class Patterns {
 					'label'       => $this->label_from_slug( $category ),
 					'description' => '',
 				);
+
+				if ( isset( $metadata[ $category ] ) ) {
+					$categories[ $category ] = array_merge( $categories[ $category ], $metadata[ $category ] );
+				}
 			}
 		}
 
@@ -349,6 +365,93 @@ final class Patterns {
 		$filtered = apply_filters( 'emulsify_theme_pattern_categories', $categories, $patterns );
 
 		return is_array( $filtered ) ? $filtered : $categories;
+	}
+
+	/**
+	 * Gets merged child-over-parent pattern category metadata.
+	 *
+	 * @return array Category metadata keyed by slug.
+	 */
+	private function category_metadata(): array {
+		$metadata = array();
+
+		foreach ( array_reverse( $this->pattern_directories() ) as $directory ) {
+			if ( empty( $directory['path'] ) || ! is_scalar( $directory['path'] ) ) {
+				continue;
+			}
+
+			foreach ( self::CATEGORY_METADATA_FILES as $filename ) {
+				$path = rtrim( (string) $directory['path'], '/\\' ) . '/' . $filename;
+
+				if ( ! is_readable( $path ) ) {
+					continue;
+				}
+
+				foreach ( $this->category_metadata_file( $path ) as $slug => $category ) {
+					$metadata[ $slug ] = array_merge( $metadata[ $slug ] ?? array(), $category );
+				}
+			}
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Reads one category metadata file.
+	 *
+	 * @param string $path Metadata file path.
+	 * @return array Category metadata keyed by slug.
+	 */
+	private function category_metadata_file( string $path ): array {
+		$contents = file_get_contents( $path );
+
+		if ( ! is_string( $contents ) ) {
+			$this->debug( sprintf( 'Could not read block pattern category metadata file: %s.', $path ) );
+			return array();
+		}
+
+		$data = json_decode( $contents, true );
+
+		if ( ! is_array( $data ) ) {
+			$this->debug( sprintf( 'Could not decode block pattern category metadata file: %s.', $path ) );
+			return array();
+		}
+
+		$metadata = array();
+
+		foreach ( $data as $slug => $category ) {
+			$slug = $this->category_name( $slug );
+
+			if ( '' === $slug || ! is_array( $category ) ) {
+				continue;
+			}
+
+			$record = array_filter(
+				array(
+					'label'       => $this->string_value( $category['label'] ?? ( $category['title'] ?? '' ) ),
+					'description' => $this->string_value( $category['description'] ?? '' ),
+				),
+				static function ( string $value ): bool {
+					return '' !== $value;
+				}
+			);
+
+			if ( ! empty( $record ) ) {
+				$metadata[ $slug ] = $record;
+			}
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Checks whether a pattern JSON file is category metadata.
+	 *
+	 * @param string $relative File basename.
+	 * @return bool TRUE when the file stores category metadata.
+	 */
+	private function is_category_metadata_file( string $relative ): bool {
+		return in_array( strtolower( $relative ), self::CATEGORY_METADATA_FILES, true );
 	}
 
 	/**

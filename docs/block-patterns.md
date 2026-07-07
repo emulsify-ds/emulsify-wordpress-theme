@@ -1,6 +1,6 @@
 # Block patterns
 
-The parent theme registers JSON block patterns from active child and parent theme `patterns` directories. Discovery is child-first and scans direct `patterns/*.json` files only, so a child theme can override a parent pattern file by using the same JSON filename.
+The parent theme registers JSON block patterns from active child and parent theme `patterns` directories. Discovery is child-first and scans direct `patterns/*.json` files only, so a child theme can override a parent pattern file by using the same JSON filename. `patterns/categories.json` and `patterns/_categories.json` are reserved for optional category metadata and are not registered as block patterns.
 
 If no pattern directory exists, or if WordPress pattern registration functions are unavailable, the service exits without changing editor behavior.
 
@@ -36,6 +36,21 @@ Optional fields:
 - `viewportWidth`: Preview width used by the inserter.
 
 Invalid JSON files, missing required fields, duplicate filenames, and duplicate pattern names are skipped safely. Diagnostics are logged only when `WP_DEBUG` is enabled.
+
+## Category metadata
+
+Categories discovered from pattern JSON receive a readable fallback label from the slug. Projects can refine labels and descriptions with `patterns/categories.json` or `patterns/_categories.json`:
+
+```json
+{
+	"featured": {
+		"label": "Featured",
+		"description": "Featured content layouts."
+	}
+}
+```
+
+Child theme category metadata extends parent metadata and overrides matching fields. Category metadata files are optional; only categories referenced by registered patterns are registered.
 
 ## Filters
 

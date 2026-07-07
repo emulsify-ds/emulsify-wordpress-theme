@@ -694,10 +694,12 @@ function runStaticChecks() {
     ensure(nativeBlocks.includes("register_block_type( (string) $component['path'] )"), 'Native blocks should delegate block.json asset fields to WordPress register_block_type().');
     ensure(locator.includes('FileDiscovery::theme_roots') && locator.includes('FileDiscovery::file_records'), 'Component locator should use shared filesystem discovery helpers.');
     ensure(patterns.includes('FileDiscovery::theme_roots') && patterns.includes("FileDiscovery::file_records( $this->pattern_directories(), array( 'json' ), false )"), 'Pattern discovery should use shared helpers while staying shallow.');
+    ensure(patterns.includes('CATEGORY_METADATA_FILES') && patterns.includes('category_metadata'), 'Pattern discovery should support optional category metadata files.');
     ensure(twig.includes('FileDiscovery::normalize_roots'), 'Twig project component roots should use shared root normalization.');
     ensure(smoke.includes('Asset discovery should keep child roots before parent fallback roots'), 'Runtime filter smoke should verify asset root priority.');
     ensure(editorEnhancementsSmoke.includes('skip duplicate parent relative paths'), 'Editor enhancements smoke should verify editor asset duplicate handling.');
     ensure(patternSmoke.includes('Child pattern JSON files should override parent files with the same basename'), 'Pattern smoke should verify child-first pattern discovery.');
+    ensure(patternSmoke.includes('Child pattern category metadata should override parent category labels') && patternSmoke.includes('metadata files'), 'Pattern smoke should cover category metadata and metadata-file skips.');
     ensure(assetManifestSmoke.includes('No manifest should fall back') && assetManifestSmoke.includes('Invalid manifest should fall back') && assetManifestSmoke.includes('Child manifest should take priority'), 'Asset manifest smoke should cover fallback, invalid, and child-priority paths.');
     ensure(blockAssetSmoke.includes('Manifest block assets should take priority') && blockAssetSmoke.includes('Native block.json asset fields should be left for WordPress') && blockAssetSmoke.includes('Global component scanning should remain the fallback'), 'Block scoped asset smoke should cover manifest priority, native block.json delegation, and scanner fallback.');
     return 'Parent runtime exposes documented filters with smoke coverage.';
@@ -1073,6 +1075,7 @@ function runStaticChecks() {
     ensure(docs.nativeBlocks.includes('emulsify_theme_native_block_directories'), 'Native blocks doc should document the native block directories filter.');
     ensure(docs.nativeBlocks.includes('style`, `script`, `viewScript`') && docs.nativeBlocks.includes('register_block_type()'), 'Native blocks doc should document WordPress-owned block.json asset loading.');
     ensure(docs.blockPatterns.includes('patterns/*.json'), 'Block patterns doc should document JSON pattern discovery.');
+    ensure(docs.blockPatterns.includes('patterns/categories.json') && docs.blockPatterns.includes('patterns/_categories.json'), 'Block patterns doc should document category metadata files.');
     ensure(docs.blockPatterns.includes('[Component recipes](component-recipes.md)'), 'Block patterns doc should link to component recipes.');
     ensure(docs.blockPatterns.includes('emulsify_theme_pattern_directories'), 'Block patterns doc should document directory filtering.');
     ensure(docs.blockPatterns.includes('emulsify_theme_pattern_args'), 'Block patterns doc should document final args filtering.');
