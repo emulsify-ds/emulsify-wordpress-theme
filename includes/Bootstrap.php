@@ -115,12 +115,6 @@ final class Bootstrap {
 				$this->autoload_runtime_class( $class );
 			}
 		);
-
-		$compatibility = $this->theme_dir . '/includes/Compatibility.php';
-
-		if ( is_readable( $compatibility ) ) {
-			require_once $compatibility;
-		}
 	}
 
 	/**

@@ -80,48 +80,21 @@ $classes   = array(
 	'Emulsify\\Theme\\Support\\FileDiscovery',
 	'Emulsify\\Theme\\Support\\ProjectConfig',
 );
-$legacy_classes = array(
-	'Emulsify\\Theme\\Setup',
-	'Emulsify\\Theme\\Assets',
-	'Emulsify\\Theme\\Context',
-	'Emulsify\\Theme\\Twig',
-	'Emulsify\\Theme\\Timber_Integration',
-	'Emulsify\\Theme\\Missing_Timber',
-	'Emulsify\\Theme\\Blocks\\Registry',
-	'Emulsify\\Theme\\Blocks\\Component_Locator',
-	'Emulsify\\Theme\\Blocks\\Acf_Blocks',
-	'Emulsify\\Theme\\Blocks\\Native_Blocks',
-	'Emulsify\\Theme\\Core_Block_Twig_Renderer',
-	'Emulsify\\Theme\\Patterns',
-	'Emulsify\\Theme\\Editor_Enhancements',
-	'Emulsify\\Theme\\Editor_Policy',
-	'Emulsify\\Theme\\Acf_Local_JSON',
-	'Emulsify\\Theme\\Cli',
-	'Emulsify\\Theme\\AttributeBag',
-);
 
 emulsify_bootstrap_loader_assert( is_readable( $autoload ), 'Run composer install or composer dump-autoload before the Bootstrap loader smoke test.' );
 
 $classes_export = var_export( $classes, true );
-$legacy_export  = var_export( $legacy_classes, true );
 $repo_export    = var_export( $repo_root, true );
 
 emulsify_bootstrap_loader_run_php(
 	<<<PHP
 \$repo_root = {$repo_export};
 \$classes = {$classes_export};
-\$legacy_classes = {$legacy_export};
 require_once \$repo_root . '/vendor/autoload.php';
 
 foreach ( \$classes as \$class ) {
 	if ( ! class_exists( \$class, true ) ) {
 		throw new RuntimeException( sprintf( 'Composer autoload did not load %s.', \$class ) );
-	}
-}
-
-foreach ( \$legacy_classes as \$class ) {
-	if ( ! class_exists( \$class, true ) ) {
-		throw new RuntimeException( sprintf( 'Composer compatibility alias did not load %s.', \$class ) );
 	}
 }
 PHP
@@ -131,7 +104,6 @@ emulsify_bootstrap_loader_run_php(
 	<<<PHP
 \$repo_root = {$repo_export};
 \$classes = {$classes_export};
-\$legacy_classes = {$legacy_export};
 require_once \$repo_root . '/includes/Bootstrap.php';
 
 \$reflection = new ReflectionClass( 'Emulsify\\\\Theme\\\\Bootstrap' );
@@ -146,12 +118,6 @@ require_once \$repo_root . '/includes/Bootstrap.php';
 foreach ( \$classes as \$class ) {
 	if ( ! class_exists( \$class, true ) ) {
 		throw new RuntimeException( sprintf( 'Fallback loader did not load %s.', \$class ) );
-	}
-}
-
-foreach ( \$legacy_classes as \$class ) {
-	if ( ! class_exists( \$class, true ) ) {
-		throw new RuntimeException( sprintf( 'Compatibility alias did not load %s.', \$class ) );
 	}
 }
 PHP

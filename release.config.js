@@ -67,7 +67,6 @@ module.exports = {
     ['@semantic-release/commit-analyzer', { parserOpts }],
     ['@semantic-release/release-notes-generator', { parserOpts }],
     expectedStableReleaseGuard,
-    ['@semantic-release/npm', { npmPublish: false }],
     '@semantic-release/github',
   ],
 };

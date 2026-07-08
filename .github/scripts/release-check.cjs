@@ -273,7 +273,6 @@ function runStaticChecks() {
   };
   const docsText = Object.values(docs).join('\n');
   const license = readFile('LICENSE');
-  const licenseTxt = readFile('LICENSE.txt');
   const issueTemplate = readFile('.github/ISSUE_TEMPLATE.md');
   const pullRequestTemplate = readFile('.github/PULL_REQUEST_TEMPLATE.md');
   const releaseGuardRejectContext = {
@@ -321,7 +320,6 @@ function runStaticChecks() {
       'composer.json',
       'functions.php',
       'includes/Bootstrap.php',
-      'includes/Compatibility.php',
       'includes/Acf/LocalJson.php',
       'includes/Blocks/AcfBlocks.php',
       'includes/Blocks/ComponentLocator.php',
@@ -418,17 +416,21 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['smoke:twig-project-namespace'] === 'php .github/scripts/twig-project-namespace-smoke.php', 'package.json should expose npm run smoke:twig-project-namespace.');
     ensure(rootPackage.scripts['whisk:install'], 'package.json should expose npm run whisk:install.');
     ensure(rootPackage.scripts['whisk:build'] === 'npm --prefix whisk run build', 'package.json should expose npm run whisk:build.');
-    ensure(rootPackage.devDependencies['@semantic-release/npm'], 'package.json should declare @semantic-release/npm directly.');
+    ensure(!rootPackage.devDependencies['@semantic-release/changelog'], 'package.json should not declare unused @semantic-release/changelog tooling.');
+    ensure(!rootPackage.devDependencies['@semantic-release/git'], 'package.json should not declare unused @semantic-release/git tooling.');
+    ensure(!rootPackage.devDependencies['@semantic-release/npm'], 'package.json should not declare unused @semantic-release/npm tooling.');
+    ensure(!Object.hasOwn(rootPackage, 'overrides'), 'package.json should not need semantic-release npm overrides.');
     ensure(composer.name === 'emulsify-ds/emulsify-wordpress', 'composer.json name should be emulsify-ds/emulsify-wordpress.');
     ensure(composer.type === 'wordpress-theme', 'composer.json type should be wordpress-theme.');
     ensure(composer.license === 'GPL-2.0-only', 'composer.json license should be GPL-2.0-only.');
     ensure(composer.homepage === 'https://www.emulsify.info', 'composer.json homepage should use the canonical HTTPS URL.');
     ensure(!Object.hasOwn(composer, 'minimum-stability'), 'composer.json should not lower release stability for a stable parent theme.');
     ensure(!Object.hasOwn(composer, 'prefer-stable'), 'composer.json should not keep prefer-stable when stable-only constraints are sufficient.');
+    ensure(composer.require && typeof composer.require.php === 'string' && composer.require.php.startsWith('>=8.3'), 'composer.json should enforce the PHP 8.3 runtime floor.');
     ensure(composer.require && composer.require['timber/timber'] === '^2.3', 'composer.json should keep the Timber 2 dependency constraint.');
     ensure(composer.autoload && composer.autoload['psr-4'] && composer.autoload['psr-4']['Emulsify\\Theme\\'] === 'includes/', 'composer.json should expose the runtime namespace through PSR-4 autoloading.');
     ensure(!Object.hasOwn(composer.autoload, 'classmap'), 'composer.json should rely on PSR-4 runtime paths instead of classmap loading.');
-    ensure(Array.isArray(composer.autoload.files) && composer.autoload.files.includes('includes/Compatibility.php'), 'composer.json should load runtime compatibility aliases for Composer installs.');
+    ensure(!Object.hasOwn(composer.autoload, 'files'), 'composer.json should not load removed compatibility files.');
     ensureParentThemeLanguage('composer.json description', composer.description);
     return `Validated root package ${rootPackage.version} and composer metadata.`;
   });
@@ -465,7 +467,6 @@ function runStaticChecks() {
     ensure(bootstrap.indexOf('load_vendor_autoload();') < bootstrap.indexOf('load_classes();'), 'Bootstrap should try Composer autoloading before fallback runtime loading.');
     ensure(bootstrap.includes('spl_autoload_register'), 'Bootstrap should register a fallback runtime autoloader.');
     ensure(bootstrap.includes('runtime_class_file'), 'Bootstrap should resolve runtime classes through a fallback file mapper.');
-    ensure(bootstrap.includes('Compatibility.php'), 'Bootstrap should load compatibility aliases after registering fallback runtime loading.');
     ensure(attributeBag.includes('implements \\Stringable'), 'AttributeBag should serialize safely in Twig string contexts.');
     ensure(attributeBag.includes('function addClass'), 'AttributeBag should support Core-style class merging.');
     ensure(attributeBag.includes('function toString'), 'AttributeBag should expose explicit serialization.');
@@ -478,18 +479,12 @@ function runStaticChecks() {
 
   runStaticCheck('Bootstrap runtime autoloading', () => {
     const bootstrap = readFile('includes/Bootstrap.php');
-    const compatibility = readFile('includes/Compatibility.php');
     const smoke = readFile('.github/scripts/bootstrap-loader-smoke.php');
 
     ensure(bootstrap.includes("str_replace( '\\\\', '/', $relative_class )"), 'Bootstrap fallback loader should resolve PSR-4-shaped runtime paths.');
-    ensure(compatibility.includes('class_alias'), 'Compatibility should preserve old runtime class names with aliases.');
-    ensure(compatibility.includes('Runtime\\Twig::class') && compatibility.includes("'\\\\Twig'"), 'Compatibility should alias old root Twig class names.');
-    ensure(compatibility.includes('Blocks\\ComponentLocator::class') && compatibility.includes("'\\\\Blocks\\\\Component_Locator'"), 'Compatibility should alias old block service class names.');
     ensure(smoke.includes("require_once \\$repo_root . '/vendor/autoload.php'"), 'Bootstrap loader smoke should verify Composer autoloading.');
-    ensure(smoke.includes('Composer compatibility alias did not load'), 'Bootstrap loader smoke should verify Composer-loaded compatibility aliases.');
     ensure(smoke.includes("require_once \\$repo_root . '/includes/Bootstrap.php'"), 'Bootstrap loader smoke should verify fallback loading without Composer.');
     ensure(smoke.includes('Emulsify\\\\Theme\\\\Blocks\\\\Registry'), 'Bootstrap loader smoke should cover nested block runtime classes.');
-    ensure(smoke.includes('Emulsify\\\\Theme\\\\Blocks\\\\Component_Locator'), 'Bootstrap loader smoke should cover legacy compatibility aliases.');
     ensure(smoke.includes('Fallback loader did not load'), 'Bootstrap loader smoke should fail clearly when fallback loading breaks.');
     return 'Composer autoloading and Bootstrap fallback loading are covered.';
   });
@@ -1136,7 +1131,7 @@ function runStaticChecks() {
 
   runStaticCheck('License metadata', () => {
     ensureGpl2LicenseText('LICENSE', license);
-    ensureGpl2LicenseText('LICENSE.txt', licenseTxt);
+    ensure(!fs.existsSync(path.join(repoRoot, 'LICENSE.txt')), 'LICENSE.txt should not duplicate the canonical LICENSE file.');
     ensure(!/MIT License/i.test(readme), 'README.md should not document an MIT license.');
     return 'License files and project metadata align on GPL-2.0-only.';
   });

@@ -15,15 +15,13 @@
     }
   ],
   "require": {
+      "php": ">=8.3",
       "timber/timber": "^2.3"
   },
   "autoload": {
     "psr-4": {
       "Emulsify\\Theme\\": "includes/"
-    },
-    "files": [
-      "includes/Compatibility.php"
-    ]
+    }
   },
   "config": {
     "optimize-autoloader": true,
