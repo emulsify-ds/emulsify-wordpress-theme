@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Blocks;
 
+use Emulsify\Theme\Support\AssetRecord;
+use Emulsify\Theme\Support\Diagnostics;
 use Emulsify\Theme\Support\FileDiscovery;
 
 /**
@@ -118,7 +120,7 @@ final class ComponentLocator {
 			$record    = $this->component_record( $file, $directory, $relative, $path );
 
 			if ( isset( $seen_paths[ $key ] ) ) {
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'acf_component_path',
 					$key,
 					$seen_paths[ $key ],
@@ -140,7 +142,7 @@ final class ComponentLocator {
 			$slug = $this->slug( $relative, $path );
 
 			if ( isset( $seen_slugs[ $slug ] ) ) {
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'acf_component_slug',
 					$slug,
 					$seen_slugs[ $slug ],
@@ -201,7 +203,7 @@ final class ComponentLocator {
 			}
 
 			if ( isset( $seen_paths[ $key ] ) ) {
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'native_component_path',
 					$key,
 					$seen_paths[ $key ],
@@ -212,7 +214,7 @@ final class ComponentLocator {
 			}
 
 			if ( '' !== $name && isset( $seen_names[ $name ] ) ) {
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'native_block_name',
 					$name,
 					$seen_names[ $name ],
@@ -642,32 +644,7 @@ final class ComponentLocator {
 			return '';
 		}
 
-		return $this->normalize_relative_path( (string) $filtered );
-	}
-
-	/**
-	 * Normalizes a safe relative path.
-	 *
-	 * @param string $path Candidate path.
-	 * @return string Normalized path, or empty string when invalid.
-	 */
-	private function normalize_relative_path( string $path ): string {
-		$path = trim( str_replace( '\\', '/', $path ) );
-
-		if (
-			'' === $path
-			|| false !== strpos( $path, "\0" )
-			|| 0 === strpos( $path, '/' )
-			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
-		) {
-			return '';
-		}
-
-		while ( 0 === strpos( $path, './' ) ) {
-			$path = substr( $path, 2 );
-		}
-
-		return $path;
+		return AssetRecord::normalize_relative_path( (string) $filtered );
 	}
 
 	/**
@@ -728,26 +705,6 @@ final class ComponentLocator {
 			'root_uri'      => $file['root_uri'] ?? '',
 			'source'        => $file['root_source'],
 			'metadata_path' => $metadata_path,
-		);
-	}
-
-	/**
-	 * Records a skipped duplicate component artifact.
-	 *
-	 * @param string $type    Duplicate type.
-	 * @param string $name    Duplicate key or block name.
-	 * @param array  $kept    Higher-priority record.
-	 * @param array  $skipped Lower-priority skipped record.
-	 * @param string $reason  Human-readable reason.
-	 * @return void
-	 */
-	private function record_skipped_duplicate( string $type, string $name, array $kept, array $skipped, string $reason ): void {
-		$this->skipped_duplicates[] = array(
-			'type'    => $type,
-			'name'    => $name,
-			'reason'  => $reason,
-			'kept'    => $kept,
-			'skipped' => $skipped,
 		);
 	}
 

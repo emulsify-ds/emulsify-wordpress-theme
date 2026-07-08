@@ -7,7 +7,9 @@
 
 namespace Emulsify\Theme\Runtime;
 
+use Emulsify\Theme\Support\AssetEnqueuer;
 use Emulsify\Theme\Support\AssetManifest;
+use Emulsify\Theme\Support\AssetRecord;
 use Emulsify\Theme\Support\FileDiscovery;
 
 /**
@@ -68,14 +70,7 @@ final class Assets {
 	 */
 	private function enqueue_styles( string $prefix, string $directory ): void {
 		foreach ( $this->asset_files( $directory, array( 'css' ) ) as $asset ) {
-			$handle = $this->handle( $prefix, $asset['relative'] );
-
-			wp_enqueue_style(
-				$handle,
-				$asset['uri'],
-				$this->dependencies( $asset ),
-				$asset['version']
-			);
+			AssetEnqueuer::enqueue_style( $prefix, $asset );
 		}
 	}
 
@@ -88,27 +83,7 @@ final class Assets {
 	 */
 	private function enqueue_scripts( string $prefix, string $directory ): void {
 		foreach ( $this->asset_files( $directory, array( 'js' ) ) as $asset ) {
-			$handle = $this->handle( $prefix, $asset['relative'] );
-
-			if ( $this->is_module_script( $asset ) && function_exists( 'wp_enqueue_script_module' ) ) {
-				wp_enqueue_script_module(
-					$handle,
-					$asset['uri'],
-					$this->dependencies( $asset ),
-					$asset['version']
-				);
-				continue;
-			}
-
-			wp_enqueue_script(
-				$handle,
-				$asset['uri'],
-				$this->dependencies( $asset ),
-				$asset['version'],
-				array(
-					'in_footer' => true,
-				)
-			);
+			AssetEnqueuer::enqueue_script( $prefix, $asset );
 		}
 	}
 
@@ -256,40 +231,6 @@ final class Assets {
 	}
 
 	/**
-	 * Builds a WordPress-safe asset handle.
-	 *
-	 * @param string $prefix   Handle prefix.
-	 * @param string $relative Asset path relative to its built directory.
-	 * @return string Asset handle.
-	 */
-	private function handle( string $prefix, string $relative ): string {
-		$name = preg_replace( '/\.(css|js)$/', '', $relative );
-		$name = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
-
-		return sanitize_key( $prefix . '-' . trim( (string) $name, '-' ) );
-	}
-
-	/**
-	 * Gets dependency handles from an asset record.
-	 *
-	 * @param array $asset Asset record.
-	 * @return array Dependency handles.
-	 */
-	private function dependencies( array $asset ): array {
-		return isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
-	}
-
-	/**
-	 * Checks whether a script should be enqueued as a script module.
-	 *
-	 * @param array $asset Asset record.
-	 * @return bool TRUE when script module enqueueing should be used.
-	 */
-	private function is_module_script( array $asset ): bool {
-		return ! array_key_exists( 'module', $asset ) || null === $asset['module'] ? true : (bool) $asset['module'];
-	}
-
-	/**
 	 * Checks whether a built asset is reserved for editor-only loading.
 	 *
 	 * @param string $directory Theme-relative asset directory being scanned.
@@ -314,7 +255,7 @@ final class Assets {
 		}
 
 		$root_relative = isset( $file['relative'] ) && is_scalar( $file['relative'] )
-			? $this->normalize_relative_asset_path( (string) $file['relative'] )
+			? AssetRecord::normalize_relative_path( (string) $file['relative'] )
 			: '';
 
 		if ( '' !== $root_relative && isset( $this->manifest_component_asset_paths()[ $root_relative ] ) ) {
@@ -426,38 +367,7 @@ final class Assets {
 	private function metadata_asset_path( $entry ): string {
 		$entry = is_array( $entry ) ? $entry : array( 'path' => $entry );
 
-		foreach ( array( 'path', 'file', 'src', 'href' ) as $key ) {
-			if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) ) {
-				return $this->normalize_relative_asset_path( (string) $entry[ $key ] );
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Normalizes a safe relative asset path.
-	 *
-	 * @param string $path Candidate path.
-	 * @return string Safe relative path, or empty string when invalid.
-	 */
-	private function normalize_relative_asset_path( string $path ): string {
-		$path = trim( str_replace( '\\', '/', $path ) );
-
-		if (
-			'' === $path
-			|| false !== strpos( $path, "\0" )
-			|| 0 === strpos( $path, '/' )
-			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
-		) {
-			return '';
-		}
-
-		while ( 0 === strpos( $path, './' ) ) {
-			$path = substr( $path, 2 );
-		}
-
-		return $path;
+		return AssetRecord::entry_path( $entry );
 	}
 
 	/**

@@ -73,6 +73,9 @@ $classes   = array(
 	'Emulsify\\Theme\\Acf\\LocalJson',
 	'Emulsify\\Theme\\Cli\\GenerateChildThemeCommand',
 	'Emulsify\\Theme\\Support\\AttributeBag',
+	'Emulsify\\Theme\\Support\\AssetRecord',
+	'Emulsify\\Theme\\Support\\AssetEnqueuer',
+	'Emulsify\\Theme\\Support\\Diagnostics',
 );
 $legacy_classes = array(
 	'Emulsify\\Theme\\Setup',

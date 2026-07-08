@@ -7,6 +7,7 @@
 
 namespace Emulsify\Theme\Editor;
 
+use Emulsify\Theme\Support\AssetEnqueuer;
 use Emulsify\Theme\Support\AssetManifest;
 use Emulsify\Theme\Support\FileDiscovery;
 
@@ -37,16 +38,11 @@ final class Enhancements {
 		// The parent ships the enqueue/runtime support only. A child theme or
 		// selected component system decides whether any editor bundle exists.
 		foreach ( $this->asset_files( 'dist/global/editor', array( 'css' ) ) as $asset ) {
-			wp_enqueue_style(
-				$this->handle( 'emulsify-editor', $asset['relative'] ),
-				$asset['uri'],
-				$this->dependencies( $asset ),
-				$asset['version']
-			);
+			AssetEnqueuer::enqueue_style( 'emulsify-editor', $asset );
 		}
 
 		foreach ( $this->asset_files( 'dist/global/editor', array( 'js' ) ) as $asset ) {
-			$handle = $this->handle( 'emulsify-editor', $asset['relative'] );
+			$handle = AssetEnqueuer::handle( 'emulsify-editor', $asset );
 
 			wp_enqueue_script(
 				$handle,
@@ -374,7 +370,7 @@ final class Enhancements {
 			array_unique(
 				array_merge(
 					$dependencies,
-					$this->dependencies( $asset )
+					AssetEnqueuer::dependencies( $asset )
 				)
 			)
 		);
@@ -474,30 +470,6 @@ final class Enhancements {
 		}
 
 		return array_values( array_unique( $strings ) );
-	}
-
-	/**
-	 * Builds a WordPress-safe asset handle.
-	 *
-	 * @param string $prefix   Handle prefix.
-	 * @param string $relative Asset path relative to its built directory.
-	 * @return string Asset handle.
-	 */
-	private function handle( string $prefix, string $relative ): string {
-		$name = preg_replace( '/\.(css|js)$/', '', $relative );
-		$name = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
-
-		return sanitize_key( $prefix . '-' . trim( (string) $name, '-' ) );
-	}
-
-	/**
-	 * Gets dependency handles from an asset record.
-	 *
-	 * @param array $asset Asset record.
-	 * @return array Dependency handles.
-	 */
-	private function dependencies( array $asset ): array {
-		return isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] ) ? $asset['dependencies'] : array();
 	}
 
 	/**

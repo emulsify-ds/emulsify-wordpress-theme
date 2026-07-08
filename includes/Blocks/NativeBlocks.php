@@ -7,6 +7,8 @@
 
 namespace Emulsify\Theme\Blocks;
 
+use Emulsify\Theme\Support\Diagnostics;
+
 /**
  * Native WordPress Block API integration.
  */
@@ -80,26 +82,26 @@ final class NativeBlocks {
 			if ( '' !== $name && isset( $seen_names[ $name ] ) ) {
 				// Filters may merge or rename block directories. Keep the first
 				// discovered name and surface later duplicates only in debug/admin contexts.
-				$skipped[] = array(
-					'type'    => 'native_filtered_block_name',
-					'name'    => $name,
-					'reason'  => 'Duplicate filtered native block name.',
-					'kept'    => $seen_names[ $name ],
-					'skipped' => $component,
+				$skipped[] = Diagnostics::duplicate_record(
+					'native_filtered_block_name',
+					$name,
+					$seen_names[ $name ],
+					$component,
+					'Duplicate filtered native block name.'
 				);
 				continue;
 			}
 
 			if ( '' !== $name && $this->native_block_registered( $name ) ) {
-				$skipped[] = array(
-					'type'    => 'native_registered_block_name',
-					'name'    => $name,
-					'reason'  => 'Native block name is already registered.',
-					'kept'    => array(
+				$skipped[] = Diagnostics::duplicate_record(
+					'native_registered_block_name',
+					$name,
+					array(
 						'name'   => $name,
 						'source' => 'existing',
 					),
-					'skipped' => $component,
+					$component,
+					'Native block name is already registered.'
 				);
 				continue;
 			}
@@ -111,11 +113,12 @@ final class NativeBlocks {
 			register_block_type( (string) $component['path'] );
 		}
 
-		$this->debug_skipped_duplicates(
+		Diagnostics::report_duplicates(
 			array_merge(
 				$this->components->skipped_duplicates( 'native' ),
 				$skipped
-			)
+			),
+			function_exists( '__' ) ? __( 'Emulsify skipped duplicate native block definitions.', 'emulsify' ) : 'Emulsify skipped duplicate native block definitions.'
 		);
 	}
 
@@ -128,74 +131,5 @@ final class NativeBlocks {
 	private function native_block_registered( string $name ): bool {
 		return class_exists( '\WP_Block_Type_Registry' )
 			&& \WP_Block_Type_Registry::get_instance()->is_registered( $name );
-	}
-
-	/**
-	 * Logs duplicate block records and optionally exposes admin notices.
-	 *
-	 * @param array $duplicates Duplicate records.
-	 * @return void
-	 */
-	private function debug_skipped_duplicates( array $duplicates ): void {
-		if ( empty( $duplicates ) || ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			return;
-		}
-
-		$messages = array();
-
-		foreach ( $duplicates as $duplicate ) {
-			$messages[] = $this->duplicate_message( $duplicate );
-			error_log( '[Emulsify] ' . end( $messages ) );
-		}
-
-		$this->admin_notice( $messages );
-	}
-
-	/**
-	 * Adds an admin-only notice for skipped duplicate blocks.
-	 *
-	 * @param array $messages Notice messages.
-	 * @return void
-	 */
-	private function admin_notice( array $messages ): void {
-		if ( empty( $messages ) || ! function_exists( 'add_action' ) || ! function_exists( 'is_admin' ) || ! is_admin() ) {
-			return;
-		}
-
-		add_action(
-			'admin_notices',
-			static function () use ( $messages ): void {
-				if ( function_exists( 'current_user_can' ) && ! current_user_can( 'edit_theme_options' ) ) {
-					return;
-				}
-
-				echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'Emulsify skipped duplicate native block definitions.', 'emulsify' ) . '</strong></p><ul>';
-
-				foreach ( $messages as $message ) {
-					echo '<li>' . esc_html( $message ) . '</li>';
-				}
-
-				echo '</ul></div>';
-			}
-		);
-	}
-
-	/**
-	 * Formats a duplicate debug message.
-	 *
-	 * @param array $duplicate Duplicate record.
-	 * @return string Debug message.
-	 */
-	private function duplicate_message( array $duplicate ): string {
-		$kept    = isset( $duplicate['kept']['metadata_path'] ) ? $duplicate['kept']['metadata_path'] : ( $duplicate['kept']['name'] ?? 'unknown' );
-		$skipped = isset( $duplicate['skipped']['metadata_path'] ) ? $duplicate['skipped']['metadata_path'] : ( $duplicate['skipped']['name'] ?? 'unknown' );
-
-		return sprintf(
-			'%s "%s" skipped %s in favor of %s.',
-			isset( $duplicate['reason'] ) ? $duplicate['reason'] : 'Duplicate block definition.',
-			isset( $duplicate['name'] ) ? $duplicate['name'] : 'unknown',
-			$skipped,
-			$kept
-		);
 	}
 }

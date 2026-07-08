@@ -7,7 +7,10 @@
 
 namespace Emulsify\Theme\Blocks;
 
+use Emulsify\Theme\Support\AssetEnqueuer;
 use Emulsify\Theme\Support\AssetManifest;
+use Emulsify\Theme\Support\AssetRecord;
+use Emulsify\Theme\Support\Diagnostics;
 use Emulsify\Theme\Support\FileDiscovery;
 
 /**
@@ -115,7 +118,7 @@ final class AcfBlocks {
 			if ( '' !== $name && isset( $seen_names[ $name ] ) ) {
 				// Duplicate names can happen after filters alter metadata. Register
 				// the first child-first record and report the skipped one in debug.
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'acf_block_name',
 					$name,
 					$seen_names[ $name ],
@@ -126,7 +129,7 @@ final class AcfBlocks {
 			}
 
 			if ( '' !== $name && $this->acf_block_registered( $name ) ) {
-				$this->record_skipped_duplicate(
+				$this->skipped_duplicates[] = Diagnostics::duplicate_record(
 					'acf_registered_block_name',
 					$name,
 					array(
@@ -146,11 +149,12 @@ final class AcfBlocks {
 			acf_register_block_type( $args );
 		}
 
-		$this->debug_skipped_duplicates(
+		Diagnostics::report_duplicates(
 			array_merge(
 				$this->components->skipped_duplicates( 'acf' ),
 				$this->skipped_duplicates
-			)
+			),
+			function_exists( '__' ) ? __( 'Emulsify skipped duplicate ACF block definitions.', 'emulsify' ) : 'Emulsify skipped duplicate ACF block definitions.'
 		);
 	}
 
@@ -272,10 +276,10 @@ final class AcfBlocks {
 		$filtered = apply_filters( 'emulsify_theme_acf_block_asset_records', $asset_records, $component, $metadata, $args );
 
 		if ( is_array( $filtered ) ) {
-			$asset_records = $this->normalize_asset_context_records( $filtered );
+			$asset_records = AssetRecord::normalize_context_records( $filtered );
 		}
 
-		if ( ! $this->has_asset_records( $asset_records ) ) {
+		if ( ! AssetRecord::has_context_records( $asset_records ) ) {
 			return $args;
 		}
 
@@ -299,12 +303,12 @@ final class AcfBlocks {
 		);
 
 		if ( is_array( $manifest_records ) ) {
-			return $this->normalize_asset_context_records( $manifest_records );
+			return AssetRecord::normalize_context_records( $manifest_records );
 		}
 
 		$metadata_records = $this->metadata_asset_records( $component, $metadata );
 
-		return is_array( $metadata_records ) ? $metadata_records : $this->empty_asset_context_records();
+		return is_array( $metadata_records ) ? $metadata_records : AssetRecord::empty_context_records();
 	}
 
 	/**
@@ -361,7 +365,7 @@ final class AcfBlocks {
 		$base_uri  = $this->component_base_uri( $component, $base_path );
 
 		if ( '' === $base_uri || '' === $base_path ) {
-			return $this->empty_asset_context_records();
+			return AssetRecord::empty_context_records();
 		}
 
 		return $this->metadata_context_records( $metadata['assets'], $base_path, $base_uri, $component );
@@ -377,7 +381,7 @@ final class AcfBlocks {
 	 * @return array Scoped asset records.
 	 */
 	private function metadata_context_records( array $assets, string $base_path, string $base_uri, array $component ): array {
-		$records = $this->empty_asset_context_records();
+		$records = AssetRecord::empty_context_records();
 
 		if ( isset( $assets['frontend'] ) || isset( $assets['editor'] ) ) {
 			if ( isset( $assets['frontend'] ) && is_array( $assets['frontend'] ) ) {
@@ -443,7 +447,7 @@ final class AcfBlocks {
 	 */
 	private function metadata_asset_record( $entry, string $type, string $base_path, string $base_uri, array $component ): ?array {
 		$data     = is_array( $entry ) ? $entry : array( 'path' => $entry );
-		$relative = $this->entry_path( $data );
+		$relative = AssetRecord::entry_path( $data );
 
 		if ( '' === $relative || strtolower( pathinfo( $relative, PATHINFO_EXTENSION ) ) !== $type ) {
 			return null;
@@ -458,11 +462,11 @@ final class AcfBlocks {
 		return array(
 			'path'         => $path,
 			'priority'     => 0,
-			'relative'     => $this->entry_relative( $data, $relative ),
+			'relative'     => AssetRecord::entry_relative( $data, $relative ),
 			'uri'          => rtrim( $base_uri, '/' ) . '/' . $relative,
-			'version'      => $this->entry_version( $data, $path ),
-			'dependencies' => $this->entry_dependencies( $data ),
-			'module'       => $this->entry_module( $data ),
+			'version'      => AssetRecord::entry_version( $data, $path ),
+			'dependencies' => AssetRecord::entry_dependencies( $data ),
+			'module'       => AssetRecord::entry_module( $data ),
 			'source'       => isset( $component['source'] ) ? (string) $component['source'] : '',
 		);
 	}
@@ -533,16 +537,7 @@ final class AcfBlocks {
 	 * @return void
 	 */
 	private function enqueue_style_record( array $record, string $block_name, string $context ): void {
-		if ( empty( $record['uri'] ) || ! function_exists( 'wp_enqueue_style' ) ) {
-			return;
-		}
-
-		wp_enqueue_style(
-			$this->asset_handle( 'emulsify-acf-' . $context, $block_name, $record ),
-			(string) $record['uri'],
-			$this->asset_dependencies( $record ),
-			$record['version'] ?? null
-		);
+		AssetEnqueuer::enqueue_style( 'emulsify-acf-' . $context . '-' . $block_name, $record );
 	}
 
 	/**
@@ -554,75 +549,7 @@ final class AcfBlocks {
 	 * @return void
 	 */
 	private function enqueue_script_record( array $record, string $block_name, string $context ): void {
-		if ( empty( $record['uri'] ) ) {
-			return;
-		}
-
-		$handle = $this->asset_handle( 'emulsify-acf-' . $context, $block_name, $record );
-
-		if ( $this->is_module_script( $record ) && function_exists( 'wp_enqueue_script_module' ) ) {
-			wp_enqueue_script_module(
-				$handle,
-				(string) $record['uri'],
-				$this->asset_dependencies( $record ),
-				$record['version'] ?? null
-			);
-			return;
-		}
-
-		if ( ! function_exists( 'wp_enqueue_script' ) ) {
-			return;
-		}
-
-		wp_enqueue_script(
-			$handle,
-			(string) $record['uri'],
-			$this->asset_dependencies( $record ),
-			$record['version'] ?? null,
-			array(
-				'in_footer' => true,
-			)
-		);
-	}
-
-	/**
-	 * Builds a WordPress-safe scoped asset handle.
-	 *
-	 * @param string $prefix     Handle prefix.
-	 * @param string $block_name ACF block name.
-	 * @param array  $record     Asset record.
-	 * @return string Asset handle.
-	 */
-	private function asset_handle( string $prefix, string $block_name, array $record ): string {
-		if ( ! empty( $record['handle'] ) && is_scalar( $record['handle'] ) ) {
-			return sanitize_key( (string) $record['handle'] );
-		}
-
-		$relative = isset( $record['relative'] ) && is_scalar( $record['relative'] ) ? (string) $record['relative'] : basename( (string) ( $record['path'] ?? 'asset' ) );
-		$name     = preg_replace( '/\.(css|js)$/', '', $relative );
-		$name     = preg_replace( '/[^A-Za-z0-9_-]+/', '-', (string) $name );
-
-		return sanitize_key( $prefix . '-' . $block_name . '-' . trim( (string) $name, '-' ) );
-	}
-
-	/**
-	 * Gets dependency handles from an asset record.
-	 *
-	 * @param array $record Asset record.
-	 * @return array Dependency handles.
-	 */
-	private function asset_dependencies( array $record ): array {
-		return isset( $record['dependencies'] ) && is_array( $record['dependencies'] ) ? $record['dependencies'] : array();
-	}
-
-	/**
-	 * Checks whether a script should be enqueued as a module.
-	 *
-	 * @param array $record Asset record.
-	 * @return bool TRUE when the script is a module.
-	 */
-	private function is_module_script( array $record ): bool {
-		return ! array_key_exists( 'module', $record ) || null === $record['module'] ? true : (bool) $record['module'];
+		AssetEnqueuer::enqueue_script( 'emulsify-acf-' . $context . '-' . $block_name, $record );
 	}
 
 	/**
@@ -632,191 +559,6 @@ final class AcfBlocks {
 	 */
 	private function is_editor_context(): bool {
 		return function_exists( 'is_admin' ) && is_admin();
-	}
-
-	/**
-	 * Gets an empty scoped asset record set.
-	 *
-	 * @return array Empty records.
-	 */
-	private function empty_asset_context_records(): array {
-		return array(
-			'frontend' => array(
-				'css' => array(),
-				'js'  => array(),
-			),
-			'editor'   => array(
-				'css' => array(),
-				'js'  => array(),
-			),
-		);
-	}
-
-	/**
-	 * Normalizes scoped asset record groups.
-	 *
-	 * @param array $records Candidate records.
-	 * @return array Normalized records.
-	 */
-	private function normalize_asset_context_records( array $records ): array {
-		$normalized = $this->empty_asset_context_records();
-
-		foreach ( array( 'frontend', 'editor' ) as $context ) {
-			if ( empty( $records[ $context ] ) || ! is_array( $records[ $context ] ) ) {
-				continue;
-			}
-
-			foreach ( array( 'css', 'js' ) as $type ) {
-				$normalized[ $context ][ $type ] = isset( $records[ $context ][ $type ] ) && is_array( $records[ $context ][ $type ] )
-					? array_values( $records[ $context ][ $type ] )
-					: array();
-			}
-		}
-
-		return $normalized;
-	}
-
-	/**
-	 * Checks whether any scoped asset records are present.
-	 *
-	 * @param array $records Scoped records.
-	 * @return bool TRUE when records are present.
-	 */
-	private function has_asset_records( array $records ): bool {
-		foreach ( array( 'frontend', 'editor' ) as $context ) {
-			foreach ( array( 'css', 'js' ) as $type ) {
-				if ( ! empty( $records[ $context ][ $type ] ) ) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Gets an asset entry path.
-	 *
-	 * @param array $entry Asset entry.
-	 * @return string Relative path.
-	 */
-	private function entry_path( array $entry ): string {
-		foreach ( array( 'path', 'file', 'src', 'href' ) as $key ) {
-			if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) ) {
-				return $this->normalize_relative_asset_path( (string) $entry[ $key ] );
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Gets the record-relative path.
-	 *
-	 * @param array  $entry    Asset entry.
-	 * @param string $fallback Fallback relative path.
-	 * @return string Relative path.
-	 */
-	private function entry_relative( array $entry, string $fallback ): string {
-		if ( isset( $entry['relative'] ) && is_scalar( $entry['relative'] ) ) {
-			$relative = $this->normalize_relative_asset_path( (string) $entry['relative'] );
-
-			if ( '' !== $relative ) {
-				return $relative;
-			}
-		}
-
-		return $fallback;
-	}
-
-	/**
-	 * Gets the asset version.
-	 *
-	 * @param array  $entry Asset entry.
-	 * @param string $path  Absolute asset path.
-	 * @return string|null Version.
-	 */
-	private function entry_version( array $entry, string $path ): ?string {
-		foreach ( array( 'version', 'hash' ) as $key ) {
-			if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) && '' !== trim( (string) $entry[ $key ] ) ) {
-				return (string) $entry[ $key ];
-			}
-		}
-
-		$modified = filemtime( $path );
-
-		return false === $modified ? null : (string) $modified;
-	}
-
-	/**
-	 * Gets normalized dependency handles.
-	 *
-	 * @param array $entry Asset entry.
-	 * @return array Dependency handles.
-	 */
-	private function entry_dependencies( array $entry ): array {
-		$dependencies = $entry['dependencies'] ?? ( $entry['deps'] ?? array() );
-
-		if ( ! is_array( $dependencies ) ) {
-			return array();
-		}
-
-		return array_values(
-			array_filter(
-				array_map(
-					static function ( $dependency ) {
-						return is_scalar( $dependency ) ? trim( (string) $dependency ) : null;
-					},
-					$dependencies
-				),
-				static function ( $dependency ): bool {
-					return is_string( $dependency ) && '' !== $dependency;
-				}
-			)
-		);
-	}
-
-	/**
-	 * Gets an optional script module flag.
-	 *
-	 * @param array $entry Asset entry.
-	 * @return bool|null Module flag, or null to use service default.
-	 */
-	private function entry_module( array $entry ): ?bool {
-		if ( array_key_exists( 'module', $entry ) ) {
-			return ! empty( $entry['module'] );
-		}
-
-		if ( array_key_exists( 'type', $entry ) && is_scalar( $entry['type'] ) ) {
-			return 'module' === strtolower( trim( (string) $entry['type'] ) );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Normalizes a relative asset path.
-	 *
-	 * @param string $path Candidate path.
-	 * @return string Safe relative path.
-	 */
-	private function normalize_relative_asset_path( string $path ): string {
-		$path = trim( str_replace( '\\', '/', $path ) );
-
-		if (
-			'' === $path
-			|| false !== strpos( $path, "\0" )
-			|| 0 === strpos( $path, '/' )
-			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
-		) {
-			return '';
-		}
-
-		while ( 0 === strpos( $path, './' ) ) {
-			$path = substr( $path, 2 );
-		}
-
-		return $path;
 	}
 
 	/**
@@ -887,95 +629,6 @@ final class AcfBlocks {
 			'source'        => isset( $component['source'] ) ? $component['source'] : '',
 			'metadata_path' => isset( $component['metadata_path'] ) ? $component['metadata_path'] : '',
 			'template'      => isset( $component['template'] ) ? $component['template'] : '',
-		);
-	}
-
-	/**
-	 * Records a skipped duplicate ACF block.
-	 *
-	 * @param string $type    Duplicate type.
-	 * @param string $name    Duplicate block name.
-	 * @param array  $kept    Higher-priority record.
-	 * @param array  $skipped Lower-priority skipped record.
-	 * @param string $reason  Human-readable reason.
-	 * @return void
-	 */
-	private function record_skipped_duplicate( string $type, string $name, array $kept, array $skipped, string $reason ): void {
-		$this->skipped_duplicates[] = array(
-			'type'    => $type,
-			'name'    => $name,
-			'reason'  => $reason,
-			'kept'    => $kept,
-			'skipped' => $skipped,
-		);
-	}
-
-	/**
-	 * Logs duplicate block records and optionally exposes admin notices.
-	 *
-	 * @param array $duplicates Duplicate records.
-	 * @return void
-	 */
-	private function debug_skipped_duplicates( array $duplicates ): void {
-		if ( empty( $duplicates ) || ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
-			return;
-		}
-
-		$messages = array();
-
-		foreach ( $duplicates as $duplicate ) {
-			$messages[] = $this->duplicate_message( $duplicate );
-			error_log( '[Emulsify] ' . end( $messages ) );
-		}
-
-		$this->admin_notice( $messages );
-	}
-
-	/**
-	 * Adds an admin-only notice for skipped duplicate blocks.
-	 *
-	 * @param array $messages Notice messages.
-	 * @return void
-	 */
-	private function admin_notice( array $messages ): void {
-		if ( empty( $messages ) || ! function_exists( 'add_action' ) || ! function_exists( 'is_admin' ) || ! is_admin() ) {
-			return;
-		}
-
-		add_action(
-			'admin_notices',
-			static function () use ( $messages ): void {
-				if ( function_exists( 'current_user_can' ) && ! current_user_can( 'edit_theme_options' ) ) {
-					return;
-				}
-
-				echo '<div class="notice notice-warning"><p><strong>' . esc_html__( 'Emulsify skipped duplicate ACF block definitions.', 'emulsify' ) . '</strong></p><ul>';
-
-				foreach ( $messages as $message ) {
-					echo '<li>' . esc_html( $message ) . '</li>';
-				}
-
-				echo '</ul></div>';
-			}
-		);
-	}
-
-	/**
-	 * Formats a duplicate debug message.
-	 *
-	 * @param array $duplicate Duplicate record.
-	 * @return string Debug message.
-	 */
-	private function duplicate_message( array $duplicate ): string {
-		$kept    = isset( $duplicate['kept']['metadata_path'] ) ? $duplicate['kept']['metadata_path'] : ( $duplicate['kept']['name'] ?? 'unknown' );
-		$skipped = isset( $duplicate['skipped']['metadata_path'] ) ? $duplicate['skipped']['metadata_path'] : ( $duplicate['skipped']['name'] ?? 'unknown' );
-
-		return sprintf(
-			'%s "%s" skipped %s in favor of %s.',
-			isset( $duplicate['reason'] ) ? $duplicate['reason'] : 'Duplicate block definition.',
-			isset( $duplicate['name'] ) ? $duplicate['name'] : 'unknown',
-			$skipped,
-			$kept
 		);
 	}
 

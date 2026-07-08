@@ -314,6 +314,8 @@ try {
 	emulsify_locator_smoke_write( $parent . '/dist/components/parent-native/block.json', '{"name":"emulsify/parent-native"}' );
 
 	require_once $repo_root . '/includes/Support/FileDiscovery.php';
+	require_once $repo_root . '/includes/Support/AssetRecord.php';
+	require_once $repo_root . '/includes/Support/Diagnostics.php';
 	require_once $repo_root . '/includes/Blocks/ComponentLocator.php';
 
 	$locator = new Emulsify\Theme\Blocks\ComponentLocator();
@@ -388,6 +390,8 @@ try {
 	emulsify_locator_smoke_write( $child . '/dist/components/acf-name-b/acf-name-b.component.json', '{"name":"emulsify/shared-acf","title":"Shared B"}' );
 	emulsify_locator_smoke_write( $child . '/dist/components/acf-name-b/acf-name-b.twig', '<article>Shared B</article>' );
 
+	require_once $repo_root . '/includes/Support/AssetEnqueuer.php';
+	require_once $repo_root . '/includes/Support/Diagnostics.php';
 	require_once $repo_root . '/includes/Support/AssetManifest.php';
 	require_once $repo_root . '/includes/Blocks/AcfBlocks.php';
 

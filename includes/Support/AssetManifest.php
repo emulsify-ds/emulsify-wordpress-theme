@@ -63,13 +63,13 @@ final class AssetManifest {
 
 		$assets      = $this->asset_data( $manifest );
 		$identifiers = $this->normalize_identifiers( $identifiers );
-		$records     = $this->empty_context_records();
+		$records     = AssetRecord::empty_context_records();
 		$declared    = false;
 
 		foreach ( $identifiers as $identifier ) {
 			if ( isset( $assets['blocks'] ) && is_array( $assets['blocks'] ) && array_key_exists( $identifier, $assets['blocks'] ) ) {
 				$declared = true;
-				$records  = $this->merge_context_records(
+				$records  = AssetRecord::merge_context_records(
 					$records,
 					$this->context_section_records( $assets['blocks'][ $identifier ], $manifest, $identifier )
 				);
@@ -77,14 +77,14 @@ final class AssetManifest {
 
 			if ( isset( $assets['components'] ) && is_array( $assets['components'] ) && array_key_exists( $identifier, $assets['components'] ) ) {
 				$declared = true;
-				$records  = $this->merge_context_records(
+				$records  = AssetRecord::merge_context_records(
 					$records,
 					$this->context_section_records( $assets['components'][ $identifier ], $manifest, $identifier )
 				);
 			}
 		}
 
-		return $declared ? $this->sort_context_records( $records ) : null;
+		return $declared ? AssetRecord::sort_context_records( $records ) : null;
 	}
 
 	/**
@@ -204,7 +204,7 @@ final class AssetManifest {
 	 * @return array Context asset records.
 	 */
 	private function context_section_records( $section, array $manifest, string $block_name = '' ): array {
-		$records = $this->empty_context_records();
+		$records = AssetRecord::empty_context_records();
 
 		if ( ! is_array( $section ) ) {
 			return $records;
@@ -272,7 +272,7 @@ final class AssetManifest {
 
 			foreach ( $section[ $type ] as $entry ) {
 				$data = is_array( $entry ) ? $entry : array( 'path' => $entry );
-				$path = $this->component_relative_path( $this->entry_path( $data ) );
+				$path = $this->component_relative_path( AssetRecord::entry_path( $data ) );
 
 				if ( '' !== $path ) {
 					$paths[] = $path;
@@ -320,60 +320,6 @@ final class AssetManifest {
 	}
 
 	/**
-	 * Gets an empty frontend/editor record set.
-	 *
-	 * @return array Empty context records.
-	 */
-	private function empty_context_records(): array {
-		return array(
-			'frontend' => array(
-				'css' => array(),
-				'js'  => array(),
-			),
-			'editor'   => array(
-				'css' => array(),
-				'js'  => array(),
-			),
-		);
-	}
-
-	/**
-	 * Merges two context asset record sets.
-	 *
-	 * @param array $base Base records.
-	 * @param array $add  Records to add.
-	 * @return array Merged records.
-	 */
-	private function merge_context_records( array $base, array $add ): array {
-		foreach ( array( 'frontend', 'editor' ) as $context ) {
-			foreach ( array( 'css', 'js' ) as $type ) {
-				$base[ $context ][ $type ] = array_merge(
-					$base[ $context ][ $type ] ?? array(),
-					$add[ $context ][ $type ] ?? array()
-				);
-			}
-		}
-
-		return $base;
-	}
-
-	/**
-	 * Sorts context asset records.
-	 *
-	 * @param array $records Context records.
-	 * @return array Sorted context records.
-	 */
-	private function sort_context_records( array $records ): array {
-		foreach ( array( 'frontend', 'editor' ) as $context ) {
-			foreach ( array( 'css', 'js' ) as $type ) {
-				$records[ $context ][ $type ] = FileDiscovery::sort_by_priority_and_relative( $records[ $context ][ $type ] ?? array() );
-			}
-		}
-
-		return $records;
-	}
-
-	/**
 	 * Normalizes scoped asset identifiers.
 	 *
 	 * @param array $identifiers Candidate identifiers.
@@ -408,7 +354,7 @@ final class AssetManifest {
 	 */
 	private function asset_record( $entry, string $extension, array $manifest, string $block_name = '' ): ?array {
 		$data     = is_array( $entry ) ? $entry : array( 'path' => $entry );
-		$relative = $this->entry_path( $data );
+		$relative = AssetRecord::entry_path( $data );
 
 		if ( '' === $relative || strtolower( pathinfo( $relative, PATHINFO_EXTENSION ) ) !== $extension ) {
 			return null;
@@ -423,11 +369,11 @@ final class AssetManifest {
 		$record = array(
 			'path'          => $path,
 			'priority'      => $manifest['priority'],
-			'relative'      => $this->entry_relative( $data, $relative ),
+			'relative'      => AssetRecord::entry_relative( $data, $relative ),
 			'uri'           => $manifest['base_uri'] . '/' . $relative,
-			'version'       => $this->entry_version( $data, $path ),
-			'dependencies'  => $this->entry_dependencies( $data ),
-			'module'        => $this->entry_module( $data ),
+			'version'       => AssetRecord::entry_version( $data, $path ),
+			'dependencies'  => AssetRecord::entry_dependencies( $data ),
+			'module'        => AssetRecord::entry_module( $data ),
 			'source'        => $manifest['source'],
 			'manifest_path' => $manifest['path'],
 		);
@@ -507,7 +453,7 @@ final class AssetManifest {
 			return array();
 		}
 
-		$relative_path = $this->normalize_relative_path( (string) $filtered );
+		$relative_path = AssetRecord::normalize_relative_path( (string) $filtered );
 
 		if ( '' === $relative_path ) {
 			return array();
@@ -559,130 +505,5 @@ final class AssetManifest {
 			'priority'  => $priority,
 			'source'    => $source,
 		);
-	}
-
-	/**
-	 * Gets an asset entry path.
-	 *
-	 * @param array $entry Manifest asset entry.
-	 * @return string Entry path relative to the manifest directory.
-	 */
-	private function entry_path( array $entry ): string {
-		foreach ( array( 'path', 'file', 'src', 'href' ) as $key ) {
-			if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) ) {
-				return $this->normalize_relative_path( (string) $entry[ $key ] );
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Gets the record-relative path used for handle generation.
-	 *
-	 * @param array  $entry    Manifest asset entry.
-	 * @param string $fallback Fallback relative path.
-	 * @return string Relative path.
-	 */
-	private function entry_relative( array $entry, string $fallback ): string {
-		if ( isset( $entry['relative'] ) && is_scalar( $entry['relative'] ) ) {
-			$relative = $this->normalize_relative_path( (string) $entry['relative'] );
-
-			if ( '' !== $relative ) {
-				return $relative;
-			}
-		}
-
-		return $fallback;
-	}
-
-	/**
-	 * Gets the asset version from explicit metadata or filemtime.
-	 *
-	 * @param array  $entry Manifest asset entry.
-	 * @param string $path  Absolute asset path.
-	 * @return string|null Asset version.
-	 */
-	private function entry_version( array $entry, string $path ): ?string {
-		foreach ( array( 'version', 'hash' ) as $key ) {
-			if ( isset( $entry[ $key ] ) && is_scalar( $entry[ $key ] ) && '' !== trim( (string) $entry[ $key ] ) ) {
-				return (string) $entry[ $key ];
-			}
-		}
-
-		$modified = filemtime( $path );
-
-		return false === $modified ? null : (string) $modified;
-	}
-
-	/**
-	 * Gets normalized dependency handles.
-	 *
-	 * @param array $entry Manifest asset entry.
-	 * @return array Dependency handles.
-	 */
-	private function entry_dependencies( array $entry ): array {
-		$dependencies = $entry['dependencies'] ?? ( $entry['deps'] ?? array() );
-
-		if ( ! is_array( $dependencies ) ) {
-			return array();
-		}
-
-		return array_values(
-			array_filter(
-				array_map(
-					static function ( $dependency ) {
-						return is_scalar( $dependency ) ? trim( (string) $dependency ) : null;
-					},
-					$dependencies
-				),
-				static function ( $dependency ): bool {
-					return is_string( $dependency ) && '' !== $dependency;
-				}
-			)
-		);
-	}
-
-	/**
-	 * Gets an optional script module flag.
-	 *
-	 * @param array $entry Manifest asset entry.
-	 * @return bool|null Module flag, or null to use service default.
-	 */
-	private function entry_module( array $entry ): ?bool {
-		if ( array_key_exists( 'module', $entry ) ) {
-			return ! empty( $entry['module'] );
-		}
-
-		if ( array_key_exists( 'type', $entry ) && is_scalar( $entry['type'] ) ) {
-			return 'module' === strtolower( trim( (string) $entry['type'] ) );
-		}
-
-		return null;
-	}
-
-	/**
-	 * Normalizes safe relative paths.
-	 *
-	 * @param string $path Relative path.
-	 * @return string Normalized relative path, or empty string when invalid.
-	 */
-	private function normalize_relative_path( string $path ): string {
-		$path = trim( str_replace( '\\', '/', $path ) );
-
-		if (
-			'' === $path
-			|| false !== strpos( $path, "\0" )
-			|| 0 === strpos( $path, '/' )
-			|| preg_match( '#(^|/)\.\.(/|$)#', $path )
-		) {
-			return '';
-		}
-
-		while ( 0 === strpos( $path, './' ) ) {
-			$path = substr( $path, 2 );
-		}
-
-		return $path;
 	}
 }
