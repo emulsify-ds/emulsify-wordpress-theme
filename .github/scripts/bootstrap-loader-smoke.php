@@ -76,6 +76,8 @@ $classes   = array(
 	'Emulsify\\Theme\\Support\\AssetRecord',
 	'Emulsify\\Theme\\Support\\AssetEnqueuer',
 	'Emulsify\\Theme\\Support\\Diagnostics',
+	'Emulsify\\Theme\\Support\\AssetManifest',
+	'Emulsify\\Theme\\Support\\FileDiscovery',
 );
 $legacy_classes = array(
 	'Emulsify\\Theme\\Setup',

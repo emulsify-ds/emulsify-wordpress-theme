@@ -17,6 +17,29 @@ use Emulsify\Theme\Support\FileDiscovery;
 final class Enhancements {
 
 	/**
+	 * Asset manifest reader.
+	 *
+	 * @var AssetManifest
+	 */
+	private $manifest;
+
+	/**
+	 * Memoized editor enhancement configuration.
+	 *
+	 * @var array|null
+	 */
+	private $config;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param AssetManifest|null $manifest Asset manifest reader.
+	 */
+	public function __construct( ?AssetManifest $manifest = null ) {
+		$this->manifest = $manifest ?? new AssetManifest();
+	}
+
+	/**
 	 * Registers editor enhancement hooks.
 	 *
 	 * @return void
@@ -155,6 +178,10 @@ final class Enhancements {
 	 * @return array Editor enhancement config.
 	 */
 	private function config(): array {
+		if ( is_array( $this->config ) ) {
+			return $this->config;
+		}
+
 		$config = array(
 			'columnsEqualHeight' => array(
 				'enabled'   => false,
@@ -193,7 +220,9 @@ final class Enhancements {
 			$config = $this->merge_config( $config, $filtered );
 		}
 
-		return $this->normalize_config( $config );
+		$this->config = $this->normalize_config( $config );
+
+		return $this->config;
 	}
 
 	/**
@@ -279,7 +308,7 @@ final class Enhancements {
 			return null;
 		}
 
-		return ( new AssetManifest() )->asset_records( 'editor', $extensions );
+		return $this->manifest->asset_records( 'editor', $extensions );
 	}
 
 	/**

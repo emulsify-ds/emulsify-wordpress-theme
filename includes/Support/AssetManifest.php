@@ -20,6 +20,20 @@ final class AssetManifest {
 	private const DEFAULT_PATH = 'dist/emulsify-assets.json';
 
 	/**
+	 * Memoized manifest record.
+	 *
+	 * @var array|null
+	 */
+	private $manifest;
+
+	/**
+	 * Whether manifest resolution has already run for this instance.
+	 *
+	 * @var bool
+	 */
+	private $manifest_resolved = false;
+
+	/**
 	 * Gets manifest-backed asset records for a runtime scope.
 	 *
 	 * A null return means no usable manifest data was found for the scope and
@@ -391,6 +405,22 @@ final class AssetManifest {
 	 * @return array|null Active manifest record, or null when unavailable.
 	 */
 	private function manifest(): ?array {
+		if ( $this->manifest_resolved ) {
+			return $this->manifest;
+		}
+
+		$this->manifest_resolved = true;
+		$this->manifest          = $this->resolve_manifest();
+
+		return $this->manifest;
+	}
+
+	/**
+	 * Resolves the first readable, valid child-first manifest.
+	 *
+	 * @return array|null Active manifest record, or null when unavailable.
+	 */
+	private function resolve_manifest(): ?array {
 		foreach ( $this->manifest_candidates() as $candidate ) {
 			if ( ! is_readable( $candidate['path'] ) ) {
 				continue;

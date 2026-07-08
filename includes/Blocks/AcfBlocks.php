@@ -26,6 +26,13 @@ final class AcfBlocks {
 	private $components;
 
 	/**
+	 * Asset manifest reader.
+	 *
+	 * @var AssetManifest
+	 */
+	private $manifest;
+
+	/**
 	 * Duplicate ACF block registrations skipped by this registrar.
 	 *
 	 * @var array
@@ -36,9 +43,11 @@ final class AcfBlocks {
 	 * Constructor.
 	 *
 	 * @param ComponentLocator|null $components Component locator.
+	 * @param AssetManifest|null    $manifest   Asset manifest reader.
 	 */
-	public function __construct( ?ComponentLocator $components = null ) {
+	public function __construct( ?ComponentLocator $components = null, ?AssetManifest $manifest = null ) {
 		$this->components = $components ?? new ComponentLocator();
+		$this->manifest   = $manifest ?? new AssetManifest();
 	}
 
 	/**
@@ -298,7 +307,7 @@ final class AcfBlocks {
 	 * @return array Scoped asset records.
 	 */
 	private function block_asset_records( array $component, array $metadata, array $args ): array {
-		$manifest_records = ( new AssetManifest() )->scoped_asset_records(
+		$manifest_records = $this->manifest->scoped_asset_records(
 			$this->asset_identifiers( $component, $metadata, $args )
 		);
 

@@ -18,6 +18,20 @@ use Emulsify\Theme\Support\FileDiscovery;
 final class Assets {
 
 	/**
+	 * Asset manifest reader.
+	 *
+	 * @var AssetManifest
+	 */
+	private $manifest;
+
+	/**
+	 * Memoized raw asset file records by theme-relative directory.
+	 *
+	 * @var array
+	 */
+	private $asset_file_records = array();
+
+	/**
 	 * Memoized component metadata asset paths.
 	 *
 	 * @var array
@@ -30,6 +44,15 @@ final class Assets {
 	 * @var array|null
 	 */
 	private $manifest_component_asset_paths;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param AssetManifest|null $manifest Asset manifest reader.
+	 */
+	public function __construct( ?AssetManifest $manifest = null ) {
+		$this->manifest = $manifest ?? new AssetManifest();
+	}
 
 	/**
 	 * Registers asset hooks.
@@ -127,7 +150,7 @@ final class Assets {
 			return null;
 		}
 
-		return ( new AssetManifest() )->asset_records( $scope, $extensions );
+		return $this->manifest->asset_records( $scope, $extensions );
 	}
 
 	/**
@@ -161,7 +184,11 @@ final class Assets {
 		$assets = array();
 		$seen   = array();
 
-		foreach ( FileDiscovery::file_records( $this->asset_roots( $directory ), $extensions ) as $file ) {
+		foreach ( $this->raw_asset_file_records( $directory ) as $file ) {
+			if ( ! $this->extension_allowed( $file, $extensions ) ) {
+				continue;
+			}
+
 			$relative = $file['relative'];
 
 			if ( $this->is_reserved_editor_asset( $directory, $relative ) ) {
@@ -195,6 +222,65 @@ final class Assets {
 		}
 
 		return FileDiscovery::sort_by_priority_and_relative( $assets );
+	}
+
+	/**
+	 * Gets raw built asset file records for a theme-relative directory.
+	 *
+	 * @param string $directory Theme-relative asset directory.
+	 * @return array Raw file records.
+	 */
+	private function raw_asset_file_records( string $directory ): array {
+		$key = trim( $directory, '/\\' );
+
+		if ( ! array_key_exists( $key, $this->asset_file_records ) ) {
+			$this->asset_file_records[ $key ] = FileDiscovery::file_records( $this->asset_roots( $directory ), array( 'css', 'js' ) );
+		}
+
+		return $this->asset_file_records[ $key ];
+	}
+
+	/**
+	 * Checks whether a raw asset record matches the requested extension set.
+	 *
+	 * @param array $file       Raw file discovery record.
+	 * @param array $extensions Allowed file extensions.
+	 * @return bool TRUE when the file extension is allowed.
+	 */
+	private function extension_allowed( array $file, array $extensions ): bool {
+		$extensions = $this->normalize_extensions( $extensions );
+
+		if ( empty( $extensions ) ) {
+			return true;
+		}
+
+		$extension = strtolower( pathinfo( (string) ( $file['path'] ?? '' ), PATHINFO_EXTENSION ) );
+
+		return isset( $extensions[ $extension ] );
+	}
+
+	/**
+	 * Normalizes extension filters.
+	 *
+	 * @param array $extensions Candidate extensions.
+	 * @return array Normalized extensions keyed by extension.
+	 */
+	private function normalize_extensions( array $extensions ): array {
+		$normalized = array();
+
+		foreach ( $extensions as $extension ) {
+			if ( ! is_scalar( $extension ) ) {
+				continue;
+			}
+
+			$extension = strtolower( ltrim( trim( (string) $extension ), '.' ) );
+
+			if ( '' !== $extension ) {
+				$normalized[ $extension ] = true;
+			}
+		}
+
+		return $normalized;
 	}
 
 	/**
@@ -279,7 +365,7 @@ final class Assets {
 			return $this->manifest_component_asset_paths;
 		}
 
-		$this->manifest_component_asset_paths = ( new AssetManifest() )->scoped_component_asset_paths();
+		$this->manifest_component_asset_paths = $this->manifest->scoped_component_asset_paths();
 
 		return $this->manifest_component_asset_paths;
 	}

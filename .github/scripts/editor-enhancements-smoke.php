@@ -249,6 +249,10 @@ try {
 		'File captions should be no-op by default.'
 	);
 
+	foreach ( array( 'enqueue_block_editor_assets', 'render_block_data', 'render_block' ) as $hook ) {
+		unset( $GLOBALS['emulsify_editor_enhancements_smoke_hooks'][ $hook ] );
+	}
+
 	add_filter(
 		'emulsify_theme_editor_enhancements_config',
 		static function ( array $config ): array {
@@ -265,6 +269,9 @@ try {
 			return $config;
 		}
 	);
+
+	$service = new Emulsify\Theme\Editor\Enhancements();
+	$service->register();
 
 	$asset_directories_seen = false;
 	$asset_files_seen       = false;

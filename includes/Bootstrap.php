@@ -19,6 +19,7 @@ use Emulsify\Theme\Runtime\MissingTimber;
 use Emulsify\Theme\Runtime\Setup;
 use Emulsify\Theme\Runtime\TimberIntegration;
 use Emulsify\Theme\Runtime\Twig;
+use Emulsify\Theme\Support\AssetManifest;
 
 /**
  * Coordinates theme services.
@@ -61,17 +62,19 @@ final class Bootstrap {
 		$this->load_vendor_autoload();
 		$this->load_classes();
 
+		$asset_manifest = new AssetManifest();
+
 		// These services use WordPress APIs directly and must stay available even
 		// when Timber is missing. The MissingTimber service owns frontend failure
 		// handling later in this method.
 		( new Setup() )->register();
-		( new Assets() )->register();
+		( new Assets( $asset_manifest ) )->register();
 		( new LocalJson() )->register();
 		( new CoreBlockTwigRenderer() )->register();
-		( new Enhancements() )->register();
+		( new Enhancements( $asset_manifest ) )->register();
 		( new Policy() )->register();
 		( new Patterns() )->register();
-		( new Blocks\Registry() )->register();
+		( new Blocks\Registry( $asset_manifest ) )->register();
 		( new GenerateChildThemeCommand() )->register();
 
 		$timber = new TimberIntegration();
