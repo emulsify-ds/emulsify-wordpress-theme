@@ -250,11 +250,11 @@ final class AcfBlocks {
 			'mode'  => 'preview',
 		);
 
-		$args                    = array_merge( $defaults, $metadata );
-		$args['name']            = $this->normalize_block_name( $args['name'] ?? '', $component['slug'] );
-		$args['render_callback'] = array( $this, 'render_block' );
-		$args['twig_template']   = $component['template'];
-		$args['data']            = isset( $args['data'] ) && is_array( $args['data'] ) ? $args['data'] : array();
+		$args                          = array_merge( $defaults, $metadata );
+		$args['name']                  = $this->normalize_block_name( $args['name'] ?? '', $component['slug'] );
+		$args['render_callback']       = array( $this, 'render_block' );
+		$args['twig_template']         = $component['template'];
+		$args['data']                  = isset( $args['data'] ) && is_array( $args['data'] ) ? $args['data'] : array();
 		$args['data']['twig_template'] = $component['template'];
 
 		return $args;
@@ -292,7 +292,7 @@ final class AcfBlocks {
 			return $args;
 		}
 
-		$existing_callback     = isset( $args['enqueue_assets'] ) && is_callable( $args['enqueue_assets'] ) ? $args['enqueue_assets'] : null;
+		$existing_callback      = isset( $args['enqueue_assets'] ) && is_callable( $args['enqueue_assets'] ) ? $args['enqueue_assets'] : null;
 		$args['enqueue_assets'] = $this->enqueue_assets_callback( $asset_records, $existing_callback, $this->block_name( $args ) );
 
 		return $args;

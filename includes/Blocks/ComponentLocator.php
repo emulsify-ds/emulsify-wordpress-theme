@@ -376,11 +376,11 @@ final class ComponentLocator {
 	 * @return string Transient key.
 	 */
 	private function component_files_cache_key(): string {
-		$stylesheet            = $this->stylesheet();
-		$template              = $this->template();
-		$stylesheet_directory  = function_exists( 'get_stylesheet_directory' ) ? get_stylesheet_directory() : '';
-		$template_directory    = function_exists( 'get_template_directory' ) ? get_template_directory() : '';
-		$key_parts             = array(
+		$stylesheet           = $this->stylesheet();
+		$template             = $this->template();
+		$stylesheet_directory = function_exists( 'get_stylesheet_directory' ) ? get_stylesheet_directory() : '';
+		$template_directory   = function_exists( 'get_template_directory' ) ? get_template_directory() : '';
+		$key_parts            = array(
 			'stylesheet'         => $stylesheet,
 			'template'           => $template,
 			'stylesheet_version' => $this->theme_version( $stylesheet, $stylesheet_directory ),

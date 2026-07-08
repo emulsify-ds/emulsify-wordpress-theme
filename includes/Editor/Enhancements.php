@@ -111,8 +111,8 @@ final class Enhancements {
 			return $parsed_block;
 		}
 
-		$class                      = $this->string_option( $settings['blockClassName'] ?? '', 'has-media-caption' );
-		$parsed_block['attrs']      = isset( $parsed_block['attrs'] ) && is_array( $parsed_block['attrs'] ) ? $parsed_block['attrs'] : array();
+		$class                              = $this->string_option( $settings['blockClassName'] ?? '', 'has-media-caption' );
+		$parsed_block['attrs']              = isset( $parsed_block['attrs'] ) && is_array( $parsed_block['attrs'] ) ? $parsed_block['attrs'] : array();
 		$parsed_block['attrs']['className'] = $this->append_class( $parsed_block['attrs']['className'] ?? '', $class );
 
 		return $parsed_block;
@@ -449,8 +449,8 @@ final class Enhancements {
 	 * @return string Class string.
 	 */
 	private function append_class( $current, string $class ): string {
-		$classes = is_scalar( $current ) ? preg_split( '/\s+/', (string) $current ) : array();
-		$classes = is_array( $classes ) ? $classes : array();
+		$classes   = is_scalar( $current ) ? preg_split( '/\s+/', (string) $current ) : array();
+		$classes   = is_array( $classes ) ? $classes : array();
 		$classes[] = $class;
 
 		return trim( implode( ' ', array_unique( array_filter( $classes ) ) ) );

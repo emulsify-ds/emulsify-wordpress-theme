@@ -20,16 +20,16 @@ final class PolicyOptions {
 	 */
 	public function get( $context = null ): array {
 		$options = array(
-			'allowed_block_types'                 => null,
-			'merge_allowed_block_types'           => true,
-			'auto_allow_pattern_blocks'           => false,
-			'pattern_directories'                 => null,
-			'pattern_namespaces'                  => array(),
+			'allowed_block_types'                  => null,
+			'merge_allowed_block_types'            => true,
+			'auto_allow_pattern_blocks'            => false,
+			'pattern_directories'                  => null,
+			'pattern_namespaces'                   => array(),
 			'disable_user_patterns_for_non_admins' => false,
-			'admin_capability'                    => 'manage_options',
-			'restrict_wp_block_creation'          => false,
-			'wp_block_create_capability'          => 'manage_options',
-			'block_support_overrides'             => array(),
+			'admin_capability'                     => 'manage_options',
+			'restrict_wp_block_creation'           => false,
+			'wp_block_create_capability'           => 'manage_options',
+			'block_support_overrides'              => array(),
 		);
 
 		/**

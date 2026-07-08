@@ -382,10 +382,10 @@ final class AttributeBag implements \Stringable {
 		return strtr(
 			$value,
 			array(
-				'&'  => '&amp;',
-				'"'  => '&quot;',
-				'<'  => '&lt;',
-				'>'  => '&gt;',
+				'&' => '&amp;',
+				'"' => '&quot;',
+				'<' => '&lt;',
+				'>' => '&gt;',
 			)
 		);
 	}

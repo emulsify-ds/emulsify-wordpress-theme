@@ -320,6 +320,8 @@ function runStaticChecks() {
       'docs/upgrading-1x-to-2x.md',
       'docs/wp-cli-child-theme-generation.md',
       'composer.json',
+      'phpcs.xml.dist',
+      'phpstan.neon.dist',
       'functions.php',
       'includes/Bootstrap.php',
       'includes/Acf/LocalJson.php',
@@ -403,6 +405,9 @@ function runStaticChecks() {
     ensure(rootPackage.bugs.url === 'https://github.com/emulsify-ds/emulsify-wordpress/issues', 'package.json bugs.url should target emulsify-wordpress.');
     ensure(rootPackage.scripts['pr:check'] === 'node .github/scripts/pr-validation.cjs', 'package.json should expose npm run pr:check.');
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
+    ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpcs -q'), 'package.json lint:php should run PHPCS.');
+    ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpstan analyse --no-progress'), 'package.json lint:php should run PHPStan.');
+    ensure(rootPackage.scripts['lint:php:fix'] === 'vendor/bin/phpcbf', 'package.json should expose npm run lint:php:fix.');
     ensure(rootPackage.scripts['smoke:acf-json'] === 'php .github/scripts/acf-local-json-smoke.php', 'package.json should expose npm run smoke:acf-json.');
     ensure(rootPackage.scripts['smoke:asset-manifest'] === 'php .github/scripts/asset-manifest-smoke.php', 'package.json should expose npm run smoke:asset-manifest.');
     ensure(rootPackage.scripts['smoke:attributes'] === 'php .github/scripts/attribute-helper-smoke.php', 'package.json should expose npm run smoke:attributes.');
@@ -430,6 +435,9 @@ function runStaticChecks() {
     ensure(!Object.hasOwn(composer, 'prefer-stable'), 'composer.json should not keep prefer-stable when stable-only constraints are sufficient.');
     ensure(composer.require && typeof composer.require.php === 'string' && composer.require.php.startsWith('>=8.3'), 'composer.json should enforce the PHP 8.3 runtime floor.');
     ensure(composer.require && composer.require['timber/timber'] === '^2.3', 'composer.json should keep the Timber 2 dependency constraint.');
+    ensure(composer['require-dev'] && composer['require-dev']['wp-coding-standards/wpcs'], 'composer.json should provide WordPress Coding Standards for PHP linting.');
+    ensure(composer['require-dev'] && composer['require-dev']['phpstan/phpstan'], 'composer.json should provide PHPStan for static analysis.');
+    ensure(composer.config && composer.config['allow-plugins'] && composer.config['allow-plugins']['dealerdirect/phpcodesniffer-composer-installer'], 'composer.json should allow the PHPCS standards installer plugin.');
     ensure(composer.autoload && composer.autoload['psr-4'] && composer.autoload['psr-4']['Emulsify\\Theme\\'] === 'includes/', 'composer.json should expose the runtime namespace through PSR-4 autoloading.');
     ensure(!Object.hasOwn(composer.autoload, 'classmap'), 'composer.json should rely on PSR-4 runtime paths instead of classmap loading.');
     ensure(!Object.hasOwn(composer.autoload, 'files'), 'composer.json should not load removed compatibility files.');

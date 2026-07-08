@@ -11,15 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$context   = Timber::context();
-$wp_post   = $context['post'] ?? null;
-$post_type = $wp_post->post_type ?? get_post_type();
-$templates = array( '@templates/single.twig' );
+$context        = Timber::context();
+$wp_post        = $context['post'] ?? null;
+$post_type_slug = $wp_post->post_type ?? get_post_type();
+$templates      = array( '@templates/single.twig' );
 
-if ( $post_type ) {
+if ( $post_type_slug ) {
 	// Child themes can add single-{post_type}.twig to override one post type
 	// without duplicating the generic single.twig fallback.
-	array_unshift( $templates, '@templates/single-' . $post_type . '.twig' );
+	array_unshift( $templates, '@templates/single-' . $post_type_slug . '.twig' );
 }
 
 if ( $wp_post && post_password_required( $wp_post->ID ) ) {

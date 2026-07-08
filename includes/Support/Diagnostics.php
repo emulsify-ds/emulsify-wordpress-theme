@@ -77,9 +77,11 @@ final class Diagnostics {
 					return;
 				}
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Heading is escaped by self::esc_html().
 				echo '<div class="notice notice-warning"><p><strong>' . self::esc_html( $heading ) . '</strong></p><ul>';
 
 				foreach ( $messages as $message ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Message is escaped by self::esc_html().
 					echo '<li>' . self::esc_html( $message ) . '</li>';
 				}
 

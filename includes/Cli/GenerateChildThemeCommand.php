@@ -277,6 +277,7 @@ final class GenerateChildThemeCommand {
 					$data['project'] = array();
 				}
 
+				// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- project.platform is a machine-readable adapter key.
 				$data['project']['platform']             = 'wordpress';
 				$data['project']['name']                 = $theme_label;
 				$data['project']['machineName']          = $machine_name;
@@ -614,7 +615,9 @@ final class GenerateChildThemeCommand {
 			return 'project.emulsify.json is missing project metadata';
 		}
 
+		// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- project.platform is a machine-readable adapter key.
 		if ( 'wordpress' !== ( $project['project']['platform'] ?? null ) ) {
+			// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText -- Diagnostic quotes the machine-readable project.platform value.
 			return 'project.emulsify.json is missing project.platform: wordpress';
 		}
 

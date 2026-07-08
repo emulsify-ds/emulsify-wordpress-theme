@@ -36,7 +36,12 @@ final class Registry {
 	 * @return void
 	 */
 	public function register(): void {
-		add_action( 'switch_theme', array( ComponentLocator::class, 'clear_discovery_cache' ) );
+		add_action(
+			'switch_theme',
+			static function (): void {
+				ComponentLocator::clear_discovery_cache();
+			}
+		);
 
 		$components = new ComponentLocator();
 

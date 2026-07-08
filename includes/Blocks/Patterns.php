@@ -90,7 +90,7 @@ final class Patterns {
 			}
 
 			$seen_names[ $name ] = true;
-			$patterns[]         = array(
+			$patterns[]          = array(
 				'name' => $name,
 				'args' => $args,
 				'data' => $data,
@@ -114,7 +114,8 @@ final class Patterns {
 		foreach ( FileDiscovery::file_records( $this->pattern_directories(), array( 'json' ), false ) as $file ) {
 			$path     = $file['path'];
 			$relative = basename( $path );
-			$real     = realpath( $path ) ?: $path;
+			$realpath = realpath( $path );
+			$real     = false !== $realpath ? $realpath : $path;
 
 			if ( $this->is_category_metadata_file( $relative ) ) {
 				continue;
@@ -137,9 +138,9 @@ final class Patterns {
 				continue;
 			}
 
-			$seen_file_path[ $real ] = true;
+			$seen_file_path[ $real ]    = true;
 			$seen_relative[ $relative ] = true;
-			$files[]                 = array(
+			$files[]                    = array(
 				'path'     => $path,
 				'relative' => $relative,
 				'source'   => $file['root_source'],
@@ -499,7 +500,7 @@ final class Patterns {
 	 * @return bool TRUE when the pattern is already registered.
 	 */
 	private function pattern_registered( string $name ): bool {
-		if ( ! class_exists( '\WP_Block_Patterns_Registry' ) || ! method_exists( '\WP_Block_Patterns_Registry', 'get_instance' ) ) {
+		if ( ! class_exists( '\WP_Block_Patterns_Registry' ) ) {
 			return false;
 		}
 
@@ -516,7 +517,7 @@ final class Patterns {
 	 */
 	private function category_registered( string $name ): bool {
 		foreach ( array( '\WP_Block_Pattern_Categories_Registry', '\WP_Block_Pattern_Category_Registry' ) as $class ) {
-			if ( ! class_exists( $class ) || ! method_exists( $class, 'get_instance' ) ) {
+			if ( ! class_exists( $class ) ) {
 				continue;
 			}
 

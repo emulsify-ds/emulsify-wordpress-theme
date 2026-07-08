@@ -50,11 +50,11 @@ final class Policy {
 	/**
 	 * Constructor.
 	 *
-	 * @param PolicyOptions|null           $options           Policy option resolver.
-	 * @param AllowedBlockTypes|null       $allowed_blocks    Allowed block policy.
-	 * @param PatternGovernance|null       $patterns          Pattern visibility policy.
-	 * @param UserPatternPermissions|null  $user_patterns     User pattern policy.
-	 * @param BlockSupportOverrides|null   $support_overrides Block support override policy.
+	 * @param PolicyOptions|null          $options           Policy option resolver.
+	 * @param AllowedBlockTypes|null      $allowed_blocks    Allowed block policy.
+	 * @param PatternGovernance|null      $patterns          Pattern visibility policy.
+	 * @param UserPatternPermissions|null $user_patterns     User pattern policy.
+	 * @param BlockSupportOverrides|null  $support_overrides Block support override policy.
 	 */
 	public function __construct(
 		?PolicyOptions $options = null,

@@ -43,7 +43,7 @@ final class ProjectConfig {
 	public static function machine_name(): string {
 		$data = self::read();
 
-		if ( ! is_array( $data ) || empty( $data['project']['machineName'] ) ) {
+		if ( empty( $data['project']['machineName'] ) ) {
 			return '';
 		}
 

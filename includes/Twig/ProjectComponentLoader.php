@@ -13,13 +13,6 @@ namespace Emulsify\Theme\Twig;
 final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 
 	/**
-	 * Project machine name.
-	 *
-	 * @var string
-	 */
-	private $machine_name;
-
-	/**
 	 * Project template prefix.
 	 *
 	 * @var string
@@ -50,15 +43,14 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 	/**
 	 * Constructs the project component loader wrapper.
 	 *
-	 * @param string                        $machine_name Active project machine name.
-	 * @param array                         $roots        Component root paths.
+	 * @param string                       $machine_name Active project machine name.
+	 * @param array                        $roots        Component root paths.
 	 * @param \Twig\Loader\LoaderInterface $loader       Wrapped Twig loader.
 	 */
 	public function __construct( string $machine_name, array $roots, \Twig\Loader\LoaderInterface $loader ) {
-		$this->machine_name = $machine_name;
-		$this->prefix       = $machine_name . ':';
-		$this->roots        = $roots;
-		$this->loader       = $loader;
+		$this->prefix = $machine_name . ':';
+		$this->roots  = $roots;
+		$this->loader = $loader;
 	}
 
 	/**
@@ -119,6 +111,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 	 *
 	 * @param string $name Template logical name.
 	 * @return \Twig\Source Template source.
+	 * @throws \Twig\Error\LoaderError When project template resolution fails.
 	 */
 	public function getSourceContext( string $name ): \Twig\Source {
 		$path = $this->find_project_template( $name );
@@ -127,6 +120,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 			$contents = file_get_contents( $path );
 
 			if ( false === $contents ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not rendered HTML.
 				throw new \Twig\Error\LoaderError( sprintf( 'Unable to read project component template "%s".', $name ) );
 			}
 
@@ -134,6 +128,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 		}
 
 		if ( $this->is_project_reference( $name ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not rendered HTML.
 			throw new \Twig\Error\LoaderError( $this->project_loader_error( $name ) );
 		}
 
@@ -145,6 +140,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 	 *
 	 * @param string $name Template logical name.
 	 * @return string Cache key.
+	 * @throws \Twig\Error\LoaderError When project template resolution fails.
 	 */
 	public function getCacheKey( string $name ): string {
 		$path = $this->find_project_template( $name );
@@ -154,6 +150,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 		}
 
 		if ( $this->is_project_reference( $name ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not rendered HTML.
 			throw new \Twig\Error\LoaderError( $this->project_loader_error( $name ) );
 		}
 
@@ -166,6 +163,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 	 * @param string $name Template logical name.
 	 * @param int    $time Cached template timestamp.
 	 * @return bool TRUE when the source is fresh.
+	 * @throws \Twig\Error\LoaderError When project template resolution fails.
 	 */
 	public function isFresh( string $name, int $time ): bool {
 		$path = $this->find_project_template( $name );
@@ -177,6 +175,7 @@ final class ProjectComponentLoader implements \Twig\Loader\LoaderInterface {
 		}
 
 		if ( $this->is_project_reference( $name ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception messages are not rendered HTML.
 			throw new \Twig\Error\LoaderError( $this->project_loader_error( $name ) );
 		}
 

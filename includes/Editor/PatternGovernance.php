@@ -187,7 +187,8 @@ final class PatternGovernance {
 				}
 
 				$file_path = $file->getPathname();
-				$key       = realpath( $file_path ) ?: $file_path;
+				$realpath  = realpath( $file_path );
+				$key       = false !== $realpath ? $realpath : $file_path;
 
 				if ( isset( $seen[ $key ] ) ) {
 					continue;

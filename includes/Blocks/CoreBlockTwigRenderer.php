@@ -48,7 +48,7 @@ final class CoreBlockTwigRenderer {
 			return $block_content;
 		}
 
-		if ( ! class_exists( '\Timber\Timber' ) || ! method_exists( '\Timber\Timber', 'compile' ) ) {
+		if ( ! class_exists( '\Timber\Timber' ) ) {
 			return $this->render_error( $block_content, $this->translate( 'Timber is not available for mapped block rendering.', 'emulsify' ), $block, $template );
 		}
 
@@ -99,7 +99,7 @@ final class CoreBlockTwigRenderer {
 	private function context( array $block, string $block_content, $instance, string $template ): array {
 		$context = array();
 
-		if ( class_exists( '\Timber\Timber' ) && method_exists( '\Timber\Timber', 'context' ) ) {
+		if ( class_exists( '\Timber\Timber' ) ) {
 			$timber_context = \Timber\Timber::context();
 			$context        = is_array( $timber_context ) ? $timber_context : array();
 		}
@@ -211,7 +211,7 @@ final class CoreBlockTwigRenderer {
 		$map = array();
 
 		foreach ( $filtered as $block_name => $template ) {
-			if ( ! is_scalar( $block_name ) || ! is_scalar( $template ) ) {
+			if ( ! is_scalar( $template ) ) {
 				continue;
 			}
 
@@ -331,13 +331,17 @@ final class CoreBlockTwigRenderer {
 	private function cleanup_class_names( array $block ): array {
 		$block_name = $this->block_name( $block );
 		$slug       = false === strpos( $block_name, '/' ) ? $block_name : substr( $block_name, strpos( $block_name, '/' ) + 1 );
-		$classes    = array_filter(
-			array(
-				'wp-block',
-				'wp-block-' . $this->sanitize_html_class( $slug ),
-				'wp-block-' . $this->sanitize_html_class( str_replace( '/', '-', $block_name ) ),
-			)
-		);
+		$classes    = array( 'wp-block' );
+		$slug_class = $this->sanitize_html_class( $slug );
+		$name_class = $this->sanitize_html_class( str_replace( '/', '-', $block_name ) );
+
+		if ( '' !== $slug_class ) {
+			$classes[] = 'wp-block-' . $slug_class;
+		}
+
+		if ( '' !== $name_class ) {
+			$classes[] = 'wp-block-' . $name_class;
+		}
 
 		/**
 		 * Filters class names removed from mapped block Twig output.
@@ -444,6 +448,7 @@ final class CoreBlockTwigRenderer {
 	 * @return string Escaped translated text.
 	 */
 	private function esc_html__( string $text, string $domain ): string {
+		// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText, WordPress.WP.I18n.NonSingularStringLiteralDomain -- Internal translation proxy receives literal strings from this class.
 		return function_exists( 'esc_html__' ) ? esc_html__( $text, $domain ) : $this->esc_html( $text );
 	}
 
@@ -455,6 +460,7 @@ final class CoreBlockTwigRenderer {
 	 * @return string Translated text.
 	 */
 	private function translate( string $text, string $domain ): string {
+		// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText, WordPress.WP.I18n.NonSingularStringLiteralDomain -- Internal translation proxy receives literal strings from this class.
 		return function_exists( '__' ) ? __( $text, $domain ) : $text;
 	}
 

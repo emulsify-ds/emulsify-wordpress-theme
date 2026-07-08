@@ -60,6 +60,9 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --no-check-publish --strict
 
+      - name: Install Composer dependencies for PHP lint
+        run: composer install --no-interaction --no-progress --prefer-dist
+
       - name: Run runtime npm audit
         run: npm audit --omit=dev
 

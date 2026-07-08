@@ -80,7 +80,9 @@ final class MissingTimber {
 			return wp_doing_ajax();
 		}
 
-		return defined( 'DOING_AJAX' ) && DOING_AJAX;
+		$doing_ajax = defined( 'DOING_AJAX' ) ? constant( 'DOING_AJAX' ) : false;
+
+		return true === $doing_ajax;
 	}
 
 	/**

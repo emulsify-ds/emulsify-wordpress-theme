@@ -23,9 +23,8 @@ function run(label, command, args) {
 }
 
 run('Validate Composer metadata', 'composer', ['validate', '--no-check-publish', '--strict']);
-run('Install Composer dependencies for Twig smoke coverage', 'composer', [
+run('Install Composer dependencies for PHP lint and Twig smoke coverage', 'composer', [
   'install',
-  '--no-dev',
   '--no-interaction',
   '--no-progress',
   '--prefer-dist',

@@ -81,7 +81,7 @@ final class Context {
 	 * @return mixed Timber menu or null.
 	 */
 	private function menu() {
-		if ( ! class_exists( '\Timber\Timber' ) || ! method_exists( '\Timber\Timber', 'get_menu' ) ) {
+		if ( ! class_exists( '\Timber\Timber' ) ) {
 			return null;
 		}
 
@@ -104,7 +104,7 @@ final class Context {
 	 * @return mixed Timber post or null.
 	 */
 	private function post() {
-		if ( ! is_singular() || ! class_exists( '\Timber\Timber' ) || ! method_exists( '\Timber\Timber', 'get_post' ) ) {
+		if ( ! is_singular() || ! class_exists( '\Timber\Timber' ) ) {
 			return null;
 		}
 

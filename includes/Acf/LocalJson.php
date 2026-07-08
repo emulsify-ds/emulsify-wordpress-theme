@@ -177,7 +177,8 @@ final class LocalJson {
 				continue;
 			}
 
-			$key = realpath( $path ) ?: $path;
+			$realpath = realpath( $path );
+			$key      = false !== $realpath ? $realpath : $path;
 
 			if ( isset( $seen[ $key ] ) ) {
 				continue;

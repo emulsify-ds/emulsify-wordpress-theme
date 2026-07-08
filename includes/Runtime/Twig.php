@@ -132,8 +132,8 @@ final class Twig {
 	 * @return AttributeBag HTML attributes.
 	 */
 	public function bem( ...$arguments ): AttributeBag {
-		$context = $this->shift_twig_context( $arguments );
-		$options = $this->normalize_bem_options(
+		$context    = $this->shift_twig_context( $arguments );
+		$options    = $this->normalize_bem_options(
 			$arguments[0] ?? '',
 			$arguments[1] ?? array(),
 			$arguments[2] ?? '',
