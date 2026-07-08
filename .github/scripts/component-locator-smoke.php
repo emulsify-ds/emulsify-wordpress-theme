@@ -12,7 +12,7 @@ if ( PHP_SAPI !== 'cli' ) {
 
 $GLOBALS['emulsify_locator_smoke_hooks'] = array();
 $GLOBALS['emulsify_locator_transients']  = array();
-$GLOBALS['emulsify_locator_environment'] = 'production';
+$GLOBALS['emulsify_locator_environment'] = 'development';
 
 if ( ! function_exists( 'add_filter' ) ) {
 	function add_filter( string $hook, callable $callback, int $priority = 10, int $accepted_args = 1 ): bool {

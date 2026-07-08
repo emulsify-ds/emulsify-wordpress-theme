@@ -17,7 +17,7 @@ use Emulsify\Theme\Support\FileDiscovery;
  * Discovery is memoized on this object for the lifetime of the current PHP
  * request. The registry shares one locator between ACF/Twig and native block
  * registration, so both paths reuse the same deterministic child-first file
- * index. Persistent caching is optional and disabled by default.
+ * index. Persistent caching defaults to on outside active development.
  */
 final class ComponentLocator {
 
@@ -352,17 +352,14 @@ final class ComponentLocator {
 	 * @return bool TRUE when persistent caching should be used.
 	 */
 	private function persistent_cache_enabled(): bool {
-		$enabled = false;
-
-		if ( $this->is_development_environment() ) {
-			$enabled = false;
-		}
+		$enabled = ! $this->is_development_environment();
 
 		/**
 		 * Filters whether component discovery should use persistent caching.
 		 *
-		 * The default is false. Return true to explicitly enable persistent
-		 * caching, including in local or WP_DEBUG environments.
+		 * The default is true in production and staging environments, and false
+		 * in local, development, or WP_DEBUG environments. Return a boolean value
+		 * to override the default either way.
 		 *
 		 * @param bool             $enabled     Whether persistent caching is enabled.
 		 * @param ComponentLocator $locator     Component locator instance.

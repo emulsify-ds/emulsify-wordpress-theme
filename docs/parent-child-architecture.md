@@ -52,17 +52,17 @@ Discovery is memoized for the current PHP request. ACF/Twig and native block reg
 
 ## Optional persistent discovery cache
 
-Persistent component discovery caching is available but disabled by default. Enable it only when a project has stable build/version invalidation:
+Persistent component discovery caching is enabled by default in production and staging environments, and disabled by default in local, development, or `WP_DEBUG` environments. Projects can still opt out or force it on with:
 
 ```php
-add_filter( 'emulsify_theme_component_discovery_cache_enabled', '__return_true' );
+add_filter( 'emulsify_theme_component_discovery_cache_enabled', '__return_false' );
 ```
 
-The transient cache key includes the active stylesheet, parent template, child theme version, parent theme version, WordPress environment type, and `dist/emulsify-assets.json` filemtime when that manifest exists. Local and `WP_DEBUG` environments stay uncached unless the filter above explicitly enables caching.
+The transient cache key includes the active stylesheet, parent template, child theme version, parent theme version, WordPress environment type, and `dist/emulsify-assets.json` filemtime when that manifest exists. The runtime also calls `clear_discovery_cache` on WordPress' `switch_theme` hook so changing themes invalidates the active cache key.
 
 Projects that customize component roots dynamically can add their own invalidation token with `emulsify_theme_component_discovery_cache_key_parts`. The default cache lifetime can be adjusted with `emulsify_theme_component_discovery_cache_ttl`.
 
-To clear the current cache key from project code or a maintenance command, call:
+To clear the current cache key from project code, a maintenance command, or custom deployment logic, call:
 
 ```php
 \Emulsify\Theme\Blocks\ComponentLocator::clear_discovery_cache();

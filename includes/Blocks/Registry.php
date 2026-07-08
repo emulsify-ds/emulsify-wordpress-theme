@@ -36,6 +36,8 @@ final class Registry {
 	 * @return void
 	 */
 	public function register(): void {
+		add_action( 'switch_theme', array( ComponentLocator::class, 'clear_discovery_cache' ) );
+
 		$components = new ComponentLocator();
 
 		// Share one locator so ACF/Twig and native block registration use the same
