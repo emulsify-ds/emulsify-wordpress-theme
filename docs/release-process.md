@@ -4,7 +4,7 @@ This repository uses semantic-release with Conventional Commits. Releases are pr
 
 ## Release branch target
 
-The `release-2.x` branch prepares the next stable release as `2.0.0`. The release dry run must compute `2.0.0` before the publish job runs. If it computes another version, the release guard fails so stale 1.x metadata is not published.
+The `release-2.x` branch prepares the next stable release as `2.0.0`. Until that stable tag exists, the semantic-release config forces the first `main` publish to use a major release type and then verifies the computed release is exactly `2.0.0`. After the `2.0.0` tag exists, normal Conventional Commit analysis drives later releases.
 
 ## Commit messages
 

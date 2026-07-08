@@ -291,6 +291,10 @@ function runStaticChecks() {
     lastRelease: { version: '2.0.0' },
     nextRelease: { version: '2.0.1' },
   };
+  const releaseAnalyzerAlphaContext = {
+    branch: { name: 'main' },
+    lastRelease: { version: '1.0.0-alpha.5' },
+  };
 
   runStaticCheck('Required files', () => {
     const requiredFiles = [
@@ -895,12 +899,14 @@ function runStaticChecks() {
   runStaticCheck('Semantic release configuration', () => {
     const analyzerOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/commit-analyzer');
     const notesOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/release-notes-generator');
+    const releaseAnalyzer = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.analyzeCommits === 'function');
     const releaseGuard = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.verifyRelease === 'function');
     ensure(releaseConfig.expectedStableRelease === '2.0.0', 'release.config.js should declare 2.0.0 as the expected stable release.');
     ensure(releaseConfig.tagFormat === '${version}', 'release.config.js should emit non-prefixed semver tags.');
     ensure(releaseConfig.repositoryUrl === 'git@github.com:emulsify-ds/emulsify-wordpress.git', 'release.config.js should publish against emulsify-wordpress.');
     ensure(Array.isArray(releaseConfig.branches), 'release.config.js branches must be an array.');
     ensure(releaseConfig.branches.length === 1 && releaseConfig.branches[0] === 'main', 'release.config.js should publish only from main.');
+    ensure(releaseAnalyzer, 'release.config.js should force the first stable release to a major release type.');
     ensure(releaseGuard, 'release.config.js should guard the first stable release version.');
     ensureBreakingParser('@semantic-release/commit-analyzer', analyzerOptions.parserOpts);
     ensureBreakingParser('@semantic-release/release-notes-generator', notesOptions.parserOpts);
@@ -922,7 +928,11 @@ function runStaticChecks() {
     }
     releaseGuard.verifyRelease({}, releaseGuardAcceptContext);
     releaseGuard.verifyRelease({}, releaseGuardFutureContext);
-    return 'Semantic release is configured for non-prefixed tags, main-only publishing, and a guarded 2.0.0 stable release.';
+    ensure(releaseAnalyzer.analyzeCommits({}, releaseAnalyzerAlphaContext) === 'major', 'release.config.js should force a major release from the latest alpha tag.');
+    ensure(releaseAnalyzerAlphaContext.lastRelease.version === '1.0.0', 'release.config.js should normalize the latest alpha tag before semantic-release computes 2.0.0.');
+    ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardRejectContext) === 'major', 'release.config.js should force a major release before 2.0.0 exists.');
+    ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardFutureContext) === null, 'release.config.js should use normal commit analysis after 2.0.0 exists.');
+    return 'Semantic release is configured for non-prefixed tags, main-only publishing, and a forced 2.0.0 stable release.';
   });
 
   runStaticCheck('Theme readiness workflow', () => {

@@ -43,6 +43,10 @@ function isAtLeastVersion(version, minimumVersion) {
   return true;
 }
 
+function stableVersionBase(version) {
+  return String(version || '').split('-')[0];
+}
+
 const expectedStableReleaseGuard = {
   verifyRelease(pluginConfig, { branch, lastRelease = {}, nextRelease }) {
     // The 2.x release branch prepares the stable 2.0.0 baseline. After that
@@ -58,12 +62,27 @@ const expectedStableReleaseGuard = {
   },
 };
 
+const expectedStableReleaseAnalyzer = {
+  analyzeCommits(pluginConfig, { branch, lastRelease = {} }) {
+    // The release-2.x branch is the first stable release line for the rebuilt
+    // parent theme. The latest existing tag is an alpha, so normalize it to its
+    // stable base before semantic-release increments it to 2.0.0.
+    if (branch.name === 'main' && !isAtLeastVersion(lastRelease.version, expectedStableRelease)) {
+      lastRelease.version = stableVersionBase(lastRelease.version);
+      return 'major';
+    }
+
+    return null;
+  },
+};
+
 module.exports = {
   expectedStableRelease,
   tagFormat: '${version}',
   branches: ['main'],
   repositoryUrl: 'git@github.com:emulsify-ds/emulsify-wordpress.git',
   plugins: [
+    expectedStableReleaseAnalyzer,
     ['@semantic-release/commit-analyzer', { parserOpts }],
     ['@semantic-release/release-notes-generator', { parserOpts }],
     expectedStableReleaseGuard,
