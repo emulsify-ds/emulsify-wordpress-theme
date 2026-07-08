@@ -193,7 +193,7 @@ final class AcfBlocks {
 		$context               = \Timber\Timber::context();
 		$context['block']      = $block;
 		$context['content']    = is_scalar( $content ) ? (string) $content : '';
-		$context['fields']     = $this->fields( $post_id );
+		$context['fields']     = $this->fields();
 		$context['is_preview'] = (bool) $is_preview;
 
 		try {
@@ -980,17 +980,16 @@ final class AcfBlocks {
 	}
 
 	/**
-	 * Gets ACF fields when ACF is active.
+	 * Gets ACF field values for the block being rendered.
 	 *
-	 * @param mixed $post_id Current post ID.
 	 * @return array ACF field values.
 	 */
-	private function fields( $post_id ): array {
+	private function fields(): array {
 		if ( ! function_exists( 'get_fields' ) ) {
 			return array();
 		}
 
-		$fields = get_fields( $post_id );
+		$fields = get_fields();
 
 		return is_array( $fields ) ? $fields : array();
 	}
