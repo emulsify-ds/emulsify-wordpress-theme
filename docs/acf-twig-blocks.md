@@ -1,5 +1,7 @@
 # ACF/Twig blocks
 
+Related: [Native Gutenberg blocks](native-gutenberg-blocks.md), [Core block Twig rendering](core-block-twig-rendering.md), [Block patterns](block-patterns.md).
+
 ACF/Twig blocks are optional. If ACF is not active, this registration path is skipped without affecting the base theme.
 
 ## How discovery works
@@ -11,7 +13,7 @@ The parent theme scans built component output under `dist/components`. A compone
 
 The Twig template can match the metadata filename or the component directory name.
 
-Discovery uses request-only memoization by default. See [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache) for the optional persistent discovery cache.
+Discovery is memoized during each request. Persistent discovery caching is enabled by default outside local, development, or `WP_DEBUG` environments; see [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache).
 
 ## Example
 

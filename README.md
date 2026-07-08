@@ -132,6 +132,7 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 
 ## Documentation
 
+- [Documentation index](docs/README.md)
 - [Upgrading from 1.x to 2.x](docs/upgrading-1x-to-2x.md)
 - [Sister-project parity contract](docs/sister-project-parity.md)
 - [Parent and child theme architecture](docs/parent-child-architecture.md)

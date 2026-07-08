@@ -20,6 +20,8 @@ The parent theme owns reusable runtime behavior:
 
 Most parent runtime code lives in `includes/`. The root `functions.php` should stay thin.
 
+Runtime classes are grouped by domain: `Runtime`, `Blocks`, `Editor`, `Acf`, `Cli`, `Support`, and `Twig`. Composer PSR-4 autoloading loads these classes when Composer is available, and Bootstrap keeps a small fallback loader for manual theme installs without Composer.
+
 ## Child theme responsibilities
 
 Generated child themes own:
@@ -49,6 +51,12 @@ The parent-only `@emulsify-tpl` namespace points at parent templates. Use it whe
 Built child theme components are discovered before built parent theme components. When a child and parent component use the same relative path under `dist/components`, the child component wins for both ACF/Twig `*.component.json` metadata and native `block.json` metadata.
 
 Discovery is memoized for the current PHP request. ACF/Twig and native block registration share one filesystem scan by default.
+
+## Asset resolution priority
+
+Built assets are resolved child-first. When `dist/emulsify-assets.json` exists and is valid, the manifest is used before recursive scanner fallback for each asset scope. If a child manifest is valid, it takes priority over the parent manifest; if a scope is missing or invalid, that scope falls back to scanning built child and parent directories.
+
+Manifest reads are memoized per `AssetManifest` instance during a request. Scanner fallback also memoizes raw file records per theme-relative directory, then filters CSS and JavaScript in memory for each enqueue pass while preserving the existing asset filters.
 
 ## Optional persistent discovery cache
 

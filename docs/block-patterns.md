@@ -1,5 +1,7 @@
 # Block patterns
 
+Related: [ACF/Twig blocks](acf-twig-blocks.md), [Native Gutenberg blocks](native-gutenberg-blocks.md), [Core block Twig rendering](core-block-twig-rendering.md).
+
 The parent theme registers JSON block patterns from active child and parent theme `patterns` directories. Discovery is child-first and scans direct `patterns/*.json` files only, so a child theme can override a parent pattern file by using the same JSON filename. `patterns/categories.json` and `patterns/_categories.json` are reserved for optional category metadata and are not registered as block patterns.
 
 If no pattern directory exists, or if WordPress pattern registration functions are unavailable, the service exits without changing editor behavior.

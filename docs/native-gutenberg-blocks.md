@@ -1,5 +1,7 @@
 # Native Gutenberg blocks
 
+Related: [ACF/Twig blocks](acf-twig-blocks.md), [Core block Twig rendering](core-block-twig-rendering.md), [Block patterns](block-patterns.md).
+
 Native Gutenberg blocks use the WordPress Block API. They are separate from Twig components and ACF/Twig blocks.
 
 ## Gutenberg and block paths
@@ -10,7 +12,7 @@ The starter does not include an active native block example. Native blocks usual
 
 See [Component recipes](component-recipes.md) for a short `block.json` example and guidance on when to choose native blocks.
 
-Discovery uses request-only memoization by default. See [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache) for the optional persistent discovery cache.
+Discovery is memoized during each request. Persistent discovery caching is enabled by default outside local, development, or `WP_DEBUG` environments; see [Parent and child theme architecture](parent-child-architecture.md#optional-persistent-discovery-cache).
 
 ## Block assets
 

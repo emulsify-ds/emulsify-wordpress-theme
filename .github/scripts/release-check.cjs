@@ -253,6 +253,7 @@ function runStaticChecks() {
   const wordpressFixtureSmoke = readFile('.github/scripts/wordpress-fixture-smoke.cjs');
   const readme = readFile('README.md');
   const docs = {
+    index: readFile('docs/README.md'),
     upgrading: readFile('docs/upgrading-1x-to-2x.md'),
     parity: readFile('docs/sister-project-parity.md'),
     architecture: readFile('docs/parent-child-architecture.md'),
@@ -300,6 +301,7 @@ function runStaticChecks() {
       '.gitignore',
       '.nvmrc',
       'README.md',
+      'docs/README.md',
       'docs/acf-local-json.md',
       'docs/acf-twig-blocks.md',
       'docs/asset-loading.md',
@@ -964,6 +966,7 @@ function runStaticChecks() {
 
   runStaticCheck('Release documentation', () => {
     const expectedDocLinks = [
+      'docs/README.md',
       'docs/upgrading-1x-to-2x.md',
       'docs/sister-project-parity.md',
       'docs/parent-child-architecture.md',
@@ -1086,6 +1089,7 @@ function runStaticChecks() {
     ensure(docs.assets.includes('emulsify_theme_asset_directories'), 'Asset loading doc should document asset directory filtering.');
     ensure(docs.assets.includes('dist/emulsify-assets.json') && docs.assets.includes('emulsify_theme_asset_manifest_path'), 'Asset loading doc should document optional manifest loading.');
     ensure(docs.assets.includes('block-scoped assets') && docs.assets.includes('emulsify_theme_acf_block_asset_records'), 'Asset loading doc should document block-scoped asset behavior.');
+    ensure(docs.assets.includes('Manifest data is memoized') && docs.assets.includes('Scanner fallback records are also memoized'), 'Asset loading doc should document per-request manifest and scanner memoization.');
     ensure(docs.coreBlockTwig.includes('[Component recipes](component-recipes.md)'), 'Core block Twig rendering doc should link to component recipes.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');
@@ -1103,11 +1107,17 @@ function runStaticChecks() {
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
     ensure(docs.post2xRoadmap.includes('follow-up opportunities for focused minor releases, not 2.0 blockers'), 'Post-2.x roadmap should frame items as follow-up opportunities.');
     ensure(docs.post2xRoadmap.includes('Ship 2.0 without adding new runtime features'), 'Post-2.x roadmap should keep 2.0 focused.');
-    ensure(docs.post2xRoadmap.includes('Build on Composer PSR-4 autoloading with grouped runtime directories'), 'Post-2.x roadmap should include the code organization milestone.');
-    ensure(docs.post2xRoadmap.includes('optional manifest-driven asset loading'), 'Post-2.x roadmap should include the asset manifest milestone.');
+    ensure(docs.post2xRoadmap.includes('## Done in 2.0'), 'Post-2.x roadmap should separate completed 2.0 work from follow-up work.');
+    ensure(docs.post2xRoadmap.includes('Composer PSR-4 autoloading and grouped runtime directories'), 'Post-2.x roadmap should identify runtime class grouping as completed.');
+    ensure(docs.post2xRoadmap.includes('Optional manifest-driven asset loading') || docs.post2xRoadmap.includes('optional manifest-driven asset loading'), 'Post-2.x roadmap should identify asset manifest support as completed.');
+    ensure(docs.post2xRoadmap.includes('AssetRecord') && docs.post2xRoadmap.includes('AssetEnqueuer') && docs.post2xRoadmap.includes('Diagnostics'), 'Post-2.x roadmap should identify shared Support helpers as completed.');
+    ensure(docs.post2xRoadmap.includes('ProjectComponentLoader'), 'Post-2.x roadmap should identify the named Twig project component loader as completed.');
     ensure(docs.post2xRoadmap.includes('wp emulsify doctor'), 'Post-2.x roadmap should include CLI diagnostics.');
+    ensure(docs.post2xRoadmap.includes('PHPUnit'), 'Post-2.x roadmap should include migration of smoke coverage into PHPUnit or an equivalent WordPress-aware layer.');
+    ensure(docs.post2xRoadmap.includes('block.json-based ACF registration'), 'Post-2.x roadmap should include block.json-based ACF registration as a follow-up.');
     ensure(docs.post2xRoadmap.includes('optional persistent discovery caching') && docs.post2xRoadmap.includes('invalidation guidance'), 'Post-2.x roadmap should keep cache follow-up work focused on diagnostics and guidance.');
     for (const heading of [
+      '## Done in 2.0',
       '## Code organization',
       '## Runtime architecture',
       '## Asset loading and performance',
@@ -1117,6 +1127,28 @@ function runStaticChecks() {
       '## Documentation and support tooling',
     ]) {
       ensure(docs.post2xRoadmap.includes(heading), `Post-2.x roadmap should include ${heading}.`);
+    }
+    for (const docLink of [
+      'upgrading-1x-to-2x.md',
+      'parent-child-architecture.md',
+      'wp-cli-child-theme-generation.md',
+      'timber-and-twig-authoring.md',
+      'component-recipes.md',
+      'core-4-vite-workflow.md',
+      'acf-twig-blocks.md',
+      'native-gutenberg-blocks.md',
+      'core-block-twig-rendering.md',
+      'block-patterns.md',
+      'editor-policy.md',
+      'editor-enhancements.md',
+      'acf-local-json.md',
+      'asset-loading.md',
+      'release-process.md',
+      'sister-project-parity.md',
+      'post-2x-optimization-roadmap.md',
+    ]) {
+      const matches = docs.index.split(`(${docLink})`).length - 1;
+      ensure(matches === 1, `Docs index should link to ${docLink} exactly once.`);
     }
     ensure(pullRequestTemplate.includes('2.0 release branch merge') && pullRequestTemplate.includes('wordpress_fixture'), 'PR template should include the 2.0 manual fixture checklist item.');
     ensure(/duplicate[\w\s/`.-]*skipped instead of being registered twice/i.test(docsText), 'Docs should document duplicate block handling.');

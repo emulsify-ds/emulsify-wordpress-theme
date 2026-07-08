@@ -2,6 +2,12 @@
 
 The parent theme loads built assets from the active child theme first, then parent fallback assets. This keeps project builds in the child theme while allowing the parent to provide reusable runtime behavior.
 
+## Resolution order
+
+Asset loading is manifest-first and scanner-backed. For each supported scope, the parent checks a valid child `dist/emulsify-assets.json` before a parent manifest. When no manifest exists, the manifest is invalid, or the manifest does not declare the requested scope, the recursive scanner remains the fallback.
+
+Manifest data is memoized for the life of the service instance during a PHP request. Scanner fallback records are also memoized per theme-relative directory, so the CSS and JavaScript enqueue passes do not walk the same directory tree twice. Filters still receive the same extension-specific asset records they received before memoization.
+
 ## Scanner behavior
 
 When no usable manifest is present, Emulsify WordPress scans these built asset directories:
@@ -19,7 +25,7 @@ For ACF/Twig components, files declared in `*.component.json` `assets` metadata 
 
 ## Manifest behavior
 
-Projects can optionally ship `dist/emulsify-assets.json` to avoid recursive discovery on every request. The manifest is child-first: a valid child manifest is used before a parent manifest. If no manifest exists, if the manifest is invalid JSON, or if a scope is not declared, the current scanner path remains the fallback for that scope.
+Projects can optionally ship `dist/emulsify-assets.json` to avoid recursive discovery during normal requests. The manifest is child-first: a valid child manifest is used before a parent manifest. If no manifest exists, if the manifest is invalid JSON, or if a scope is not declared, the current scanner path remains the fallback for that scope.
 
 Manifest entry paths are relative to the manifest directory. For `dist/emulsify-assets.json`, use paths such as `global/app.css` or `components/card.js`.
 
@@ -75,7 +81,7 @@ Block-specific entries are accepted under `blocks` and are used by ACF/Twig bloc
 
 ## Performance
 
-The scanner is simple and requires no build integration. A manifest is useful for larger projects because build tooling can write the exact asset list, hashes, and dependencies once, and PHP can avoid walking `dist/global` and `dist/components` on every request.
+The scanner is simple and requires no build integration. A manifest is useful for larger projects because build tooling can write the exact asset list, hashes, and dependencies once, and PHP can usually avoid walking `dist/global` and `dist/components` during normal requests.
 
 ## Asset filters
 
