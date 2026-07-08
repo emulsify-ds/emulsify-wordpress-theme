@@ -784,6 +784,7 @@ function runStaticChecks() {
 
   runStaticCheck('Template fallback model', () => {
     const twigIntegration = readFile('includes/Runtime/Twig.php');
+    const projectComponentLoader = readFile('includes/Twig/ProjectComponentLoader.php');
     const twigNamespaceSmoke = readFile('.github/scripts/twig-project-namespace-smoke.php');
     const childFunctions = readFile('whisk/functions.php');
     const childPageTemplate = readFile('whisk/templates/page.twig');
@@ -833,7 +834,7 @@ function runStaticChecks() {
     ensure(twigIntegration.includes('project.emulsify.json'), 'Twig integration should read active child project.emulsify.json metadata.');
     ensure(twigIntegration.includes('project_structure_namespaces') && twigIntegration.includes('structureImplementations'), 'Twig integration should honor Emulsify Core structureImplementations for configured namespaces.');
     ensure(twigIntegration.includes('emulsify_theme_project_component_roots'), 'Twig integration should expose a focused project component roots filter.');
-    ensure(twigIntegration.includes('implements \\Twig\\Loader\\LoaderInterface'), 'Twig integration should wrap the loader for machineName:component references.');
+    ensure(twigIntegration.includes('new ProjectComponentLoader') && projectComponentLoader.includes('implements \\Twig\\Loader\\LoaderInterface'), 'Twig integration should wrap the loader for machineName:component references.');
     ensure(twigIntegration.includes('machineName:component'), 'Twig integration should document the project component reference intent in code comments.');
     ensure(twigNamespaceSmoke.includes('@custom/teaser.twig') && twigNamespaceSmoke.includes('variant.structureImplementations'), 'Twig namespace smoke should verify configured Core structure namespaces.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/includes/twig-namespaces.php')), 'Whisk should rely on the parent Twig namespace integration by default.');

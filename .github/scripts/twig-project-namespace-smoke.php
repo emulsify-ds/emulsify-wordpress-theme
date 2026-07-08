@@ -77,6 +77,8 @@ if ( ! function_exists( 'get_template_directory' ) ) {
 
 require_once $repo_root . '/includes/Support/AttributeBag.php';
 require_once $repo_root . '/includes/Support/FileDiscovery.php';
+require_once $repo_root . '/includes/Support/ProjectConfig.php';
+require_once $repo_root . '/includes/Twig/ProjectComponentLoader.php';
 require_once $repo_root . '/includes/Runtime/Twig.php';
 
 /**
