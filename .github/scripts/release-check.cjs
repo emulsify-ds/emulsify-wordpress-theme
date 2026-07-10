@@ -353,6 +353,9 @@ function runStaticChecks() {
       'includes/Support/AssetManifest.php',
       'includes/Support/AttributeBag.php',
       'includes/Support/FileDiscovery.php',
+      'includes/Twig/SwitchExtension.php',
+      'includes/Twig/SwitchNode.php',
+      'includes/Twig/SwitchTokenParser.php',
       'package.json',
       'release.config.js',
       'style.css',
@@ -377,6 +380,7 @@ function runStaticChecks() {
       '.github/scripts/wordpress-starter-init-smoke.cjs',
       '.github/scripts/theme-filters-smoke.php',
       '.github/scripts/twig-project-namespace-smoke.php',
+      '.github/scripts/twig-switch-smoke.php',
       '.github/scripts/wordpress-fixture-smoke.cjs',
       'whisk/.cli/init.js',
       'whisk/.gitignore',
@@ -424,6 +428,7 @@ function runStaticChecks() {
     ensure(rootPackage.scripts['smoke:patterns'] === 'php .github/scripts/pattern-registry-smoke.php', 'package.json should expose npm run smoke:patterns.');
     ensure(rootPackage.scripts['smoke:starter-init'] === 'node .github/scripts/wordpress-starter-init-smoke.cjs', 'package.json should expose npm run smoke:starter-init.');
     ensure(rootPackage.scripts['smoke:theme-filters'] === 'php .github/scripts/theme-filters-smoke.php', 'package.json should expose npm run smoke:theme-filters.');
+    ensure(rootPackage.scripts['smoke:twig-switch'] === 'php .github/scripts/twig-switch-smoke.php', 'package.json should expose npm run smoke:twig-switch.');
     ensure(rootPackage.scripts['smoke:twig-project-namespace'] === 'php .github/scripts/twig-project-namespace-smoke.php', 'package.json should expose npm run smoke:twig-project-namespace.');
     ensure(rootPackage.scripts['whisk:install'], 'package.json should expose npm run whisk:install.');
     ensure(rootPackage.scripts['whisk:build'] === 'npm --prefix whisk run build', 'package.json should expose npm run whisk:build.');
@@ -489,6 +494,23 @@ function runStaticChecks() {
     ensure(smoke.includes('{{ bem("example-card", ["featured"]) }}'), 'Attribute helper smoke script should render a bem() Twig fixture.');
     ensure(smoke.includes('{{ add_attributes({ class: ["foo"] }) }}'), 'Attribute helper smoke script should render an add_attributes() Twig fixture.');
     return 'Attribute helper runtime and smoke fixture are wired.';
+  });
+
+  runStaticCheck('Twig switch tags', () => {
+    const twig = readFile('includes/Runtime/Twig.php');
+    const extension = readFile('includes/Twig/SwitchExtension.php');
+    const parser = readFile('includes/Twig/SwitchTokenParser.php');
+    const node = readFile('includes/Twig/SwitchNode.php');
+    const smoke = readFile('.github/scripts/twig-switch-smoke.php');
+
+    ensure(twig.includes("add_filter( 'timber/twig', array( $this, 'extensions' ) )"), 'Timber integration should register custom Twig extensions.');
+    ensure(twig.includes('new SwitchExtension()'), 'Timber integration should add the switch extension.');
+    ensure(extension.includes('new SwitchTokenParser()'), 'Switch extension should expose the switch token parser.');
+    ensure(parser.includes("return 'switch';") && parser.includes("case 'case':") && parser.includes("case 'default':") && parser.includes("case 'endswitch':"), 'Switch parser should support switch, case, default, and endswitch tags.');
+    ensure(node.includes("->write( 'switch (' )") && node.includes('->write( "break;\\n" )'), 'Switch node should compile native switch branches with automatic breaks.');
+    ensure(smoke.includes("{% case 'alpha' or 'beta' %}") && smoke.includes('automatic case break'), 'Twig switch smoke should cover multiple values and no fall-through.');
+    ensure(docs.twig.includes('## Switch statements') && docs.twig.includes('{% switch variant %}'), 'Twig authoring docs should document switch statements.');
+    return 'Twig switch tags are registered, documented, and covered by a runtime smoke test.';
   });
 
   runStaticCheck('Bootstrap runtime autoloading', () => {
@@ -975,6 +997,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:patterns'), 'PR validation should run the pattern registry smoke test.');
     ensure(prValidationScript.includes('smoke:starter-init'), 'PR validation should run the WordPress starter init smoke test.');
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
+    ensure(prValidationScript.includes('smoke:twig-switch'), 'PR validation should run the Twig switch smoke test.');
     ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
     ensure(prValidationScript.indexOf('whisk:install') < prValidationScript.indexOf('smoke:starter-init'), 'PR validation should install Whisk dependencies before checking the starter npm test script.');
@@ -1043,6 +1066,8 @@ function runStaticChecks() {
     ensure(docs.parity.includes('Built global assets are emitted under `dist/global`'), 'Sister-project parity doc should document global build output.');
     ensure(docs.parity.includes('Built component assets and block metadata are emitted under `dist/components`'), 'Sister-project parity doc should document component build output.');
     ensure(docs.parity.includes('Frontend rendering uses Timber'), 'Sister-project parity doc should document Timber as a WordPress difference.');
+    ensure(docs.twig.includes('## Switch statements') && docs.twig.includes("{% case 'primary' or 'secondary' %}"), 'Twig authoring docs should document switch tags and multiple case values.');
+    ensure(docs.release.includes('Twig switch tag smoke test'), 'Release documentation should list Twig switch smoke coverage.');
     ensure(docs.parity.includes('WordPress theme identity lives in `style.css` headers'), 'Sister-project parity doc should document WordPress theme headers.');
     ensure(docs.parity.includes('`theme.json` is the WordPress site and editor configuration surface'), 'Sister-project parity doc should document theme.json.');
     ensure(docs.parity.includes('Whisk does not include a child `theme.json` by default'), 'Sister-project parity doc should explain why Whisk does not ship an empty child theme.json.');

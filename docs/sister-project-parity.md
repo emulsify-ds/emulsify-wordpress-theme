@@ -37,7 +37,7 @@ Emulsify WordPress is not a Drupal runtime port. It keeps parity at the Emulsify
 
 ### Timber runtime
 
-Frontend rendering uses Timber. The parent theme owns Timber bootstrapping, global context, Twig namespace registration, route fallbacks, and Twig helper functions. Child themes supply project Twig templates and component source.
+Frontend rendering uses Timber. The parent theme owns Timber bootstrapping, global context, Twig namespace registration, route fallbacks, helper functions, and Emulsify-compatible switch tags. Child themes supply project Twig templates and component source.
 
 For new project component includes, prefer the generated child theme machine name from `project.emulsify.json`, using the general form `{% include "project_machine_name:component_name" %}`. The legacy `@components/component-name/component-name.twig` namespace remains supported for compatible component libraries, existing projects, shared templates, and migration work.
 

@@ -31,6 +31,7 @@ npm run publish-test -- --no-ci
 - PHP linting.
 - ACF Local JSON smoke test.
 - Twig attribute helper smoke test.
+- Twig switch tag smoke test.
 - Child theme generator smoke test.
 - Component locator smoke test.
 - Parent theme filter smoke test.

@@ -11,6 +11,7 @@ use Emulsify\Theme\Support\AttributeBag;
 use Emulsify\Theme\Support\FileDiscovery;
 use Emulsify\Theme\Support\ProjectConfig;
 use Emulsify\Theme\Twig\ProjectComponentLoader;
+use Emulsify\Theme\Twig\SwitchExtension;
 
 /**
  * Twig integration for Timber.
@@ -25,6 +26,7 @@ final class Twig {
 	public function register(): void {
 		add_filter( 'timber/loader/loader', array( $this, 'loader_paths' ) );
 		add_filter( 'timber/twig/functions', array( $this, 'functions' ) );
+		add_filter( 'timber/twig', array( $this, 'extensions' ) );
 	}
 
 	/**
@@ -123,6 +125,18 @@ final class Twig {
 		);
 
 		return $functions;
+	}
+
+	/**
+	 * Registers custom Twig extensions.
+	 *
+	 * @param \Twig\Environment $environment Timber Twig environment.
+	 * @return \Twig\Environment Updated Twig environment.
+	 */
+	public function extensions( \Twig\Environment $environment ): \Twig\Environment {
+		$environment->addExtension( new SwitchExtension() );
+
+		return $environment;
 	}
 
 	/**

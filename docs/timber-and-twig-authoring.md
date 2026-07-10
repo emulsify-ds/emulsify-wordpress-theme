@@ -115,6 +115,21 @@ The parent theme registers Core-style helpers for class and attribute handling:
 
 The helpers return an attribute bag that serializes safely in Twig string contexts.
 
+## Switch statements
+
+The parent theme registers the Emulsify-compatible `switch`, `case`, `default`, and `endswitch` tags used by Emulsify Core in Storybook and Emulsify Tools in Drupal. Use `or` to match more than one value in a case:
+
+```twig
+{% switch variant %}
+  {% case 'primary' or 'secondary' %}
+    <span class="badge badge--strong">{{ label }}</span>
+  {% default %}
+    <span class="badge">{{ label }}</span>
+{% endswitch %}
+```
+
+The `default` branch is optional and, when present, follows the case branches. Each matching case stops automatically, so switch blocks do not fall through to later cases. Matching follows PHP switch semantics in Timber and the equivalent scalar behavior in Emulsify Core's Twig.js runtime.
+
 ## Global context
 
 The parent theme adds common values such as `site`, `theme`, `menu`, `post`, `wp`, and `body_class` to the Timber context. Child themes and project plugins can add values with:
