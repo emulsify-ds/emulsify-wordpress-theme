@@ -445,8 +445,8 @@ if ( 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['twig_template'] ) 
   emulsify_smoke_fail( 'Generated child ACF/Twig fixture did not keep its Twig template.' );
 }
 
-if ( empty( $fixture['data']['twig_template'] ) || 'dist/components/smoke-acf/smoke-acf.twig' !== $fixture['data']['twig_template'] ) {
-  emulsify_smoke_fail( 'Generated child ACF/Twig fixture data did not include its Twig template.' );
+if ( ! empty( $fixture['data']['twig_template'] ) ) {
+  emulsify_smoke_fail( 'Generated child ACF/Twig fixture data should not persist its Twig template.' );
 }
 `;
 

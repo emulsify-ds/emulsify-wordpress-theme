@@ -26,7 +26,7 @@
         {% endif %}
 
         {% if comment.content|default(null) %}
-            <div {{ add_attributes(comment_content_attributes) }}>{{ comment.content|wpautop }}</div>
+            <div {{ add_attributes(comment_content_attributes) }}>{{ comment.content|wpautop|raw }}</div>
         {% endif %}
 
         {% set children = comment.children|default([]) %}
