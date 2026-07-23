@@ -9,6 +9,10 @@ namespace Emulsify\Theme\Editor;
 
 /**
  * User-created pattern UI and capability governance.
+ *
+ * The disable_user_patterns_for_non_admins option only hides editor controls.
+ * Pair it with restrict_wp_block_creation for server-side creation enforcement;
+ * otherwise users may still create wp_block posts through the REST API.
  */
 final class UserPatternPermissions {
 

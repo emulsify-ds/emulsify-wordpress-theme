@@ -10,6 +10,10 @@ if ( PHP_SAPI !== 'cli' ) {
 	exit( 1 );
 }
 
+if ( ! defined( 'WP_DEBUG' ) ) {
+	define( 'WP_DEBUG', true );
+}
+
 $GLOBALS['emulsify_asset_manifest_smoke_hooks']          = array();
 $GLOBALS['emulsify_asset_manifest_smoke_styles']         = array();
 $GLOBALS['emulsify_asset_manifest_smoke_scripts']        = array();
@@ -202,6 +206,10 @@ function emulsify_asset_manifest_smoke_remove( string $path ): void {
 
 $repo_root = dirname( __DIR__, 2 );
 $work_root = sys_get_temp_dir() . '/emulsify-asset-manifest-' . uniqid( '', true );
+$debug_log = $work_root . '/debug.log';
+
+ini_set( 'log_errors', '1' );
+ini_set( 'error_log', $debug_log );
 
 try {
 	require_once $repo_root . '/includes/Support/FileDiscovery.php';
@@ -354,12 +362,40 @@ try {
 	emulsify_asset_manifest_smoke_reset( $child, $parent );
 	emulsify_asset_manifest_smoke_write( $child . '/dist/emulsify-assets.json', '{invalid' );
 	emulsify_asset_manifest_smoke_write( $child . '/dist/global/fallback.css', '.fallback{}' );
+	emulsify_asset_manifest_smoke_write( $parent . '/dist/global/parent.css', '.parent{}' );
+	emulsify_asset_manifest_smoke_write_json(
+		$parent . '/dist/emulsify-assets.json',
+		array(
+			'assets' => array(
+				'global' => array(
+					'css' => array(
+						array( 'path' => 'global/parent.css' ),
+						array( 'path' => 'global/missing.css' ),
+					),
+				),
+			),
+		)
+	);
 
 	( new Emulsify\Theme\Runtime\Assets() )->styles();
 
 	emulsify_asset_manifest_smoke_assert(
-		isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-global-fallback'] ),
-		'Invalid manifest should fall back safely to recursive discovery.'
+		isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-global-global-parent'] )
+		&& ! isset( $GLOBALS['emulsify_asset_manifest_smoke_styles']['emulsify-global-fallback'] ),
+		'Invalid manifest should fall back to the valid parent manifest before recursive discovery.'
+	);
+
+	$debug_contents = is_readable( $debug_log ) ? file_get_contents( $debug_log ) : '';
+
+	emulsify_asset_manifest_smoke_assert(
+		is_string( $debug_contents )
+		&& false !== strpos( $debug_contents, '[Emulsify] Asset manifest contains invalid JSON: ' . $child . '/dist/emulsify-assets.json' ),
+		'WP_DEBUG should log malformed asset manifest candidates.'
+	);
+	emulsify_asset_manifest_smoke_assert(
+		is_string( $debug_contents )
+		&& false !== strpos( $debug_contents, '[Emulsify] Asset not readable: ' . $parent . '/dist/global/missing.css' ),
+		'WP_DEBUG should log missing manifest asset files.'
 	);
 
 	$child  = $work_root . '/priority-child';

@@ -136,7 +136,6 @@ The `.husky/pre-commit` hook already runs `npm run lint`, which delegates to thi
 | Command | Purpose |
 | --- | --- |
 | `npm run lint:php` | Run PHPCS and PHPStan across the parent runtime. |
-| `npm run lint:php:fix` | Apply PHPCBF fixes for supported coding-standard violations. |
 | `npm run pr:check` | Run the practical, stubbed pull request validation suite. |
 | `npm run release:check` | Run release-readiness checks. |
 | `npm run build:dist` | Build the installable `dist-artifact/emulsify.zip` release archive. |
