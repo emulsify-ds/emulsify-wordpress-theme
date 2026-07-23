@@ -86,6 +86,16 @@ module.exports = {
     ['@semantic-release/commit-analyzer', { parserOpts }],
     ['@semantic-release/release-notes-generator', { parserOpts }],
     expectedStableReleaseGuard,
-    '@semantic-release/github',
+    [
+      '@semantic-release/github',
+      {
+        assets: [
+          {
+            path: 'dist-artifact/emulsify.zip',
+            label: 'Emulsify WordPress theme (with dependencies)',
+          },
+        ],
+      },
+    ],
   ],
 };

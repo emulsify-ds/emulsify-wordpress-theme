@@ -408,6 +408,57 @@ try {
 		'ACF block registration should report duplicate normalized final block names.'
 	);
 
+	$registered_card = null;
+
+	foreach ( $GLOBALS['emulsify_locator_acf_registered'] as $registered_block ) {
+		if ( 'emulsify-card' === $registered_block['name'] ) {
+			$registered_card = $registered_block;
+			break;
+		}
+	}
+
+	emulsify_locator_smoke_assert(
+		is_array( $registered_card ) && empty( $registered_card['data']['twig_template'] ),
+		'ACF block registration should not persist the discovered Twig template in block data.'
+	);
+
+	$template_method = new ReflectionMethod( $acf_blocks, 'template' );
+
+	emulsify_locator_smoke_assert(
+		'dist/components/card/card.twig' === $template_method->invoke(
+			$acf_blocks,
+			array(
+				'twig_template' => 'dist/components/card/card.twig',
+				'data'          => array(
+					'twig_template' => 'dist/components/parent-card/parent-card.twig',
+				),
+			)
+		),
+		'ACF block rendering should prefer the registered Twig template over persisted block data.'
+	);
+	emulsify_locator_smoke_assert(
+		'dist/components/parent-card/parent-card.twig' === $template_method->invoke(
+			$acf_blocks,
+			array(
+				'data' => array(
+					'twig_template' => 'dist/components/parent-card/parent-card.twig',
+				),
+			)
+		),
+		'ACF block rendering should allow a legacy persisted template only when component discovery found it.'
+	);
+	emulsify_locator_smoke_assert(
+		'' === $template_method->invoke(
+			$acf_blocks,
+			array(
+				'data' => array(
+					'twig_template' => '../../hostile.twig',
+				),
+			)
+		),
+		'ACF block rendering should reject persisted templates outside the discovered component set.'
+	);
+
 	add_filter(
 		'emulsify_theme_component_discovery_cache_enabled',
 		static function (): bool {

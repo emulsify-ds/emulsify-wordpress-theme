@@ -28,3 +28,7 @@
 - [Release process](release-process.md)
 - [Sister-project parity contract](sister-project-parity.md)
 - [Post-2.x optimization roadmap](post-2x-optimization-roadmap.md)
+
+## Continuous integration
+
+Pull requests run practical smoke coverage, a dedicated PHPCS/PHPStan job, the required MySQL/WP-CLI WordPress rendering fixture, and a CI-seeded Whisk Storybook accessibility audit. Nightly scheduled runs repeat both extended fixtures. Manual readiness runs use the `wordpress_fixture` and `extended_checks` inputs to select those extended jobs. The release process documents commands, route coverage, and merge-gate details.
