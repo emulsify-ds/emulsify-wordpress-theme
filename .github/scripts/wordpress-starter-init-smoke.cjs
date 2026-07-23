@@ -117,6 +117,7 @@ function runWhiskTestScript() {
 
 const workRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'emulsify-wordpress-starter-'));
 const target = path.join(workRoot, 'acme-theme');
+const hostileName = 'Acme */ echo 1; /* Theme';
 
 try {
   copyStarterFixture(starterRoot, target);
@@ -124,7 +125,7 @@ try {
   writeJson(path.join(target, 'project.emulsify.json'), {
     project: {
       platform: 'wordpress',
-      name: 'Acme Theme',
+      name: hostileName,
       machineName: 'acme-theme',
     },
     starter: {
@@ -165,14 +166,15 @@ try {
   const functionsPhp = fs.readFileSync(path.join(target, 'functions.php'), 'utf8');
   const pageTwig = fs.readFileSync(path.join(target, 'templates/page.twig'), 'utf8');
 
-  assert(style['Theme Name'] === 'Acme Theme', 'style.css should update Theme Name.');
+  assert(style['Theme Name'] === 'Acme echo 1 Theme', 'style.css should use a source-safe Theme Name.');
+  assert(!style['Theme Name'].includes('*/'), 'style.css should not contain a crafted comment terminator.');
   assert(style['Text Domain'] === 'acme-theme', 'style.css should update Text Domain.');
   assert(style.Template === 'emulsify', 'style.css should keep Template: emulsify.');
   assert(packageJson.name === 'acme-theme', 'package.json should update name.');
   assert(packageLock.name === 'acme-theme', 'package-lock.json should update the root name.');
   assert(packageLock.packages[''].name === 'acme-theme', 'package-lock.json packages[""].name should update.');
   assert(project.project.platform === 'wordpress', 'project.emulsify.json should keep project.platform: wordpress.');
-  assert(project.project.name === 'Acme Theme', 'project.emulsify.json should update project.name.');
+  assert(project.project.name === hostileName, 'project.emulsify.json should preserve the richer project.name.');
   assert(project.project.machineName === 'acme-theme', 'project.emulsify.json should update project.machineName.');
   assert(project.project.generatedFrom === 'emulsify-wordpress', 'project.emulsify.json should identify the generated child theme source.');
   assert(project.project.generatedFromVersion === '2.0.0', 'project.emulsify.json should record the generated child theme source version.');
@@ -180,7 +182,8 @@ try {
     project.starter.repository === 'https://github.com/emulsify-ds/emulsify-wordpress-starter',
     'project.emulsify.json should keep the standalone starter repository.',
   );
-  assert(functionsPhp.includes('Acme Theme child theme hooks.'), 'functions.php should update visible Whisk labels.');
+  assert(functionsPhp.includes('Acme echo 1 Theme child theme hooks.'), 'functions.php should use a source-safe visible label.');
+  assert(!functionsPhp.includes('*/ echo 1; /*'), 'functions.php should not contain the attempted docblock breakout.');
   assert(pageTwig.includes('acme-theme-page'), 'templates/page.twig should update the page class.');
   assert(!pageTwig.includes('whisk-page'), 'templates/page.twig should not keep the starter page class.');
   assert(pattern.name === 'acme-theme/smoke-pattern', 'JSON pattern names should update the whisk namespace.');

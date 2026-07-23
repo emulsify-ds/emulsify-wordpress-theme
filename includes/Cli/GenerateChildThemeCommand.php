@@ -64,6 +64,9 @@ final class GenerateChildThemeCommand {
 	 * : Lowercase slug for the generated theme directory, text domain, package
 	 * name, and Emulsify machineName. Defaults to a slug generated from <name>.
 	 *
+	 * [--parent=<slug>]
+	 * : Parent theme directory slug. Defaults to emulsify.
+	 *
 	 * [--dry-run]
 	 * : Show what would be created or changed without writing files.
 	 *
@@ -90,15 +93,16 @@ final class GenerateChildThemeCommand {
 	 * @return void
 	 */
 	private function generate( array $args, array $assoc_args ): void {
-		$label        = $this->get_theme_label( $args );
-		$machine_name = $this->get_machine_name( $label, $assoc_args );
-		$parent       = $this->get_parent_slug( $assoc_args );
-		$dry_run      = $this->get_flag_value( $assoc_args, 'dry-run' );
-		$force        = $this->get_flag_value( $assoc_args, 'force' );
-		$activate     = $this->get_flag_value( $assoc_args, 'activate' );
-		$source       = $this->join_path( get_theme_root(), $parent, self::STARTER_SLUG );
-		$destination  = $this->join_path( get_theme_root(), $machine_name );
-		$version      = $this->get_generated_from_version( $source );
+		$label              = $this->get_theme_label( $args );
+		$machine_name       = $this->get_machine_name( $label, $assoc_args );
+		$parent             = $this->get_parent_slug( $assoc_args );
+		$dry_run            = $this->get_flag_value( $assoc_args, 'dry-run' );
+		$force              = $this->get_flag_value( $assoc_args, 'force' );
+		$activate           = $this->get_flag_value( $assoc_args, 'activate' );
+		$source             = $this->join_path( get_theme_root(), $parent, self::STARTER_SLUG );
+		$destination        = $this->join_path( get_theme_root(), $machine_name );
+		$destination_exists = file_exists( $destination );
+		$version            = $this->get_generated_from_version( $source );
 
 		\WP_CLI::log( sprintf( 'Generating child theme "%s" (%s) from Emulsify.', $label, $machine_name ) );
 		\WP_CLI::log( sprintf( 'Source: %s', $source ) );
@@ -112,27 +116,19 @@ final class GenerateChildThemeCommand {
 			\WP_CLI::error( sprintf( 'The machine name "%s" would overwrite the parent theme. Choose a different --machine-name.', $machine_name ) );
 		}
 
-		if ( file_exists( $destination ) && ! $force ) {
+		if ( $destination_exists && ! $force ) {
 			\WP_CLI::error( sprintf( 'Destination already exists: %s. Use --force to replace it.', $destination ) );
 		}
 
-		$metadata_updates = $this->collect_metadata_updates(
-			$source,
-			array(
-				'label'        => $label,
-				'machine_name' => $machine_name,
-				'parent'       => $parent,
-				'version'      => $version,
-			)
+		$config = array(
+			'label'        => $label,
+			'machine_name' => $machine_name,
+			'parent'       => $parent,
+			'version'      => $version,
 		);
 
-		if ( $dry_run ) {
-			$this->report_dry_run( $source, $destination, $metadata_updates, $force, $activate, $machine_name );
-			return;
-		}
-
-		if ( file_exists( $destination ) ) {
-			$replacement_error = $this->get_destination_replacement_error( $destination, $parent );
+		if ( $destination_exists ) {
+			$replacement_error = $this->get_destination_replacement_error( $destination, $parent, $machine_name );
 
 			if ( null !== $replacement_error ) {
 				\WP_CLI::error(
@@ -143,28 +139,40 @@ final class GenerateChildThemeCommand {
 					)
 				);
 			}
+		}
 
-			\WP_CLI::warning( sprintf( 'Replacing existing destination because --force was provided: %s', $destination ) );
+		if ( $dry_run ) {
+			$metadata_updates = $this->collect_metadata_updates( $source, $config );
+			$this->report_dry_run( $source, $destination, $metadata_updates, $force, $activate, $machine_name );
+			return;
+		}
 
-			if ( ! $this->remove_path( $destination ) ) {
-				\WP_CLI::error( sprintf( 'Failed removing existing destination: %s', $destination ) );
+		$staging = $this->get_unique_sibling_path( $destination, 'tmp' );
+		$staged  = false;
+
+		try {
+			$staged = $this->copy_theme( $source, $staging );
+
+			if ( $staged ) {
+				$metadata_updates = $this->collect_metadata_updates( $staging, $config );
+				$staged           = $this->apply_metadata_updates( $staging, $metadata_updates );
 			}
+		} catch ( \Throwable $exception ) {
+			\WP_CLI::warning( sprintf( 'Could not finish staging the child theme: %s', $exception->getMessage() ) );
 		}
 
-		if ( ! $this->copy_theme( $source, $destination ) ) {
-			\WP_CLI::error( sprintf( 'Failed generating child theme at: %s', $destination ) );
+		if ( ! $staged ) {
+			$this->cleanup_staging_path( $staging );
+			\WP_CLI::error( sprintf( 'Failed staging child theme for destination: %s', $destination ) );
 		}
 
-		$metadata_updates = $this->collect_metadata_updates(
-			$destination,
-			array(
-				'label'        => $label,
-				'machine_name' => $machine_name,
-				'parent'       => $parent,
-				'version'      => $version,
-			)
-		);
-		$this->apply_metadata_updates( $destination, $metadata_updates );
+		if ( $destination_exists ) {
+			\WP_CLI::warning( sprintf( 'Replacing existing destination because --force was provided: %s', $destination ) );
+			$this->replace_with_staged_theme( $staging, $destination );
+		} elseif ( ! rename( $staging, $destination ) ) {
+			$this->cleanup_staging_path( $staging );
+			\WP_CLI::error( sprintf( 'Failed moving staged child theme into place at: %s', $destination ) );
+		}
 
 		if ( $activate ) {
 			$this->activate_theme( $machine_name );
@@ -240,6 +248,7 @@ final class GenerateChildThemeCommand {
 	private function collect_metadata_updates( string $root, array $config ): array {
 		$updates      = array();
 		$theme_label  = $config['label'];
+		$source_label = $this->sanitize_label_for_source( $theme_label );
 		$machine_name = $config['machine_name'];
 		$parent       = $config['parent'];
 		$version      = $config['version'];
@@ -251,8 +260,8 @@ final class GenerateChildThemeCommand {
 			$updates,
 			$root,
 			'style.css',
-			function ( string $contents ) use ( $theme_label, $machine_name, $parent ): string {
-				$contents = $this->replace_theme_header( $contents, 'Theme Name', $theme_label );
+			function ( string $contents ) use ( $source_label, $machine_name, $parent ): string {
+				$contents = $this->replace_theme_header( $contents, 'Theme Name', $source_label );
 				$contents = $this->replace_theme_header( $contents, 'Text Domain', $machine_name );
 				return $this->replace_theme_header( $contents, 'Template', $parent );
 			}
@@ -292,8 +301,8 @@ final class GenerateChildThemeCommand {
 			$updates,
 			$root,
 			'functions.php',
-			function ( string $contents ) use ( $theme_label ): string {
-				return str_replace( 'Whisk child theme hooks.', $theme_label . ' child theme hooks.', $contents );
+			function ( string $contents ) use ( $source_label ): string {
+				return str_replace( 'Whisk child theme hooks.', $source_label . ' child theme hooks.', $contents );
 			}
 		);
 
@@ -442,19 +451,21 @@ final class GenerateChildThemeCommand {
 	 *
 	 * @param string $destination Destination theme root.
 	 * @param array  $updates     File updates.
-	 * @return void
+	 * @return bool TRUE when every update succeeds.
 	 */
-	private function apply_metadata_updates( string $destination, array $updates ): void {
+	private function apply_metadata_updates( string $destination, array $updates ): bool {
 		foreach ( $updates as $update ) {
 			$path = $this->join_path( $destination, $update['file'] );
 
 			if ( false === file_put_contents( $path, $update['contents'] ) ) {
 				\WP_CLI::warning( sprintf( 'Could not update generated file: %s', $path ) );
-				continue;
+				return false;
 			}
 
 			\WP_CLI::log( sprintf( 'Updated %s.', $update['file'] ) );
 		}
+
+		return true;
 	}
 
 	/**
@@ -584,11 +595,12 @@ final class GenerateChildThemeCommand {
 	/**
 	 * Gets the reason an existing destination should not be force-replaced.
 	 *
-	 * @param string $destination Destination theme root.
-	 * @param string $parent      Selected parent theme slug.
+	 * @param string $destination  Destination theme root.
+	 * @param string $parent       Selected parent theme slug.
+	 * @param string $machine_name Requested child theme machine name.
 	 * @return string|null Error reason, or NULL when replacement is allowed.
 	 */
-	private function get_destination_replacement_error( string $destination, string $parent ): ?string {
+	private function get_destination_replacement_error( string $destination, string $parent, string $machine_name ): ?string {
 		if ( ! is_dir( $destination ) ) {
 			return 'destination is not a theme directory';
 		}
@@ -625,26 +637,81 @@ final class GenerateChildThemeCommand {
 			return 'project.emulsify.json is missing project.machineName';
 		}
 
-		$has_generated_from         = array_key_exists( 'generatedFrom', $project['project'] );
-		$has_generated_from_version = array_key_exists( 'generatedFromVersion', $project['project'] );
-
-		if ( $has_generated_from && ( ! is_string( $project['project']['generatedFrom'] ) || '' === trim( $project['project']['generatedFrom'] ) ) ) {
-			return 'project.emulsify.json has an invalid project.generatedFrom';
+		if ( $machine_name !== $project['project']['machineName'] ) {
+			return sprintf( 'project.emulsify.json machineName is "%s", expected "%s"', $project['project']['machineName'], $machine_name );
 		}
 
-		if ( $has_generated_from && self::GENERATED_FROM !== $project['project']['generatedFrom'] ) {
+		if ( ! isset( $project['project']['generatedFrom'] ) || ! is_string( $project['project']['generatedFrom'] ) || '' === trim( $project['project']['generatedFrom'] ) ) {
+			return 'project.emulsify.json is missing project.generatedFrom';
+		}
+
+		if ( self::GENERATED_FROM !== $project['project']['generatedFrom'] ) {
 			return sprintf( 'project.emulsify.json generatedFrom is "%s", expected "%s"', $project['project']['generatedFrom'], self::GENERATED_FROM );
 		}
 
-		if ( $has_generated_from && ( ! $has_generated_from_version || ! is_string( $project['project']['generatedFromVersion'] ) || '' === trim( $project['project']['generatedFromVersion'] ) ) ) {
+		if ( ! isset( $project['project']['generatedFromVersion'] ) || ! is_string( $project['project']['generatedFromVersion'] ) || '' === trim( $project['project']['generatedFromVersion'] ) ) {
 			return 'project.emulsify.json is missing project.generatedFromVersion';
 		}
 
-		if ( ! $has_generated_from && $has_generated_from_version ) {
-			return 'project.emulsify.json has project.generatedFromVersion without project.generatedFrom';
+		return null;
+	}
+
+	/**
+	 * Replaces an existing destination with a fully staged theme.
+	 *
+	 * @param string $staging     Fully generated staging directory.
+	 * @param string $destination Existing destination theme root.
+	 * @return void
+	 */
+	private function replace_with_staged_theme( string $staging, string $destination ): void {
+		$backup = $this->get_unique_sibling_path( $destination, 'bak' );
+
+		if ( ! rename( $destination, $backup ) ) {
+			$this->cleanup_staging_path( $staging );
+			\WP_CLI::error( sprintf( 'Failed moving existing destination to a backup: %s', $destination ) );
 		}
 
-		return null;
+		if ( ! rename( $staging, $destination ) ) {
+			$restored = rename( $backup, $destination );
+			$this->cleanup_staging_path( $staging );
+
+			if ( ! $restored ) {
+				\WP_CLI::error( sprintf( 'Failed installing the staged theme and restoring the previous theme. The previous theme remains at: %s', $backup ) );
+			}
+
+			\WP_CLI::error( sprintf( 'Failed installing the staged theme. The previous theme was restored at: %s', $destination ) );
+		}
+
+		if ( ! $this->remove_path( $backup ) ) {
+			\WP_CLI::warning( sprintf( 'Generated the child theme, but could not remove the previous theme backup: %s', $backup ) );
+		}
+	}
+
+	/**
+	 * Gets a unique temporary sibling path for an atomic theme swap.
+	 *
+	 * @param string $destination Destination theme root.
+	 * @param string $type        Temporary path type.
+	 * @return string Unique sibling path.
+	 */
+	private function get_unique_sibling_path( string $destination, string $type ): string {
+		do {
+			$path = sprintf( '%s.%s-%s', $destination, $type, bin2hex( random_bytes( 8 ) ) );
+		} while ( file_exists( $path ) || is_link( $path ) );
+
+		return $path;
+	}
+
+	/**
+	 * Removes a staging path after a failed generation attempt.
+	 *
+	 * @param string $path Staging path.
+	 * @return void
+	 */
+	private function cleanup_staging_path( string $path ): void {
+		if ( ! $this->remove_path( $path ) ) {
+			\WP_CLI::warning( sprintf( 'Could not clean up failed child theme staging path: %s', $path ) );
+		}
 	}
 
 	/**
@@ -695,7 +762,7 @@ final class GenerateChildThemeCommand {
 	}
 
 	/**
-	 * Removes a generated destination before force replacement.
+	 * Removes a generated, staged, or backed-up theme path.
 	 *
 	 * @param string $path Path to remove.
 	 * @return bool TRUE on success.
@@ -705,8 +772,8 @@ final class GenerateChildThemeCommand {
 			return true;
 		}
 
-		// --force removal is scoped to the computed child theme destination. The
-		// generator validates that destination before this method is called.
+		// Removal is scoped to computed staging/backup paths or to a destination
+		// whose generated-theme lineage was validated before the atomic swap.
 		if ( is_file( $path ) || is_link( $path ) ) {
 			return unlink( $path );
 		}
@@ -803,6 +870,24 @@ final class GenerateChildThemeCommand {
 		$label = function_exists( 'sanitize_text_field' ) ? sanitize_text_field( $label ) : trim( strip_tags( $label ) );
 
 		return '' !== $label ? $label : 'New Theme';
+	}
+
+	/**
+	 * Restricts a theme label to characters safe inside source comments.
+	 *
+	 * The richer human-readable label remains available for JSON metadata, where
+	 * JSON encoding handles it safely. Source files only receive letters, numbers,
+	 * spaces, and hyphens so a crafted label cannot terminate a comment.
+	 *
+	 * @param string $label Human-readable theme label.
+	 * @return string Source-safe theme label.
+	 */
+	private function sanitize_label_for_source( string $label ): string {
+		$source_label = preg_replace( '/[^\p{L}\p{N} -]+/u', '', $label );
+		$source_label = preg_replace( '/ +/', ' ', is_string( $source_label ) ? $source_label : '' );
+		$source_label = trim( is_string( $source_label ) ? $source_label : '' );
+
+		return '' !== $source_label ? $source_label : 'New Theme';
 	}
 
 	/**

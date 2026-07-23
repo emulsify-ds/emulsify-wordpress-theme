@@ -120,13 +120,14 @@ Generate a project child theme from the bundled Whisk starter with WP-CLI:
 ```sh
 wp emulsify "Acme Site" --dry-run
 wp emulsify "Acme Site" --machine-name=acme-site
+wp emulsify "Acme Site" --machine-name=acme-site --parent=emulsify
 wp emulsify "Acme Site" --machine-name=acme-site --force
 wp emulsify "Acme Site" --machine-name=acme-site --activate
 ```
 
-The generator copies `emulsify/whisk` to a sibling child theme directory, updates WordPress theme headers, package metadata, Emulsify project metadata, and visible starter labels, then optionally activates the generated child theme.
+The generator copies `<parent>/whisk` to a sibling child theme directory, updates WordPress theme headers, package metadata, Emulsify project metadata, and visible starter labels, then optionally activates the generated child theme. `--parent=<slug>` selects a different installed parent theme directory; it defaults to `emulsify`.
 
-`--force` only replaces an existing destination when it already looks like an Emulsify-generated child theme. It refuses unrelated theme directories; use `--dry-run --force` to inspect replacement intent without deleting files.
+`--force` only replaces an existing destination when its WordPress platform, `generatedFrom: "emulsify-wordpress"` lineage, generated version, parent template, and machine name all match the requested generated child theme. The replacement is staged atomically so a copy failure leaves the existing theme intact; use `--dry-run --force` to inspect replacement intent without deleting files.
 
 For Emulsify CLI integration, the standalone starter repository is `https://github.com/emulsify-ds/emulsify-wordpress-starter`. It represents the generated child theme layer from `whisk/`, not the parent runtime theme root, and generated projects still declare `Template: emulsify` so WordPress loads the installed parent theme.
 
