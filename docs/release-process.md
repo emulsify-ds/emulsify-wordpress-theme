@@ -41,6 +41,14 @@ npm run publish-test -- --no-ci
 
 `release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
 
+## Installable release artifact
+
+Run `npm run build:dist` to create `dist-artifact/emulsify.zip`. The build stages an explicit parent-theme runtime file list under a top-level `emulsify/` directory and installs the versions pinned in `composer.lock` with `--no-dev --optimize-autoloader` directly into that staged tree. The ZIP therefore bundles `vendor/` and can be installed without running Composer after download.
+
+The archive includes the runtime PHP entry points, `includes/`, `templates/`, `src/`, `style.css`, `theme.json`, the screenshot, license, README, and production Composer dependencies. It excludes repository metadata, `.github/`, `docs/`, root npm and Composer metadata, `node_modules/`, development configuration, smoke tests, and the separate `whisk/` child starter.
+
+The semantic-release publish job sets up PHP 8.3 and Composer, builds this archive, and lets `@semantic-release/github` attach it to the GitHub release as **Emulsify WordPress theme (with dependencies)**. WordPress.org SVN deployment remains a future step after the project has a WordPress.org profile; it is not performed by this workflow.
+
 ## CI
 
 The WordPress Theme Readiness workflow runs on pull requests, manual dispatch, and a weekly schedule.

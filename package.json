@@ -50,6 +50,7 @@
     "smoke:twig-project-namespace": "php .github/scripts/twig-project-namespace-smoke.php",
     "whisk:build": "npm --prefix whisk run build",
     "whisk:install": "npm --prefix whisk install --package-lock=false --ignore-scripts",
+    "build:dist": "bash scripts/build-dist.sh",
     "publish": "semantic-release --tag-format '${version}'",
     "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"
