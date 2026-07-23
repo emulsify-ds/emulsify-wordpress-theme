@@ -379,6 +379,7 @@ function runStaticChecks() {
       '.github/scripts/pattern-registry-smoke.php',
       '.github/scripts/wordpress-starter-init-smoke.cjs',
       '.github/scripts/theme-filters-smoke.php',
+      '.github/scripts/twig-autoescape-smoke.php',
       '.github/scripts/twig-project-namespace-smoke.php',
       '.github/scripts/twig-switch-smoke.php',
       '.github/scripts/wordpress-fixture-smoke.cjs',
@@ -496,6 +497,18 @@ function runStaticChecks() {
     return 'Attribute helper runtime and smoke fixture are wired.';
   });
 
+  runStaticCheck('Twig HTML autoescaping', () => {
+    const twig = readFile('includes/Runtime/Twig.php');
+    const smoke = readFile('.github/scripts/twig-autoescape-smoke.php');
+
+    ensure(twig.includes("timber/twig/environment/options"), 'Timber integration should register the Twig environment options filter.');
+    ensure(twig.includes("$options['autoescape'] = 'html'"), 'Timber integration should enable HTML autoescaping.');
+    ensure(smoke.includes('{{ fields.heading }}'), 'Twig autoescape smoke should render a field value.');
+    ensure(smoke.includes('<script>alert(1)</script>'), 'Twig autoescape smoke should use a hostile script fixture.');
+    ensure(smoke.includes("$definition['is_safe']"), 'Twig autoescape smoke should register helper safety metadata.');
+    return 'Twig HTML autoescaping is registered and covered by a behavioral smoke test.';
+  });
+
   runStaticCheck('Twig switch tags', () => {
     const twig = readFile('includes/Runtime/Twig.php');
     const extension = readFile('includes/Twig/SwitchExtension.php');
@@ -596,6 +609,14 @@ function runStaticChecks() {
     ensure(locator.includes('wp_get_environment_type') && locator.includes('WP_DEBUG'), 'Component locator should keep active development uncached unless explicitly enabled.');
     ensure(registry.includes('$components = new ComponentLocator()'), 'Block registry should share one ComponentLocator instance.');
     ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use ComponentLocator.');
+    ensure(!acfBlocks.includes("$args['data']['twig_template'] ="), 'ACF/Twig block registration should not persist template paths in editor block data.');
+    ensure(
+      acfBlocks.includes("$block['twig_template']")
+      && acfBlocks.includes("$block['data']['twig_template']")
+      && acfBlocks.indexOf("$block['twig_template']") < acfBlocks.indexOf("$block['data']['twig_template']"),
+      'ACF/Twig rendering should prefer the registered template over persisted block data.'
+    );
+    ensure(smoke.includes('../../hostile.twig'), 'Component locator smoke should prove untrusted persisted template paths are rejected.');
     ensure(acfBlocks.includes('acf_block_name'), 'ACF/Twig block registration should skip duplicate final ACF block names.');
     ensure(acfBlocks.includes('acf_get_block_type'), 'ACF/Twig block registration should avoid already registered ACF block names.');
     ensure(nativeBlocks.includes('$this->components->native_block_directories()'), 'Native block discovery should use ComponentLocator.');
@@ -997,6 +1018,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:patterns'), 'PR validation should run the pattern registry smoke test.');
     ensure(prValidationScript.includes('smoke:starter-init'), 'PR validation should run the WordPress starter init smoke test.');
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
+    ensure(prValidationScript.includes('smoke:twig-autoescape'), 'PR validation should run the Twig autoescape smoke test.');
     ensure(prValidationScript.includes('smoke:twig-switch'), 'PR validation should run the Twig switch smoke test.');
     ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');

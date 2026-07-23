@@ -25,8 +25,25 @@ final class Twig {
 	 */
 	public function register(): void {
 		add_filter( 'timber/loader/loader', array( $this, 'loader_paths' ) );
+		add_filter( 'timber/twig/environment/options', array( $this, 'environment_options' ) );
 		add_filter( 'timber/twig/functions', array( $this, 'functions' ) );
 		add_filter( 'timber/twig', array( $this, 'extensions' ) );
+	}
+
+	/**
+	 * Enables HTML autoescaping for every Timber render path.
+	 *
+	 * Twig context can contain editor-controlled ACF fields and block attributes.
+	 * Escaping by default prevents child templates from turning those values into
+	 * executable markup unless an author explicitly marks trusted HTML as raw.
+	 *
+	 * @param array $options Existing Twig environment options.
+	 * @return array Updated Twig environment options.
+	 */
+	public function environment_options( array $options ): array {
+		$options['autoescape'] = 'html';
+
+		return $options;
 	}
 
 	/**
