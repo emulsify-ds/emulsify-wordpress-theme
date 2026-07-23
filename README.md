@@ -6,13 +6,31 @@ Emulsify WordPress 2.0.0 is a Timber-first WordPress parent theme for teams buil
 
 The parent theme provides the WordPress runtime: theme setup, Timber bootstrapping, Twig namespaces and helpers, template fallbacks, asset loading, and optional block registration. Generated child themes provide the project layer: components, templates, source Sass and JavaScript, compiled assets, and site-specific overrides.
 
+## Installation
+
+### Composer (primary)
+
+Track the parent theme through the site project's Composer configuration and install it as `emulsify`:
+
+```sh
+composer require emulsify-ds/emulsify-wordpress
+```
+
+Composer-based applications should also require `timber/timber` from the application-level Composer project so Timber loads before WordPress activates the theme. If the parent theme owns its dependencies instead, run `composer install` inside the installed `emulsify` directory.
+
+### Manual release ZIP
+
+Download `emulsify.zip` from the matching [GitHub release](https://github.com/emulsify-ds/emulsify-wordpress/releases), then upload it through Appearance > Themes > Add New > Upload Theme. The release ZIP already includes production Composer dependencies under `vendor/`, so a manual installation does not need to run Composer.
+
+The archive installs into the required `emulsify/` directory. A WordPress.org listing and SVN deployment are planned as a future release step; they are not part of the current release workflow.
+
 ## Requirements
 
 - WordPress 6.7 or newer.
 - PHP 8.3 or newer.
-- Composer 2.
+- Composer 2 for Composer-based installation and parent-theme maintenance.
 - Node.js 24. Root release tooling expects `>=24.10`; generated child themes expect `>=24`.
-- Timber 2, preferably installed with Composer.
+- Timber 2, installed by the site project or bundled in the manual release ZIP.
 - WP-CLI when generating child themes or running the full WordPress fixture smoke test.
 
 ## Using Emulsify WordPress in a site project
@@ -31,7 +49,7 @@ wp-content/themes/emulsify
 wp-content/themes/whisk
 ```
 
-Timber 2 must be loaded before the theme renders. Site projects can satisfy that requirement in either place:
+Timber 2 must be loaded before the theme renders. Composer-based site projects can satisfy that requirement in either place:
 
 - Require `timber/timber` from the application-level Composer project.
 - Run Composer inside the parent theme when the parent theme owns its PHP dependencies:
@@ -100,13 +118,14 @@ composer install
 npm ci --ignore-scripts
 ```
 
-Composer install creates the runtime autoloader. After adding or renaming parent runtime classes, run `composer dump-autoload` so Composer's optimized classmap sees the current files. Manual theme installs without Composer still use the Bootstrap fallback loader.
+Composer install creates the runtime autoloader. After adding or renaming parent runtime classes, run `composer dump-autoload` so Composer's optimized classmap sees the current files. The supported manual release ZIP ships that autoloader and its production dependencies; a source checkout without `vendor/` still uses the Bootstrap fallback loader.
 
 | Command | Purpose |
 | --- | --- |
 | `npm run lint:php` | Lint all PHP files with `php -l`. |
 | `npm run pr:check` | Run the practical, stubbed pull request validation suite. |
 | `npm run release:check` | Run release-readiness checks. |
+| `npm run build:dist` | Build the installable `dist-artifact/emulsify.zip` release archive. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
 Normal PR checks do not start MySQL or run the full WordPress fixture. `release:check` includes that fixture path, which requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.

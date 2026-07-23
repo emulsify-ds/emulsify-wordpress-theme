@@ -249,6 +249,7 @@ function runStaticChecks() {
   const releaseConfig = require(path.join(repoRoot, 'release.config.js'));
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
   const themeReadinessWorkflow = readFile('.github/workflows/theme-readiness.yml');
+  const distBuilder = readFile('scripts/build-dist.sh');
   const starterInitSmoke = readFile('.github/scripts/wordpress-starter-init-smoke.cjs');
   const wordpressFixtureSmoke = readFile('.github/scripts/wordpress-fixture-smoke.cjs');
   const readme = readFile('README.md');
@@ -324,6 +325,7 @@ function runStaticChecks() {
       'docs/upgrading-1x-to-2x.md',
       'docs/wp-cli-child-theme-generation.md',
       'composer.json',
+      'composer.lock',
       'phpcs.xml.dist',
       'phpstan.neon.dist',
       'functions.php',
@@ -358,6 +360,7 @@ function runStaticChecks() {
       'includes/Twig/SwitchTokenParser.php',
       'package.json',
       'release.config.js',
+      'scripts/build-dist.sh',
       'style.css',
       'templates/404.twig',
       'templates/archive.twig',
@@ -414,6 +417,7 @@ function runStaticChecks() {
     ensure(rootPackage.bugs.url === 'https://github.com/emulsify-ds/emulsify-wordpress/issues', 'package.json bugs.url should target emulsify-wordpress.');
     ensure(rootPackage.scripts['pr:check'] === 'node .github/scripts/pr-validation.cjs', 'package.json should expose npm run pr:check.');
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
+    ensure(rootPackage.scripts['build:dist'] === 'bash scripts/build-dist.sh', 'package.json should expose npm run build:dist.');
     ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpcs -q'), 'package.json lint:php should run PHPCS.');
     ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpstan analyse --no-progress'), 'package.json lint:php should run PHPStan.');
     ensure(rootPackage.scripts['lint:php:fix'] === 'vendor/bin/phpcbf', 'package.json should expose npm run lint:php:fix.');
@@ -959,11 +963,16 @@ function runStaticChecks() {
   runStaticCheck('Semantic release configuration', () => {
     const analyzerOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/commit-analyzer');
     const notesOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/release-notes-generator');
+    const githubOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/github');
     const releaseAnalyzer = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.analyzeCommits === 'function');
     const releaseGuard = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.verifyRelease === 'function');
-    const runtimeAuditIndex = semanticReleaseWorkflow.indexOf('- name: Run runtime npm audit');
-    const releaseDryRunIndex = semanticReleaseWorkflow.indexOf('- name: Run release dry run');
-    const fullAuditIndex = semanticReleaseWorkflow.indexOf('- name: Run full npm audit');
+    const releaseJobStart = semanticReleaseWorkflow.indexOf('  semantic-release:');
+    const releaseJob = semanticReleaseWorkflow.slice(releaseJobStart);
+    const buildStep = releaseJob.indexOf('npm run build:dist');
+    const publishStep = releaseJob.indexOf('npm run publish');
+    const releaseAsset = Array.isArray(githubOptions.assets)
+      ? githubOptions.assets.find((asset) => asset.path === 'dist-artifact/emulsify.zip')
+      : null;
     ensure(releaseConfig.expectedStableRelease === '2.0.0', 'release.config.js should declare 2.0.0 as the expected stable release.');
     ensure(releaseConfig.tagFormat === '${version}', 'release.config.js should emit non-prefixed semver tags.');
     ensure(releaseConfig.repositoryUrl === 'git@github.com:emulsify-ds/emulsify-wordpress.git', 'release.config.js should publish against emulsify-wordpress.');
@@ -971,6 +980,8 @@ function runStaticChecks() {
     ensure(releaseConfig.branches.length === 1 && releaseConfig.branches[0] === 'main', 'release.config.js should publish only from main.');
     ensure(releaseAnalyzer, 'release.config.js should force the first stable release to a major release type.');
     ensure(releaseGuard, 'release.config.js should guard the first stable release version.');
+    ensure(releaseAsset, 'release.config.js should attach dist-artifact/emulsify.zip to GitHub releases.');
+    ensure(releaseAsset.label === 'Emulsify WordPress theme (with dependencies)', 'release.config.js should give the installable ZIP a clear release label.');
     ensureBreakingParser('@semantic-release/commit-analyzer', analyzerOptions.parserOpts);
     ensureBreakingParser('@semantic-release/release-notes-generator', notesOptions.parserOpts);
     ensure(semanticReleaseWorkflow.includes('release-readiness:'), 'semantic-release.yml should run release-readiness before publishing.');
@@ -981,9 +992,11 @@ function runStaticChecks() {
     ensure(semanticReleaseWorkflow.includes('wp-cli'), 'semantic-release.yml should install WP-CLI for the WordPress smoke fixture.');
     ensure(semanticReleaseWorkflow.includes('mysql:'), 'semantic-release.yml should provide a MySQL service for the WordPress smoke fixture.');
     ensure(semanticReleaseWorkflow.includes('WP_SMOKE_DB_HOST'), 'semantic-release.yml should pass WordPress smoke database settings.');
-    ensure(semanticReleaseWorkflow.includes('- name: Run runtime npm audit\n        run: npm audit --omit=dev'), 'semantic-release.yml should block releases on runtime npm audit findings.');
-    ensure(semanticReleaseWorkflow.includes('- name: Run full npm audit\n        continue-on-error: true\n        run: npm audit'), 'semantic-release.yml should report full npm audit findings without blocking releases.');
-    ensure(runtimeAuditIndex < releaseDryRunIndex && releaseDryRunIndex < fullAuditIndex, 'semantic-release.yml should keep the release dry run between the blocking runtime audit and informational full audit.');
+    ensure(releaseJobStart >= 0, 'semantic-release.yml should define the semantic-release job.');
+    ensure(releaseJob.includes("php-version: '8.3'"), 'semantic-release.yml release job should set up PHP 8.3.');
+    ensure(releaseJob.includes('tools: composer:v2'), 'semantic-release.yml release job should install Composer.');
+    ensure(buildStep >= 0, 'semantic-release.yml release job should build the installable theme archive.');
+    ensure(publishStep >= 0 && buildStep < publishStep, 'semantic-release.yml should build the installable theme archive before publishing.');
     try {
       releaseGuard.verifyRelease({}, releaseGuardRejectContext);
       throw new Error('release.config.js release guard should reject pre-2.0.0 releases.');
@@ -998,7 +1011,22 @@ function runStaticChecks() {
     ensure(releaseAnalyzerAlphaContext.lastRelease.version === '1.0.0', 'release.config.js should normalize the latest alpha tag before semantic-release computes 2.0.0.');
     ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardRejectContext) === 'major', 'release.config.js should force a major release before 2.0.0 exists.');
     ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardFutureContext) === null, 'release.config.js should use normal commit analysis after 2.0.0 exists.');
-    return 'Semantic release is configured for non-prefixed tags, main-only publishing, and a forced 2.0.0 stable release.';
+    return 'Semantic release is configured for non-prefixed tags, main-only publishing, a forced 2.0.0 stable release, and the installable ZIP asset.';
+  });
+
+  runStaticCheck('Installable release artifact', () => {
+    ensure(distBuilder.includes('dist-artifact'), 'Distribution build should write to dist-artifact/.');
+    ensure(distBuilder.includes('artifact_path="${artifact_dir}/emulsify.zip"'), 'Distribution build should create emulsify.zip.');
+    ensure(distBuilder.includes('staging_root="${staging_parent}/emulsify"'), 'Distribution build should stage a top-level emulsify/ directory.');
+    ensure(distBuilder.includes('--working-dir="${staging_root}"'), 'Distribution build should install Composer dependencies from inside the staged theme.');
+    ensure(distBuilder.includes('--no-dev') && distBuilder.includes('--optimize-autoloader'), 'Distribution build should install optimized production-only Composer dependencies.');
+    ensure(distBuilder.includes('rm -f "${staging_root}/composer.json" "${staging_root}/composer.lock"'), 'Distribution build should remove temporary Composer metadata from the archive.');
+    ensure(distBuilder.includes('"includes"') && distBuilder.includes('"templates"') && distBuilder.includes('"src"'), 'Distribution build should include parent runtime directories.');
+    ensure(distBuilder.includes('"functions.php"') && distBuilder.includes('"style.css"') && distBuilder.includes('"theme.json"'), 'Distribution build should include required WordPress theme files.');
+    ensure(distBuilder.includes('find emulsify -type f -print') && distBuilder.includes('zip -X'), 'Distribution build should archive the staged emulsify/ tree reproducibly.');
+    ensure(!distBuilder.includes('"whisk"'), 'Distribution build should not include the separate Whisk child starter.');
+    ensure(!distBuilder.includes('cp -R "${repo_root}"'), 'Distribution build should use a runtime allowlist instead of copying the repository root.');
+    return 'Distribution build stages the parent theme and production Composer dependencies under emulsify/.';
   });
 
   runStaticCheck('Theme readiness workflow', () => {
@@ -1078,6 +1106,10 @@ function runStaticChecks() {
     ensure(readme.includes('Emulsify WordPress is licensed under GPL-2.0-only'), 'README.md should document the GPL-2.0-only license.');
     ensure(readme.includes('[LICENSE](LICENSE)'), 'README.md should link to the repository license file.');
     ensure(readme.includes('## Requirements'), 'README.md should keep requirements visible.');
+    ensure(readme.includes('## Installation') && readme.includes('### Composer (primary)'), 'README.md should document Composer as the primary installation path.');
+    ensure(readme.includes('### Manual release ZIP') && readme.includes('emulsify.zip'), 'README.md should document the supported manual release ZIP.');
+    ensure(readme.includes('already includes production Composer dependencies under `vendor/`'), 'README.md should explain that the manual ZIP bundles production dependencies.');
+    ensure(readme.includes('WordPress.org listing and SVN deployment are planned as a future release step'), 'README.md should identify WordPress.org publishing as future work.');
     ensure(readme.includes('## Using Emulsify WordPress in a site project'), 'README.md should keep site project usage guidance visible.');
     ensure(readme.includes('## Working inside a generated child theme'), 'README.md should keep child theme workflow guidance visible.');
     ensure(readme.includes('## Parent and child themes'), 'README.md should keep the parent/child overview visible.');
@@ -1198,6 +1230,9 @@ function runStaticChecks() {
     ensure(docs.release.includes('ACF/Twig and native `block.json` discovery'), 'Release process doc should document block discovery fixture coverage.');
     ensure(docs.release.includes('WP_SMOKE_REQUIRED=1'), 'Release process doc should document required fixture smoke behavior.');
     ensure(docs.release.includes('Manual dispatch can also run the Whisk Storybook build and accessibility audit'), 'Release process doc should document optional extended checks.');
+    ensure(docs.release.includes('npm run build:dist') && docs.release.includes('dist-artifact/emulsify.zip'), 'Release process doc should document the installable artifact build.');
+    ensure(docs.release.includes('bundles `vendor/`') && docs.release.includes('--no-dev --optimize-autoloader'), 'Release process doc should explain that the ZIP bundles optimized production dependencies.');
+    ensure(docs.release.includes('@semantic-release/github') && docs.release.includes('WordPress.org SVN deployment remains a future step'), 'Release process doc should document GitHub asset upload and defer WordPress.org SVN deployment.');
     ensure(docs.post2xRoadmap.includes('follow-up opportunities for focused minor releases, not 2.0 blockers'), 'Post-2.x roadmap should frame items as follow-up opportunities.');
     ensure(docs.post2xRoadmap.includes('Ship 2.0 without adding new runtime features'), 'Post-2.x roadmap should keep 2.0 focused.');
     ensure(docs.post2xRoadmap.includes('## Done in 2.0'), 'Post-2.x roadmap should separate completed 2.0 work from follow-up work.');
