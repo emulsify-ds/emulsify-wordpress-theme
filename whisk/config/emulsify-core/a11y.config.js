@@ -1,4 +1,10 @@
 export default {
+  // Resolve from node_modules/@emulsify/core to this generated theme's build.
+  storybookBuildDir: '../../../.out',
+  // Let Storybook mount the selected story before axe inspects the iframe.
+  pa11y: {
+    wait: 1000,
+  },
   // A11y linting is done on a component-by-component
   // basis, which results in the linter reporting some errors that
   // should be ignored. These codes and descriptions allow for those

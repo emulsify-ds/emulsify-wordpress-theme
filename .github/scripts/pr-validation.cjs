@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Practical PR gate for checks that do not need a database-backed WordPress
-// install. The Whisk starter is installed but not built because a generated
-// child theme intentionally fails Vite until a component system is installed.
+// install. PHP analysis and CI-seeded Whisk build/a11y coverage have dedicated
+// workflow jobs so their status is visible independently on pull requests.
 
 const childProcess = require('child_process');
 const path = require('path');
@@ -23,14 +23,13 @@ function run(label, command, args) {
 }
 
 run('Validate Composer metadata', 'composer', ['validate', '--no-check-publish', '--strict']);
-run('Install Composer dependencies for PHP lint and Twig smoke coverage', 'composer', [
+run('Install Composer dependencies for Twig smoke coverage', 'composer', [
   'install',
   '--no-interaction',
   '--no-progress',
   '--prefer-dist',
 ]);
 run('Run Bootstrap loader smoke test', 'npm', ['run', 'smoke:bootstrap-loader']);
-run('Run PHP lint', 'npm', ['run', 'lint:php']);
 run('Run ACF Local JSON smoke test', 'npm', ['run', 'smoke:acf-json']);
 run('Run asset manifest smoke test', 'npm', ['run', 'smoke:asset-manifest']);
 run('Run Twig attribute helper smoke test', 'npm', ['run', 'smoke:attributes']);
