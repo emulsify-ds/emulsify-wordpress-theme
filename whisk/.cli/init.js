@@ -30,6 +30,15 @@ const writeJsonIfChanged = (filePath, data) => {
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const sanitizeLabelForSource = (label) => {
+  const sourceLabel = label
+    .replace(/[^\p{L}\p{N} -]+/gu, '')
+    .replace(/ +/g, ' ')
+    .trim();
+
+  return sourceLabel || 'New Theme';
+};
+
 const replaceThemeHeader = (contents, field, value) => {
   const pattern = new RegExp(`^(\\s*\\*\\s*${escapeRegExp(field)}:\\s*).*$`, 'mi');
   let found = false;
@@ -65,11 +74,11 @@ const getProjectConfig = () => {
   return config;
 };
 
-const updateStyleCss = ({ name, machineName }) => {
+const updateStyleCss = ({ sourceLabel, machineName }) => {
   const filePath = path.join(ROOT, 'style.css');
   let contents = readText(filePath);
 
-  contents = replaceThemeHeader(contents, 'Theme Name', name);
+  contents = replaceThemeHeader(contents, 'Theme Name', sourceLabel);
   contents = replaceThemeHeader(contents, 'Text Domain', machineName);
   contents = replaceThemeHeader(contents, 'Template', PARENT_THEME);
 
@@ -121,11 +130,11 @@ const updateProjectConfig = (config, { name, machineName, generatedFromVersion }
   writeJsonIfChanged(projectConfigPath, config);
 };
 
-const updateFunctionsPhp = ({ name }) => {
+const updateFunctionsPhp = ({ sourceLabel }) => {
   const filePath = path.join(ROOT, 'functions.php');
   const contents = readText(filePath).replace(
     'Whisk child theme hooks.',
-    `${name} child theme hooks.`,
+    `${sourceLabel} child theme hooks.`,
   );
 
   writeTextIfChanged(filePath, contents);
@@ -172,6 +181,7 @@ const main = () => {
   const config = getProjectConfig();
   const project = {
     name: config.project.name,
+    sourceLabel: sanitizeLabelForSource(config.project.name),
     machineName: config.project.machineName,
     generatedFromVersion: getGeneratedFromVersion(),
   };
