@@ -923,6 +923,9 @@ function runStaticChecks() {
     const notesOptions = getReleasePluginOptions(releaseConfig, '@semantic-release/release-notes-generator');
     const releaseAnalyzer = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.analyzeCommits === 'function');
     const releaseGuard = releaseConfig.plugins.find((plugin) => plugin && typeof plugin.verifyRelease === 'function');
+    const runtimeAuditIndex = semanticReleaseWorkflow.indexOf('- name: Run runtime npm audit');
+    const releaseDryRunIndex = semanticReleaseWorkflow.indexOf('- name: Run release dry run');
+    const fullAuditIndex = semanticReleaseWorkflow.indexOf('- name: Run full npm audit');
     ensure(releaseConfig.expectedStableRelease === '2.0.0', 'release.config.js should declare 2.0.0 as the expected stable release.');
     ensure(releaseConfig.tagFormat === '${version}', 'release.config.js should emit non-prefixed semver tags.');
     ensure(releaseConfig.repositoryUrl === 'git@github.com:emulsify-ds/emulsify-wordpress.git', 'release.config.js should publish against emulsify-wordpress.');
@@ -940,6 +943,9 @@ function runStaticChecks() {
     ensure(semanticReleaseWorkflow.includes('wp-cli'), 'semantic-release.yml should install WP-CLI for the WordPress smoke fixture.');
     ensure(semanticReleaseWorkflow.includes('mysql:'), 'semantic-release.yml should provide a MySQL service for the WordPress smoke fixture.');
     ensure(semanticReleaseWorkflow.includes('WP_SMOKE_DB_HOST'), 'semantic-release.yml should pass WordPress smoke database settings.');
+    ensure(semanticReleaseWorkflow.includes('- name: Run runtime npm audit\n        run: npm audit --omit=dev'), 'semantic-release.yml should block releases on runtime npm audit findings.');
+    ensure(semanticReleaseWorkflow.includes('- name: Run full npm audit\n        continue-on-error: true\n        run: npm audit'), 'semantic-release.yml should report full npm audit findings without blocking releases.');
+    ensure(runtimeAuditIndex < releaseDryRunIndex && releaseDryRunIndex < fullAuditIndex, 'semantic-release.yml should keep the release dry run between the blocking runtime audit and informational full audit.');
     try {
       releaseGuard.verifyRelease({}, releaseGuardRejectContext);
       throw new Error('release.config.js release guard should reject pre-2.0.0 releases.');
@@ -959,6 +965,8 @@ function runStaticChecks() {
 
   runStaticCheck('Theme readiness workflow', () => {
     const prValidationScript = readFile('.github/scripts/pr-validation.cjs');
+    const runtimeAuditIndex = themeReadinessWorkflow.indexOf('- name: Run runtime npm audit');
+    const fullAuditIndex = themeReadinessWorkflow.indexOf('- name: Run full npm audit');
 
     ensure(themeReadinessWorkflow.includes('name: WordPress Theme Readiness'), 'theme-readiness.yml should identify the WordPress theme readiness workflow.');
     ensure(themeReadinessWorkflow.includes('pull_request:'), 'theme-readiness.yml should run for pull_request events.');
@@ -969,8 +977,9 @@ function runStaticChecks() {
     ensure(themeReadinessWorkflow.includes("php-version: '8.3'"), 'theme-readiness.yml should set up PHP 8.3.');
     ensure(themeReadinessWorkflow.includes('npm ci --ignore-scripts'), 'theme-readiness.yml should install root npm dependencies cleanly.');
     ensure(themeReadinessWorkflow.includes('composer validate --no-check-publish --strict'), 'theme-readiness.yml should validate Composer metadata.');
-    ensure(themeReadinessWorkflow.includes('npm audit --omit=dev'), 'theme-readiness.yml should run runtime npm audit.');
-    ensure(themeReadinessWorkflow.includes('npm audit'), 'theme-readiness.yml should run full npm audit.');
+    ensure(themeReadinessWorkflow.includes('- name: Run runtime npm audit\n        run: npm audit --omit=dev'), 'theme-readiness.yml should block PR checks on runtime npm audit findings.');
+    ensure(themeReadinessWorkflow.includes('- name: Run full npm audit\n        continue-on-error: true\n        run: npm audit'), 'theme-readiness.yml should report full npm audit findings without blocking PR checks.');
+    ensure(runtimeAuditIndex < fullAuditIndex, 'theme-readiness.yml should run the blocking runtime audit before the informational full audit.');
     ensure(themeReadinessWorkflow.includes('npm run lint:php'), 'theme-readiness.yml should run PHP lint.');
     ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke checks to npm run pr:check.');
     ensure(themeReadinessWorkflow.includes('npm run release:check'), 'theme-readiness.yml should run release readiness checks.');
