@@ -120,17 +120,31 @@ npm ci --ignore-scripts
 
 Composer install creates the runtime autoloader. After adding or renaming parent runtime classes, run `composer dump-autoload` so Composer's optimized classmap sees the current files. The supported manual release ZIP ships that autoloader and its production dependencies; a source checkout without `vendor/` still uses the Bootstrap fallback loader.
 
+### Linting and static analysis
+
+Install the PHP development dependencies, then run the combined coding-standards and static-analysis command:
+
+```sh
+composer install
+npm run lint:php
+```
+
+`lint:php` runs PHPCS with `phpcs.xml.dist`, followed by PHPStan with `phpstan.neon.dist`. Both configurations cover `includes/` and the parent theme's root PHP entry points, including `functions.php`. Use `npm run lint:php:fix` to apply safe PHPCBF coding-standard fixes, then rerun `npm run lint:php` to confirm PHPStan and the remaining PHPCS checks.
+
+The `.husky/pre-commit` hook already runs `npm run lint`, which delegates to this PHP check.
+
 | Command | Purpose |
 | --- | --- |
-| `npm run lint:php` | Lint all PHP files with `php -l`. |
+| `npm run lint:php` | Run PHPCS and PHPStan across the parent runtime. |
+| `npm run lint:php:fix` | Apply PHPCBF fixes for supported coding-standard violations. |
 | `npm run pr:check` | Run the practical, stubbed pull request validation suite. |
 | `npm run release:check` | Run release-readiness checks. |
 | `npm run build:dist` | Build the installable `dist-artifact/emulsify.zip` release archive. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
-Normal PR checks do not start MySQL or run the full WordPress fixture. `release:check` includes that fixture path, which requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable, and fails on missing fixture prerequisites when `WP_SMOKE_REQUIRED=1` is set.
+Pull requests to the configured release branches run four visible readiness jobs: practical smoke checks, dedicated PHPCS/PHPStan analysis, the MySQL-backed WordPress fixture, and a Whisk Storybook accessibility audit. The WordPress job sets `WP_SMOKE_REQUIRED=1`, so missing WP-CLI/MySQL prerequisites or route render failures fail the job instead of producing a skip. The Whisk job copies an accessible CI-only story and Vite entry into the otherwise component-agnostic starter before building and running axe.
 
-Before merging the 2.0 release branch, maintainers should run GitHub Actions > `WordPress Theme Readiness` on `release-2.x` with the `wordpress_fixture` input enabled. Success means both `Practical theme readiness` and `WordPress fixture smoke` pass. Release publishing also requires that full fixture path before semantic-release can publish.
+Nightly scheduled runs repeat the WordPress fixture and Whisk accessibility audit. Manual GitHub Actions > `WordPress Theme Readiness` runs can select either extended fixture with the `wordpress_fixture` and `extended_checks` inputs. Local `release:check` still skips the database fixture when prerequisites are unavailable unless `WP_SMOKE_REQUIRED=1` is set. Release publishing also requires the full WordPress fixture path before semantic-release can publish.
 
 ## Generate a child theme
 

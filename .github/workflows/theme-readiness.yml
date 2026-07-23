@@ -1,9 +1,9 @@
 name: WordPress Theme Readiness
 
-# Pull requests run practical checks without starting MySQL. Manual and
-# scheduled runs can exercise the full WordPress fixture with WP-CLI and MySQL.
-# For the 2.0 release branch, maintainers should run the manual workflow with
-# wordpress_fixture enabled before merging.
+# Pull requests run practical checks, dedicated PHP analysis, the full
+# WordPress fixture, and a CI-seeded Whisk Storybook accessibility audit.
+# Scheduled runs exercise the same extended coverage, while manual inputs can
+# select either expensive fixture independently.
 on:
   pull_request:
     branches:
@@ -19,12 +19,12 @@ on:
         type: boolean
         default: true
       extended_checks:
-        description: Run the Whisk Storybook build and accessibility audit.
+        description: Run the CI-seeded Whisk Storybook build and accessibility audit.
         required: false
         type: boolean
         default: false
   schedule:
-    - cron: '17 11 * * 1'
+    - cron: '17 11 * * *'
 
 permissions:
   contents: read
@@ -60,7 +60,7 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --no-check-publish --strict
 
-      - name: Install Composer dependencies for PHP lint
+      - name: Install Composer dependencies for runtime smoke coverage
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Run runtime npm audit
@@ -70,24 +70,47 @@ jobs:
         continue-on-error: true
         run: npm audit
 
-      - name: Run PHP lint
-        run: npm run lint:php
-
       - name: Run PR validation checks
         run: npm run pr:check
 
       - name: Run release readiness checks
         run: npm run release:check
 
+  php-lint:
+    name: PHP coding standards and static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run PHPCS and PHPStan
+        run: npm run lint:php
+
   wordpress-fixture:
     name: WordPress fixture smoke
     if: >-
-      github.event_name != 'pull_request' &&
-      (
-        github.event_name == 'schedule' ||
-        (github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)
-      )
+      github.event_name == 'pull_request' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       mysql:
         image: mysql:8.0
@@ -137,8 +160,12 @@ jobs:
 
   extended-whisk:
     name: Extended Whisk Storybook and a11y
-    if: github.event_name == 'workflow_dispatch' && inputs.extended_checks
+    if: >-
+      github.event_name == 'pull_request' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.extended_checks)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -155,5 +182,10 @@ jobs:
       - name: Install Whisk dependencies
         run: npm run whisk:install
 
+      - name: Seed CI-only Whisk component
+        run: cp -R .github/fixtures/whisk-a11y/. whisk/src/components/
+
       - name: Build Storybook and run a11y
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
         run: npm --prefix whisk run a11y
