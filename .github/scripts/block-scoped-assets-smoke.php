@@ -10,6 +10,10 @@ if ( PHP_SAPI !== 'cli' ) {
 	exit( 1 );
 }
 
+if ( ! defined( 'WP_DEBUG' ) ) {
+	define( 'WP_DEBUG', true );
+}
+
 $GLOBALS['emulsify_block_assets_smoke_hooks']          = array();
 $GLOBALS['emulsify_block_assets_smoke_acf_blocks']     = array();
 $GLOBALS['emulsify_block_assets_smoke_native_blocks']  = array();
@@ -220,6 +224,10 @@ $repo_root = dirname( __DIR__, 2 );
 $work_root = sys_get_temp_dir() . '/emulsify-block-assets-' . uniqid( '', true );
 $child     = $work_root . '/child-theme';
 $parent    = $work_root . '/parent-theme';
+$debug_log = $work_root . '/debug.log';
+
+ini_set( 'log_errors', '1' );
+ini_set( 'error_log', $debug_log );
 
 $GLOBALS['emulsify_block_assets_smoke_child']  = $child;
 $GLOBALS['emulsify_block_assets_smoke_parent'] = $parent;
@@ -235,6 +243,9 @@ try {
 						array(
 							'path'    => 'card.css',
 							'version' => 'metadata-css',
+						),
+						array(
+							'path' => 'missing.css',
 						),
 					),
 					'js'  => array(
@@ -357,6 +368,14 @@ try {
 
 	$acf_blocks = new Emulsify\Theme\Blocks\AcfBlocks( new Emulsify\Theme\Blocks\ComponentLocator() );
 	$acf_blocks->register_blocks();
+
+	$debug_contents = is_readable( $debug_log ) ? file_get_contents( $debug_log ) : '';
+
+	emulsify_block_assets_smoke_assert(
+		is_string( $debug_contents )
+		&& false !== strpos( $debug_contents, '[Emulsify] Asset not readable: ' . $child . '/dist/components/card/missing.css' ),
+		'WP_DEBUG should log missing ACF component metadata assets.'
+	);
 
 	emulsify_block_assets_smoke_assert(
 		isset( $GLOBALS['emulsify_block_assets_smoke_acf_blocks']['emulsify-card']['enqueue_assets'] )

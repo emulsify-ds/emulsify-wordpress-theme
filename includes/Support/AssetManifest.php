@@ -377,6 +377,7 @@ final class AssetManifest {
 		$path = $manifest['base_path'] . '/' . $relative;
 
 		if ( ! is_readable( $path ) ) {
+			$this->debug_log( sprintf( 'Asset not readable: %s', $path ) );
 			return null;
 		}
 
@@ -422,20 +423,33 @@ final class AssetManifest {
 	 */
 	private function resolve_manifest(): ?array {
 		foreach ( $this->manifest_candidates() as $candidate ) {
-			if ( ! is_readable( $candidate['path'] ) ) {
+			if ( ! file_exists( $candidate['path'] ) ) {
+				continue;
+			}
+
+			if ( ! is_file( $candidate['path'] ) || ! is_readable( $candidate['path'] ) ) {
+				$this->debug_log( sprintf( 'Asset manifest not readable: %s', $candidate['path'] ) );
 				continue;
 			}
 
 			$contents = file_get_contents( $candidate['path'] );
 
 			if ( ! is_string( $contents ) ) {
-				return null;
+				$this->debug_log( sprintf( 'Asset manifest could not be read: %s', $candidate['path'] ) );
+				continue;
 			}
 
 			$data = json_decode( $contents, true );
 
 			if ( ! is_array( $data ) || JSON_ERROR_NONE !== json_last_error() ) {
-				return null;
+				$this->debug_log(
+					sprintf(
+						'Asset manifest contains invalid JSON: %s (%s)',
+						$candidate['path'],
+						json_last_error_msg()
+					)
+				);
+				continue;
 			}
 
 			/**
@@ -459,6 +473,20 @@ final class AssetManifest {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Logs asset diagnostics during active WordPress debugging.
+	 *
+	 * @param string $message Diagnostic message.
+	 * @return void
+	 */
+	private function debug_log( string $message ): void {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return;
+		}
+
+		error_log( '[Emulsify] ' . $message );
 	}
 
 	/**

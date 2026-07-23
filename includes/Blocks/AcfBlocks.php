@@ -465,6 +465,10 @@ final class AcfBlocks {
 		$path = $base_path . '/' . $relative;
 
 		if ( ! is_readable( $path ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( sprintf( '[Emulsify] Asset not readable: %s', $path ) );
+			}
+
 			return null;
 		}
 

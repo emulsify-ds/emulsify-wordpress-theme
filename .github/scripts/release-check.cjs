@@ -731,8 +731,10 @@ function runStaticChecks() {
     ensure(editorEnhancementsSmoke.includes('skip duplicate parent relative paths'), 'Editor enhancements smoke should verify editor asset duplicate handling.');
     ensure(patternSmoke.includes('Child pattern JSON files should override parent files with the same basename'), 'Pattern smoke should verify child-first pattern discovery.');
     ensure(patternSmoke.includes('Child pattern category metadata should override parent category labels') && patternSmoke.includes('metadata files'), 'Pattern smoke should cover category metadata and metadata-file skips.');
-    ensure(assetManifestSmoke.includes('No manifest should fall back') && assetManifestSmoke.includes('Invalid manifest should fall back') && assetManifestSmoke.includes('Child manifest should take priority'), 'Asset manifest smoke should cover fallback, invalid, and child-priority paths.');
+    ensure(assetManifestSmoke.includes('No manifest should fall back') && assetManifestSmoke.includes('Invalid manifest should fall back to the valid parent manifest') && assetManifestSmoke.includes('Child manifest should take priority'), 'Asset manifest smoke should cover scanner fallback, invalid-child parent fallback, and child priority.');
+    ensure(assetManifestSmoke.includes('WP_DEBUG should log malformed asset manifest candidates') && assetManifestSmoke.includes('WP_DEBUG should log missing manifest asset files'), 'Asset manifest smoke should cover debug logging for malformed manifests and missing referenced files.');
     ensure(blockAssetSmoke.includes('Manifest block assets should take priority') && blockAssetSmoke.includes('Native block.json asset fields should be left for WordPress') && blockAssetSmoke.includes('Global component scanning should remain the fallback'), 'Block scoped asset smoke should cover manifest priority, native block.json delegation, and scanner fallback.');
+    ensure(blockAssetSmoke.includes('WP_DEBUG should log missing ACF component metadata assets'), 'Block scoped asset smoke should cover missing ACF metadata asset diagnostics.');
     return 'Parent runtime exposes documented filters with smoke coverage.';
   });
 

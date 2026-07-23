@@ -104,7 +104,7 @@ Composer install creates the runtime autoloader. After adding or renaming parent
 
 | Command | Purpose |
 | --- | --- |
-| `npm run lint:php` | Lint all PHP files with `php -l`. |
+| `npm run lint:php` | Run PHPCS and PHPStan across the parent runtime. |
 | `npm run pr:check` | Run the practical, stubbed pull request validation suite. |
 | `npm run release:check` | Run release-readiness checks. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |

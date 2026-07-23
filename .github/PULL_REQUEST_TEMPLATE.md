@@ -1,7 +1,7 @@
 **This PR does the following:**
 - Adds functionality bullet item
 - Fixes this or that bullet item
-  
+
 ### Related Issue(s)
 - [Title of the issue](https://github.com/emulsify-ds/emulsify-wordpress/issues/1) (if applicable)
 

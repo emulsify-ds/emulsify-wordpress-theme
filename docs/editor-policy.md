@@ -46,6 +46,12 @@ add_filter(
 
 When `auto_allow_pattern_blocks` is enabled, block names found in JSON files under `patterns/` are added to the configured allow list. Comment shorthand such as `<!-- wp:paragraph -->` is normalized to `core/paragraph`.
 
+### UI visibility versus server-side enforcement
+
+`disable_user_patterns_for_non_admins` is an editor UI policy only. It sets `enableUserPatterns` to `false` for users below `admin_capability`, but it does not change the `wp_block` post type capabilities. A user who retains the relevant capability may still create synced patterns through the REST API or another non-editor client.
+
+For server-side enforcement, pair the UI option with `restrict_wp_block_creation` and set `wp_block_create_capability` to the capability required to create `wp_block` posts. The parent theme changes the post type's `create_posts` capability; it does not grant that capability to roles.
+
 ## Fine-tune allowed blocks
 
 Use `emulsify_theme_allowed_block_types` when the final list needs request-aware logic:
