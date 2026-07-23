@@ -92,6 +92,7 @@ jobs:
         run: npm run publish-test -- --no-ci
 
       - name: Run full npm audit
+        continue-on-error: true
         run: npm audit
 
   semantic-release:

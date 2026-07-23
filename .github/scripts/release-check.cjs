@@ -382,6 +382,7 @@ function runStaticChecks() {
       '.github/scripts/pattern-registry-smoke.php',
       '.github/scripts/wordpress-starter-init-smoke.cjs',
       '.github/scripts/theme-filters-smoke.php',
+      '.github/scripts/twig-autoescape-smoke.php',
       '.github/scripts/twig-project-namespace-smoke.php',
       '.github/scripts/twig-switch-smoke.php',
       '.github/scripts/wordpress-fixture-smoke.cjs',
@@ -500,6 +501,18 @@ function runStaticChecks() {
     return 'Attribute helper runtime and smoke fixture are wired.';
   });
 
+  runStaticCheck('Twig HTML autoescaping', () => {
+    const twig = readFile('includes/Runtime/Twig.php');
+    const smoke = readFile('.github/scripts/twig-autoescape-smoke.php');
+
+    ensure(twig.includes("timber/twig/environment/options"), 'Timber integration should register the Twig environment options filter.');
+    ensure(twig.includes("$options['autoescape'] = 'html'"), 'Timber integration should enable HTML autoescaping.');
+    ensure(smoke.includes('{{ fields.heading }}'), 'Twig autoescape smoke should render a field value.');
+    ensure(smoke.includes('<script>alert(1)</script>'), 'Twig autoescape smoke should use a hostile script fixture.');
+    ensure(smoke.includes("$definition['is_safe']"), 'Twig autoescape smoke should register helper safety metadata.');
+    return 'Twig HTML autoescaping is registered and covered by a behavioral smoke test.';
+  });
+
   runStaticCheck('Twig switch tags', () => {
     const twig = readFile('includes/Runtime/Twig.php');
     const extension = readFile('includes/Twig/SwitchExtension.php');
@@ -534,6 +547,7 @@ function runStaticChecks() {
     const smoke = readFile('.github/scripts/child-theme-generator-smoke.php');
 
     ensure(cli.includes('[--machine-name=<slug>]'), 'WP-CLI help should document --machine-name.');
+    ensure(cli.includes('[--parent=<slug>]'), 'WP-CLI help should document --parent.');
     ensure(cli.includes('[--dry-run]'), 'WP-CLI help should document --dry-run.');
     ensure(cli.includes('[--force]'), 'WP-CLI help should document --force.');
     ensure(cli.includes('[--activate]'), 'WP-CLI help should document --activate.');
@@ -547,9 +561,18 @@ function runStaticChecks() {
     ensure(cli.includes("data['project']['generatedFromVersion']"), 'Child theme generator should update project.emulsify.json generatedFromVersion.');
     ensure(cli.includes("data['name'] = $machine_name"), 'Child theme generator should update package.json name.');
     ensure(cli.includes('collect_pattern_updates'), 'Child theme generator should update starter pattern namespaces.');
+    ensure(cli.includes('sanitize_label_for_source'), 'Child theme generator should sanitize human labels before writing source comments.');
+    ensure(cli.includes("replace_theme_header( $contents, 'Theme Name', $source_label )"), 'Child theme generator should use a source-safe label in style.css.');
+    ensure(cli.includes("$source_label . ' child theme hooks.'"), 'Child theme generator should use a source-safe label in functions.php.');
     ensure(cli.includes('get_destination_replacement_error'), 'Child theme generator should verify existing destinations before force replacement.');
     ensure(cli.includes('project.platform: wordpress'), 'Child theme generator should require WordPress project metadata before force replacement.');
-    ensure(cli.includes('project.generatedFrom'), 'Child theme generator should use generated source metadata for force replacement safety.');
+    ensure(cli.includes("if ( ! isset( $project['project']['generatedFrom'] )"), 'Child theme generator should require generatedFrom metadata before force replacement.');
+    ensure(cli.includes("self::GENERATED_FROM !== $project['project']['generatedFrom']"), 'Child theme generator should require emulsify-wordpress lineage before force replacement.');
+    ensure(cli.includes("if ( ! isset( $project['project']['generatedFromVersion'] )"), 'Child theme generator should require generatedFromVersion metadata before force replacement.');
+    ensure(cli.includes("$machine_name !== $project['project']['machineName']"), 'Child theme generator should require the existing machineName to match the requested destination.');
+    ensure(!cli.includes('$has_generated_from'), 'Child theme generator should not treat generatedFrom lineage as optional.');
+    ensure(cli.includes('get_unique_sibling_path') && cli.includes("'tmp'") && cli.includes("'bak'"), 'Child theme generator should stage and back up themes in unique sibling paths.');
+    ensure(cli.includes('replace_with_staged_theme') && cli.includes('cleanup_staging_path'), 'Child theme generator should atomically swap staged themes and clean failed copies.');
     ensure(!cli.includes('rename_instances'), 'Child theme generator should not use blind recursive starter string replacement.');
     ensure(smoke.includes("'machine-name' => 'acme-child'"), 'Child theme generator smoke should cover --machine-name.');
     ensure(smoke.includes("'dry-run' => true"), 'Child theme generator smoke should cover --dry-run.');
@@ -564,6 +587,11 @@ function runStaticChecks() {
     ensure(smoke.includes("'emulsify-wordpress' === $project['project']['generatedFrom']"), 'Child theme generator smoke should validate generatedFrom metadata.');
     ensure(smoke.includes("'2.0.0' === $project['project']['generatedFromVersion']"), 'Child theme generator smoke should validate generatedFromVersion metadata.');
     ensure(smoke.includes('foreign-generator'), 'Child theme generator smoke should reject conflicting generatedFrom metadata.');
+    ensure(smoke.includes('missing-lineage'), 'Child theme generator smoke should reject destinations without generatedFrom metadata.');
+    ensure(smoke.includes('missing-version'), 'Child theme generator smoke should reject destinations without generatedFromVersion metadata.');
+    ensure(smoke.includes('different-machine-name'), 'Child theme generator smoke should reject mismatched project.machineName metadata.');
+    ensure(smoke.includes('*/ echo 1; /*'), 'Child theme generator smoke should cover hostile source-comment labels.');
+    ensure(smoke.includes('emulsify_mkdir_failure') && smoke.includes("'.tmp-*'"), 'Child theme generator smoke should simulate a failed staged copy and verify cleanup.');
     ensure(smoke.includes('smoke-pattern.json'), 'Child theme generator smoke should validate optional copied pattern namespace updates.');
     ensure(smoke.includes("! is_dir( $destination . '/src/components/button' )"), 'Child theme generator smoke should prove removed starter components are not copied.');
     ensure(smoke.includes("! is_dir( $destination . '/src/editor' )"), 'Child theme generator smoke should prove assumed editor modules are not copied.');
@@ -600,6 +628,14 @@ function runStaticChecks() {
     ensure(locator.includes('wp_get_environment_type') && locator.includes('WP_DEBUG'), 'Component locator should keep active development uncached unless explicitly enabled.');
     ensure(registry.includes('$components = new ComponentLocator()'), 'Block registry should share one ComponentLocator instance.');
     ensure(acfBlocks.includes('$this->components->acf_components()'), 'ACF/Twig block discovery should use ComponentLocator.');
+    ensure(!acfBlocks.includes("$args['data']['twig_template'] ="), 'ACF/Twig block registration should not persist template paths in editor block data.');
+    ensure(
+      acfBlocks.includes("$block['twig_template']")
+      && acfBlocks.includes("$block['data']['twig_template']")
+      && acfBlocks.indexOf("$block['twig_template']") < acfBlocks.indexOf("$block['data']['twig_template']"),
+      'ACF/Twig rendering should prefer the registered template over persisted block data.'
+    );
+    ensure(smoke.includes('../../hostile.twig'), 'Component locator smoke should prove untrusted persisted template paths are rejected.');
     ensure(acfBlocks.includes('acf_block_name'), 'ACF/Twig block registration should skip duplicate final ACF block names.');
     ensure(acfBlocks.includes('acf_get_block_type'), 'ACF/Twig block registration should avoid already registered ACF block names.');
     ensure(nativeBlocks.includes('$this->components->native_block_directories()'), 'Native block discovery should use ComponentLocator.');
@@ -768,7 +804,8 @@ function runStaticChecks() {
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/config/jest.config.js')), 'Whisk should provide the Jest config referenced by package scripts.');
     ensure(scripts.test === 'jest --coverage --passWithNoTests --config ./config/jest.config.js', 'whisk/package.json test script should point at the checked-in Jest config.');
     ensure(jestConfig.includes("testEnvironment: 'node'"), 'whisk/config/jest.config.js should define a node test environment.');
-    ensure(initHook.includes("replaceThemeHeader(contents, 'Theme Name', name)"), 'Whisk init hook should update style.css Theme Name.');
+    ensure(initHook.includes('sanitizeLabelForSource'), 'Whisk init hook should sanitize human labels before writing source comments.');
+    ensure(initHook.includes("replaceThemeHeader(contents, 'Theme Name', sourceLabel)"), 'Whisk init hook should update style.css with a source-safe Theme Name.');
     ensure(initHook.includes("replaceThemeHeader(contents, 'Text Domain', machineName)"), 'Whisk init hook should update style.css Text Domain.');
     ensure(initHook.includes("replaceThemeHeader(contents, 'Template', PARENT_THEME)"), 'Whisk init hook should keep Template aligned to the parent theme.');
     ensure(initHook.includes("const PARENT_THEME = 'emulsify'"), 'Whisk init hook should keep the parent Template slug as emulsify.');
@@ -783,6 +820,7 @@ function runStaticChecks() {
     ensure(starterInitSmoke.includes("project.project.generatedFrom === 'emulsify-wordpress'"), 'Starter init smoke should validate generatedFrom metadata.');
     ensure(starterInitSmoke.includes("project.project.generatedFromVersion === '2.0.0'"), 'Starter init smoke should validate generatedFromVersion metadata.');
     ensure(starterInitSmoke.includes("style.Template === 'emulsify'"), 'Starter init smoke should validate Template: emulsify.');
+    ensure(starterInitSmoke.includes('*/ echo 1; /*'), 'Starter init smoke should cover hostile source-comment labels.');
     ensure(starterInitSmoke.includes('node_modules') && starterInitSmoke.includes('dist'), 'Starter init smoke should validate copied build and dependency output is absent.');
     ensure(starterInitSmoke.includes("['--prefix', 'whisk', 'run', 'test']"), 'Starter init smoke should verify the starter npm test script works after Whisk dependencies are installed.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components/.gitkeep')), 'whisk/src/components should remain as an empty optional component placeholder.');
@@ -993,6 +1031,8 @@ function runStaticChecks() {
 
   runStaticCheck('Theme readiness workflow', () => {
     const prValidationScript = readFile('.github/scripts/pr-validation.cjs');
+    const runtimeAuditIndex = themeReadinessWorkflow.indexOf('- name: Run runtime npm audit');
+    const fullAuditIndex = themeReadinessWorkflow.indexOf('- name: Run full npm audit');
 
     ensure(themeReadinessWorkflow.includes('name: WordPress Theme Readiness'), 'theme-readiness.yml should identify the WordPress theme readiness workflow.');
     ensure(themeReadinessWorkflow.includes('pull_request:'), 'theme-readiness.yml should run for pull_request events.');
@@ -1003,8 +1043,9 @@ function runStaticChecks() {
     ensure(themeReadinessWorkflow.includes("php-version: '8.3'"), 'theme-readiness.yml should set up PHP 8.3.');
     ensure(themeReadinessWorkflow.includes('npm ci --ignore-scripts'), 'theme-readiness.yml should install root npm dependencies cleanly.');
     ensure(themeReadinessWorkflow.includes('composer validate --no-check-publish --strict'), 'theme-readiness.yml should validate Composer metadata.');
-    ensure(themeReadinessWorkflow.includes('npm audit --omit=dev'), 'theme-readiness.yml should run runtime npm audit.');
-    ensure(themeReadinessWorkflow.includes('npm audit'), 'theme-readiness.yml should run full npm audit.');
+    ensure(themeReadinessWorkflow.includes('- name: Run runtime npm audit\n        run: npm audit --omit=dev'), 'theme-readiness.yml should block PR checks on runtime npm audit findings.');
+    ensure(themeReadinessWorkflow.includes('- name: Run full npm audit\n        continue-on-error: true\n        run: npm audit'), 'theme-readiness.yml should report full npm audit findings without blocking PR checks.');
+    ensure(runtimeAuditIndex < fullAuditIndex, 'theme-readiness.yml should run the blocking runtime audit before the informational full audit.');
     ensure(themeReadinessWorkflow.includes('npm run lint:php'), 'theme-readiness.yml should run PHP lint.');
     ensure(themeReadinessWorkflow.includes('npm run pr:check'), 'theme-readiness.yml should delegate project smoke checks to npm run pr:check.');
     ensure(themeReadinessWorkflow.includes('npm run release:check'), 'theme-readiness.yml should run release readiness checks.');
@@ -1031,6 +1072,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('smoke:patterns'), 'PR validation should run the pattern registry smoke test.');
     ensure(prValidationScript.includes('smoke:starter-init'), 'PR validation should run the WordPress starter init smoke test.');
     ensure(prValidationScript.includes('smoke:theme-filters'), 'PR validation should run the parent theme filter smoke test.');
+    ensure(prValidationScript.includes('smoke:twig-autoescape'), 'PR validation should run the Twig autoescape smoke test.');
     ensure(prValidationScript.includes('smoke:twig-switch'), 'PR validation should run the Twig switch smoke test.');
     ensure(prValidationScript.includes('smoke:twig-project-namespace'), 'PR validation should run the Twig project namespace smoke test.');
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
@@ -1081,6 +1123,7 @@ function runStaticChecks() {
     ensure(readme.includes('generatedFrom') && readme.includes('generatedFromVersion'), 'README.md should explain generated child theme source metadata.');
     ensure(readme.includes('whisk/assets/images') && readme.includes('whisk/assets/icons'), 'README.md should document the generated child asset placeholders.');
     ensure(readme.includes('wp emulsify "Acme Site" --machine-name=acme-site'), 'README.md should document child theme generator examples.');
+    ensure(readme.includes('--parent=emulsify'), 'README.md should document the child theme generator parent option.');
     ensure(readme.includes('docs/component-recipes.md'), 'README.md should link to component recipes.');
     ensure(readme.includes('Normal PR checks do not start MySQL or run the full WordPress fixture'), 'README.md should distinguish practical PR checks from the full fixture.');
     ensure(readme.includes('GitHub Actions > `WordPress Theme Readiness`'), 'README.md should tell maintainers where to run the manual fixture workflow.');
@@ -1172,6 +1215,7 @@ function runStaticChecks() {
     ensure(docs.assets.includes('block-scoped assets') && docs.assets.includes('emulsify_theme_acf_block_asset_records'), 'Asset loading doc should document block-scoped asset behavior.');
     ensure(docs.assets.includes('Manifest data is memoized') && docs.assets.includes('Scanner fallback records are also memoized'), 'Asset loading doc should document per-request manifest and scanner memoization.');
     ensure(docs.coreBlockTwig.includes('[Component recipes](component-recipes.md)'), 'Core block Twig rendering doc should link to component recipes.');
+    ensure(docs.cli.includes('--parent=<slug>') && docs.cli.includes('Defaults to `emulsify`'), 'WP-CLI doc should document the parent option and its default.');
     ensure(docs.cli.includes('--dry-run') && docs.cli.includes('--force') && docs.cli.includes('--activate'), 'WP-CLI doc should document generator safety options.');
     ensure(docs.cli.includes('Force replacement safety') && docs.cli.includes('Emulsify-generated child theme markers'), 'WP-CLI doc should document force replacement safety.');
     ensure(docs.cli.includes('Upgrade and support diagnostics') && docs.cli.includes('generatedFromVersion'), 'WP-CLI doc should document generated child theme lineage diagnostics.');

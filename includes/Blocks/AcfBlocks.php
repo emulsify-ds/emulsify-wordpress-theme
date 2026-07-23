@@ -250,12 +250,10 @@ final class AcfBlocks {
 			'mode'  => 'preview',
 		);
 
-		$args                          = array_merge( $defaults, $metadata );
-		$args['name']                  = $this->normalize_block_name( $args['name'] ?? '', $component['slug'] );
-		$args['render_callback']       = array( $this, 'render_block' );
-		$args['twig_template']         = $component['template'];
-		$args['data']                  = isset( $args['data'] ) && is_array( $args['data'] ) ? $args['data'] : array();
-		$args['data']['twig_template'] = $component['template'];
+		$args                    = array_merge( $defaults, $metadata );
+		$args['name']            = $this->normalize_block_name( $args['name'] ?? '', $component['slug'] );
+		$args['render_callback'] = array( $this, 'render_block' );
+		$args['twig_template']   = $component['template'];
 
 		return $args;
 	}
@@ -659,16 +657,31 @@ final class AcfBlocks {
 	/**
 	 * Gets the block Twig template.
 	 *
+	 * The top-level value comes from the registered ACF block definition. A
+	 * legacy value persisted in block data is considered only as a fallback, and
+	 * every candidate must match a template found by component discovery.
+	 *
 	 * @param array $block Block settings and attributes.
 	 * @return string Template path.
 	 */
 	private function template( array $block ): string {
-		if ( ! empty( $block['data']['twig_template'] ) && is_string( $block['data']['twig_template'] ) ) {
-			return $block['data']['twig_template'];
-		}
+		$template = '';
 
 		if ( ! empty( $block['twig_template'] ) && is_string( $block['twig_template'] ) ) {
-			return $block['twig_template'];
+			$template = $block['twig_template'];
+		} elseif (
+			! empty( $block['data'] )
+			&& is_array( $block['data'] )
+			&& ! empty( $block['data']['twig_template'] )
+			&& is_string( $block['data']['twig_template'] )
+		) {
+			$template = $block['data']['twig_template'];
+		}
+
+		foreach ( $this->components->acf_components() as $component ) {
+			if ( isset( $component['template'] ) && is_string( $component['template'] ) && $template === $component['template'] ) {
+				return $template;
+			}
 		}
 
 		return '';
