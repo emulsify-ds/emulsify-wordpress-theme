@@ -7,6 +7,7 @@ The parent theme includes a WP-CLI command for generating a project child theme 
 ```sh
 wp emulsify "Acme Site" --dry-run
 wp emulsify "Acme Site" --machine-name=acme-site
+wp emulsify "Acme Site" --machine-name=acme-site --parent=emulsify
 wp emulsify "Acme Site" --machine-name=acme-site --force
 wp emulsify "Acme Site" --machine-name=acme-site --activate
 ```
@@ -16,6 +17,7 @@ wp emulsify "Acme Site" --machine-name=acme-site --activate
 | Option | Purpose |
 | --- | --- |
 | `--machine-name=<slug>` | Override the generated slug used for paths and package metadata. |
+| `--parent=<slug>` | Use a different installed parent theme directory slug. Defaults to `emulsify`. |
 | `--dry-run` | Show what would be created or changed without writing files. |
 | `--force` | Replace an existing destination only when it already looks like an Emulsify-generated child theme. |
 | `--activate` | Activate the generated child theme after creation. |
@@ -45,10 +47,12 @@ Ignored dependency, cache, Storybook, and Vite output directories are not copied
 - `style.css` declares `Template: emulsify` or the selected parent slug.
 - `project.emulsify.json` exists.
 - `project.emulsify.json` declares `"platform": "wordpress"`.
-- `project.emulsify.json` includes a project `machineName`.
-- New generated child themes include `generatedFrom: "emulsify-wordpress"` and `generatedFromVersion`; `--force` refuses a destination that declares a different generated source.
+- `project.emulsify.json` includes a project `machineName` that exactly matches the requested machine name.
+- `project.emulsify.json` includes `generatedFrom: "emulsify-wordpress"` and a non-empty `generatedFromVersion`.
 
 Use `--dry-run --force` to inspect replacement intent without deleting files. If the destination is an unrelated theme, remove or rename it manually before generating a child theme with the same machine name.
+
+Generation is atomic. The command copies and updates the new child theme in a temporary sibling directory, then moves it into place. With `--force`, the existing verified theme is moved to a temporary backup only after staging succeeds and is restored if the final move fails.
 
 ## Upgrade and support diagnostics
 
@@ -64,7 +68,7 @@ Generated child themes record their source in `project.emulsify.json`:
 }
 ```
 
-Use these fields when diagnosing project lineage or planning starter upgrades. `generatedFrom` identifies the Emulsify WordPress starter lineage, while `generatedFromVersion` records the parent/starter release that generated or last regenerated the child theme. Older generated child themes may not have these fields; the generator still uses the existing WordPress platform and machine-name markers for compatibility.
+Use these fields when diagnosing project lineage or planning starter upgrades. `generatedFrom` identifies the Emulsify WordPress starter lineage, while `generatedFromVersion` records the parent/starter release that generated or last regenerated the child theme. For safety, `--force` does not replace older child themes that lack these lineage fields; add verified metadata deliberately or replace those directories manually.
 
 ## Emulsify CLI starter hook
 

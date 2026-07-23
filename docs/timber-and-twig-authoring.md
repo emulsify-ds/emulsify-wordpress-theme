@@ -99,6 +99,23 @@ Then includes such as this resolve through the configured child-theme-relative r
 
 Do not use `theme.json` for Twig namespaces. `theme.json` is WordPress configuration for editor settings, global styles, presets, templates, and style variations; it is not a Twig loader configuration file.
 
+## Escaping and trusted HTML
+
+The parent theme enables Twig's HTML autoescaping for every Timber render path. Component values, including ACF fields and Gutenberg block attributes, are escaped by default:
+
+```twig
+<h2>{{ fields.heading }}</h2>
+```
+
+Use `|raw` only for already-rendered, trusted WordPress HTML. Do not use it to print plain ACF values, block attributes, query parameters, or other editor- or visitor-controlled strings.
+
+```twig
+{{ post.content|raw }}
+{{ comment.content|wpautop|raw }}
+```
+
+The `bem()` and `add_attributes()` helpers build and escape their own attribute values and are registered as safe HTML. Print them directly without `|raw`.
+
 ## Attribute helpers
 
 The parent theme registers Core-style helpers for class and attribute handling:

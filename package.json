@@ -46,10 +46,12 @@
     "smoke:patterns": "php .github/scripts/pattern-registry-smoke.php",
     "smoke:starter-init": "node .github/scripts/wordpress-starter-init-smoke.cjs",
     "smoke:theme-filters": "php .github/scripts/theme-filters-smoke.php",
+    "smoke:twig-autoescape": "php .github/scripts/twig-autoescape-smoke.php",
     "smoke:twig-switch": "php .github/scripts/twig-switch-smoke.php",
     "smoke:twig-project-namespace": "php .github/scripts/twig-project-namespace-smoke.php",
     "whisk:build": "npm --prefix whisk run build",
     "whisk:install": "npm --prefix whisk install --package-lock=false --ignore-scripts",
+    "build:dist": "bash scripts/build-dist.sh",
     "publish": "semantic-release --tag-format '${version}'",
     "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"

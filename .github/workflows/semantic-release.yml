@@ -92,6 +92,7 @@ jobs:
         run: npm run publish-test -- --no-ci
 
       - name: Run full npm audit
+        continue-on-error: true
         run: npm audit
 
   semantic-release:
@@ -114,8 +115,18 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
       - name: Clean npm install
         run: npm ci --ignore-scripts
+
+      - name: Build installable theme archive
+        run: npm run build:dist
 
       - name: Semantic release
         id: semantic

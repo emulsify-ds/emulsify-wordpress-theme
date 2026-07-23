@@ -24,7 +24,7 @@
             </header>
 
             <div {{ add_attributes(entry_content_attributes) }}>
-                {{ post.content }}
+                {{ post.content|raw }}
             </div>
         </article>
     {% else %}
