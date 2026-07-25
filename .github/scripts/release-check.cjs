@@ -247,6 +247,7 @@ function runStaticChecks() {
   const whiskThemeHeader = parseWordPressThemeHeader('whisk/style.css');
   const whiskProject = readJson('whisk/project.emulsify.json');
   const releaseConfig = require(path.join(repoRoot, 'release.config.js'));
+  const semanticReleaseRunner = readFile('.github/scripts/semantic-release.cjs');
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
   const themeReadinessWorkflow = readFile('.github/workflows/theme-readiness.yml');
   const distBuilder = readFile('scripts/build-dist.sh');
@@ -301,11 +302,16 @@ function runStaticChecks() {
     branch: { name: 'main' },
     lastRelease: { version: '1.0.0-alpha.5' },
   };
+  const releaseAnalyzerNoStableContext = {
+    branch: { name: 'main' },
+    lastRelease: {},
+  };
 
   runStaticCheck('Required files', () => {
     const requiredFiles = [
       '.github/scripts/release-check.cjs',
       '.github/scripts/pr-validation.cjs',
+      '.github/scripts/semantic-release.cjs',
       '.github/fixtures/whisk-a11y/ci-readiness/ci-readiness.js',
       '.github/fixtures/whisk-a11y/ci-readiness/ci-readiness.stories.js',
       '.github/fixtures/whisk-a11y/ci-readiness/ci-readiness.twig',
@@ -1018,12 +1024,19 @@ function runStaticChecks() {
       ? githubOptions.assets.find((asset) => asset.path === 'dist-artifact/emulsify.zip')
       : null;
     ensure(releaseConfig.expectedStableRelease === '2.0.0', 'release.config.js should declare 2.0.0 as the expected stable release.');
+    ensure(releaseConfig.initialStableBaseline === '1.0.0', 'release.config.js should declare the temporary 1.0.0 stable baseline.');
     ensure(releaseConfig.tagFormat === '${version}', 'release.config.js should emit non-prefixed semver tags.');
     ensure(releaseConfig.repositoryUrl === 'git@github.com:emulsify-ds/emulsify-wordpress.git', 'release.config.js should publish against emulsify-wordpress.');
     ensure(Array.isArray(releaseConfig.branches), 'release.config.js branches must be an array.');
     ensure(releaseConfig.branches.length === 1 && releaseConfig.branches[0] === 'main', 'release.config.js should publish only from main.');
     ensure(releaseAnalyzer, 'release.config.js should force the first stable release to a major release type.');
     ensure(releaseGuard, 'release.config.js should guard the first stable release version.');
+    ensure(rootPackage.scripts.publish.startsWith('node .github/scripts/semantic-release.cjs '), 'The publish script should prepare semantic-release through the guarded runner.');
+    ensure(rootPackage.scripts['publish-test'].startsWith('node .github/scripts/semantic-release.cjs '), 'The publish-test script should use the same guarded semantic-release runner.');
+    ensure(semanticReleaseRunner.includes("git(['tag', initialStableBaseline, sourceSha])"), 'The semantic-release runner should expose the latest prerelease commit as a temporary stable baseline.');
+    ensure(semanticReleaseRunner.includes('finally') && semanticReleaseRunner.includes('removeStableBaseline(temporaryBaseline)'), 'The semantic-release runner should always clean up its temporary baseline tag.');
+    ensure(releaseGuard.verifyRelease.toString().includes('removeSyntheticBaseline'), 'The stable release guard should remove the temporary baseline before semantic-release pushes tags.');
+    ensure(typeof notesOptions.writerOpts?.finalizeContext === 'function', 'Release notes should suppress the inaugural compare link to the temporary baseline tag.');
     ensure(releaseAsset, 'release.config.js should attach dist-artifact/emulsify.zip to GitHub releases.');
     ensure(releaseAsset.label === 'Emulsify WordPress theme (with dependencies)', 'release.config.js should give the installable ZIP a clear release label.');
     ensureBreakingParser('@semantic-release/commit-analyzer', analyzerOptions.parserOpts);
@@ -1052,7 +1065,7 @@ function runStaticChecks() {
     releaseGuard.verifyRelease({}, releaseGuardAcceptContext);
     releaseGuard.verifyRelease({}, releaseGuardFutureContext);
     ensure(releaseAnalyzer.analyzeCommits({}, releaseAnalyzerAlphaContext) === 'major', 'release.config.js should force a major release from the latest alpha tag.');
-    ensure(releaseAnalyzerAlphaContext.lastRelease.version === '1.0.0', 'release.config.js should normalize the latest alpha tag before semantic-release computes 2.0.0.');
+    ensure(releaseAnalyzer.analyzeCommits({}, releaseAnalyzerNoStableContext) === 'major', 'release.config.js should force a major release when semantic-release finds no previous stable release.');
     ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardRejectContext) === 'major', 'release.config.js should force a major release before 2.0.0 exists.');
     ensure(releaseAnalyzer.analyzeCommits({}, releaseGuardFutureContext) === null, 'release.config.js should use normal commit analysis after 2.0.0 exists.');
     return 'Semantic release is configured for non-prefixed tags, main-only publishing, a forced 2.0.0 stable release, and the installable ZIP asset.';

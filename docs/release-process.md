@@ -6,6 +6,8 @@ This repository uses semantic-release with Conventional Commits. Releases are pr
 
 The `release-2.x` branch prepares the next stable release as `2.0.0`. Until that stable tag exists, the semantic-release config forces the first `main` publish to use a major release type and then verifies the computed release is exactly `2.0.0`. After the `2.0.0` tag exists, normal Conventional Commit analysis drives later releases.
 
+Semantic-release excludes prerelease tags when it determines the previous release on a stable branch. The repository publish scripts therefore use a guarded runner that temporarily aliases the latest merged `1.0.0` alpha tag as a local `1.0.0` baseline. The release guard removes that temporary tag before semantic-release can push tags, so only the computed `2.0.0` tag is published. The runner verifies the tag target and also removes the alias on failure.
+
 ## Commit messages
 
 Use commit messages that describe the public change:

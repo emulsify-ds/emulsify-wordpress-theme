@@ -52,8 +52,8 @@
     "whisk:build": "npm --prefix whisk run build",
     "whisk:install": "npm --prefix whisk install --package-lock=false --ignore-scripts",
     "build:dist": "bash scripts/build-dist.sh",
-    "publish": "semantic-release --tag-format '${version}'",
-    "publish-test": "semantic-release --tag-format '${version}' --dry-run --debug",
+    "publish": "node .github/scripts/semantic-release.cjs --tag-format '${version}'",
+    "publish-test": "node .github/scripts/semantic-release.cjs --tag-format '${version}' --dry-run --debug",
     "semantic-release": "semantic-release"
   },
   "devDependencies": {
