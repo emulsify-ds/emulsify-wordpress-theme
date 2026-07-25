@@ -888,6 +888,7 @@ function runStaticChecks() {
     ensure(whiskA11yConfig.includes('wait: 1000'), 'Whisk accessibility config should wait for the selected Storybook story to mount.');
     ensure(whiskA11yRunner.includes('resolvePa11yStoryIds') && whiskA11yRunner.includes('storyIds.length === 0'), 'Whisk accessibility runner should discover stories and reject an empty audit.');
     ensure(whiskA11yRunner.includes('http.createServer') && whiskA11yRunner.includes('await pa11y') && whiskA11yRunner.includes('logReport'), 'Whisk accessibility runner should serve the static build over HTTP and report real Pa11y results.');
+    ensure(whiskA11yRunner.includes("process.env.CI === 'true' && process.platform === 'linux'") && whiskA11yRunner.includes('pa11yOptions.chromeLaunchConfig') && whiskA11yRunner.includes("'--no-sandbox'") && whiskA11yRunner.includes("'--disable-setuid-sandbox'"), 'Whisk accessibility runner should launch Chrome without its unavailable sandbox on isolated Linux CI runners.');
     ensure(whiskA11yRunner.includes('if (hasIssues)') && whiskA11yRunner.includes('process.exitCode = 1'), 'Whisk accessibility runner should fail when Pa11y reports a non-ignored violation.');
     ensure(!scriptText.includes('vite-if-inputs'), 'whisk/package.json scripts should not wrap missing-input build errors.');
     ensure(scripts.develop && scripts.develop.includes('npm:vite'), 'whisk/package.json develop script should run the Vite watcher.');

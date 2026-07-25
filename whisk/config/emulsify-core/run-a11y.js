@@ -92,6 +92,18 @@ const pa11yOptions = {
   ...coreA11yConfig.pa11y,
   ...a11yConfig.pa11y,
 };
+
+if (process.env.CI === 'true' && process.platform === 'linux') {
+  pa11yOptions.chromeLaunchConfig = {
+    ...pa11yOptions.chromeLaunchConfig,
+    args: [
+      ...(pa11yOptions.chromeLaunchConfig?.args || []),
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+    ],
+  };
+}
+
 let hasIssues = false;
 
 console.log(
