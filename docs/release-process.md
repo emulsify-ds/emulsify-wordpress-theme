@@ -21,11 +21,15 @@ Use commit messages that describe the public change:
 Run:
 
 ```sh
+npm run docs:check-commands
 npm run lint:php
 npm run pr:check
 npm run release:check
 npm run publish-test -- --no-ci
 ```
+
+`docs:check-commands` verifies that documented generated-theme and maintainer
+commands still exist in the package where readers are instructed to run them.
 
 `lint:php` is the local PHPCS and PHPStan entry point. Install Composer development dependencies first; use `npm run lint:php:fix` for PHPCBF auto-fixes.
 

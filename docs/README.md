@@ -2,6 +2,7 @@
 
 ## Getting started
 
+- [Generated-theme upgrade guide](../UPGRADE.md)
 - [Upgrading from 1.x to 2.x](upgrading-1x-to-2x.md)
 - [Parent and child theme architecture](parent-child-architecture.md)
 - [WP-CLI child theme generation](wp-cli-child-theme-generation.md)

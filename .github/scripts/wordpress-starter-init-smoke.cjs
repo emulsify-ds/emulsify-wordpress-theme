@@ -115,6 +115,107 @@ function runWhiskTestScript() {
   }
 }
 
+function runGeneratedComponentInspector(projectDir) {
+  const binDirectory = path.join(starterRoot, 'node_modules', '.bin');
+  const inspectorBin = path.join(
+    binDirectory,
+    process.platform === 'win32'
+      ? 'emulsify-inspect-components.cmd'
+      : 'emulsify-inspect-components',
+  );
+
+  assert(
+    fs.existsSync(inspectorBin),
+    'The Emulsify component inspector is not installed. Install Whisk dependencies with @emulsify/core 4.3.0 or newer.',
+  );
+
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const commandEnvironment = {
+    ...process.env,
+    PATH: `${binDirectory}${path.delimiter}${process.env.PATH || ''}`,
+    npm_config_loglevel: 'silent',
+  };
+  const result = childProcess.spawnSync(
+    npm,
+    ['run', 'inspect:components', '--', '--json'],
+    {
+      cwd: projectDir,
+      encoding: 'utf8',
+      env: commandEnvironment,
+    },
+  );
+
+  if (result.status !== 0) {
+    throw new Error(
+      `npm run inspect:components -- --json failed:\n${result.stdout || ''}${result.stderr || ''}`.trim(),
+    );
+  }
+
+  let report;
+  try {
+    report = JSON.parse((result.stdout || '').trim());
+  } catch (error) {
+    throw new Error(
+      `npm run inspect:components -- --json did not produce valid JSON: ${error.message}\n${result.stdout || ''}${result.stderr || ''}`.trim(),
+    );
+  }
+
+  assert(
+    report && typeof report === 'object' && !Array.isArray(report),
+    'Component inspector JSON should be an object.',
+  );
+  assert(
+    report.project &&
+      typeof report.project === 'object' &&
+      !Array.isArray(report.project),
+    'Component inspector JSON should include project metadata.',
+  );
+  assert(
+    report.project.machineName === null ||
+      typeof report.project.machineName === 'string',
+    'Component inspector project.machineName should be a string or null.',
+  );
+  assert(
+    typeof report.project.platform === 'string',
+    'Component inspector project.platform should be a string.',
+  );
+  assert(
+    report.project.namespaceRoots &&
+      typeof report.project.namespaceRoots === 'object' &&
+      !Array.isArray(report.project.namespaceRoots),
+    'Component inspector project.namespaceRoots should be an object.',
+  );
+  assert(
+    typeof report.project.singleDirectoryComponents === 'boolean',
+    'Component inspector project.singleDirectoryComponents should be a boolean.',
+  );
+  assert(
+    Array.isArray(report.components),
+    'Component inspector JSON should include a components array.',
+  );
+
+  for (const component of report.components) {
+    assert(
+      component && typeof component === 'object' && !Array.isArray(component),
+      'Each inspected component should be an object.',
+    );
+    assert(
+      typeof component.name === 'string',
+      'Each inspected component should include a name.',
+    );
+    assert(
+      Array.isArray(component.namespaces),
+      'Each inspected component should include a namespaces array.',
+    );
+    assert(
+      typeof component.source === 'string',
+      'Each inspected component should include a source path.',
+    );
+  }
+
+  return report;
+}
+
 const workRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'emulsify-wordpress-starter-'));
 const target = path.join(workRoot, 'acme-theme');
 const hostileName = 'Acme */ echo 1; /* Theme';
@@ -140,19 +241,18 @@ try {
     content: '<!-- wp:paragraph --><p>Smoke pattern content</p><!-- /wp:paragraph -->',
   });
 
+  const lockfileRootPackage = {
+    name: 'whisk',
+    version: '2.0.0',
+    dependencies: { '@emulsify/core': '^4.3.0' },
+  };
   writeJson(path.join(target, 'package-lock.json'), {
     name: 'whisk',
     version: '2.0.0',
     lockfileVersion: 3,
     requires: true,
     packages: {
-      '': {
-        name: 'whisk',
-        version: '2.0.0',
-        dependencies: {
-          '@emulsify/core': '^4.2.0',
-        },
-      },
+      '': lockfileRootPackage,
     },
   });
 
@@ -196,6 +296,18 @@ try {
     assert(
       !fs.existsSync(path.join(target, generatedPath)),
       `Cloned starter fixture should not contain copied ${generatedPath} output.`,
+    );
+  }
+
+  const inspectorReport = runGeneratedComponentInspector(target);
+  assert(
+    inspectorReport.project.machineName === project.project.machineName,
+    'Component inspector should read project metadata from the generated theme root.',
+  );
+  if (inspectorReport.components.length === 0) {
+    assert(
+      Object.hasOwn(inspectorReport, 'project') && Object.hasOwn(inspectorReport, 'components'),
+      'An empty component inspection should retain the project metadata and components array.',
     );
   }
 

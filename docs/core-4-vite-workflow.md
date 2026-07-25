@@ -58,8 +58,25 @@ Run these from the generated child theme directory:
 | `npm run lint` | Run JavaScript and Sass linting with the Core 4 config. |
 | `npm run audit` | Run the Core migration/static audit. |
 | `npm run audit:twig-stories` | Check Twig story compatibility. |
+| `npm run inspect:components` | Discover components and report metadata, dependencies, configuration issues, and orphaned files. |
 | `npm run a11y` | Build Storybook and run the Core accessibility check. |
 | `npm run test` | Run Jest with `--passWithNoTests` for starter projects. |
+
+### Component inspector
+
+The component inspector is provided by the published
+`emulsify-inspect-components` binary in `@emulsify/core`. Run it from the
+generated child theme root; it has no WordPress or Drupal runtime dependency and
+does not duplicate the inspector implementation in this repository.
+
+Use the default report during development, JSON for automation, and the built-in
+help when checking the current Core options:
+
+```sh
+npm run inspect:components
+npm run inspect:components -- --json
+npm run inspect:components -- --help
+```
 
 ## Documentation-only component example
 

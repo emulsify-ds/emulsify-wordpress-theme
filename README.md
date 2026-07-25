@@ -82,8 +82,19 @@ npm install
 | `npm run lint` | Run JavaScript and Sass linting with the Core 4 config. |
 | `npm run audit` | Run the Core migration/static audit. |
 | `npm run audit:twig-stories` | Check Twig story compatibility. |
+| `npm run inspect:components` | Discover components and report metadata, dependencies, configuration issues, and orphaned files. |
 | `npm run a11y` | Build Storybook and run the Core accessibility check. |
 | `npm run test` | Run Jest with `--passWithNoTests` for starter projects. |
+
+The component inspector comes from the installed `@emulsify/core` package and
+runs from the generated child theme root without requiring WordPress to be
+installed or bootstrapped:
+
+```sh
+npm run inspect:components
+npm run inspect:components -- --json
+npm run inspect:components -- --help
+```
 
 ## Parent and child themes
 
@@ -166,6 +177,7 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 ## Documentation
 
 - [Documentation index](docs/README.md)
+- [Generated-theme upgrade guide](UPGRADE.md)
 - [Upgrading from 1.x to 2.x](docs/upgrading-1x-to-2x.md)
 - [Sister-project parity contract](docs/sister-project-parity.md)
 - [Parent and child theme architecture](docs/parent-child-architecture.md)

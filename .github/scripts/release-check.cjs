@@ -251,6 +251,7 @@ function runStaticChecks() {
   const semanticReleaseWorkflow = readFile('.github/workflows/semantic-release.yml');
   const themeReadinessWorkflow = readFile('.github/workflows/theme-readiness.yml');
   const distBuilder = readFile('scripts/build-dist.sh');
+  const docsCommandCheck = readFile('.github/scripts/docs-command-check.cjs');
   const starterInitSmoke = readFile('.github/scripts/wordpress-starter-init-smoke.cjs');
   const wordpressFixtureSmoke = readFile('.github/scripts/wordpress-fixture-smoke.cjs');
   const whiskA11yConfig = readFile('whisk/config/emulsify-core/a11y.config.js');
@@ -260,6 +261,7 @@ function runStaticChecks() {
   const whiskA11yTemplate = readFile('.github/fixtures/whisk-a11y/ci-readiness/ci-readiness.twig');
   const readme = readFile('README.md');
   const docs = {
+    generatedThemeUpgrade: readFile('UPGRADE.md'),
     index: readFile('docs/README.md'),
     upgrading: readFile('docs/upgrading-1x-to-2x.md'),
     parity: readFile('docs/sister-project-parity.md'),
@@ -310,6 +312,7 @@ function runStaticChecks() {
   runStaticCheck('Required files', () => {
     const requiredFiles = [
       '.github/scripts/release-check.cjs',
+      '.github/scripts/docs-command-check.cjs',
       '.github/scripts/pr-validation.cjs',
       '.github/scripts/semantic-release.cjs',
       '.github/fixtures/whisk-a11y/ci-readiness/ci-readiness.js',
@@ -320,6 +323,7 @@ function runStaticChecks() {
       '.gitignore',
       '.nvmrc',
       'README.md',
+      'UPGRADE.md',
       'docs/README.md',
       'docs/acf-local-json.md',
       'docs/acf-twig-blocks.md',
@@ -433,6 +437,7 @@ function runStaticChecks() {
     ensure(rootPackage.bugs.url === 'https://github.com/emulsify-ds/emulsify-wordpress/issues', 'package.json bugs.url should target emulsify-wordpress.');
     ensure(rootPackage.scripts['pr:check'] === 'node .github/scripts/pr-validation.cjs', 'package.json should expose npm run pr:check.');
     ensure(rootPackage.scripts['release:check'] === 'node .github/scripts/release-check.cjs', 'package.json should expose npm run release:check.');
+    ensure(rootPackage.scripts['docs:check-commands'] === 'node .github/scripts/docs-command-check.cjs', 'package.json should expose npm run docs:check-commands.');
     ensure(rootPackage.scripts['build:dist'] === 'bash scripts/build-dist.sh', 'package.json should expose npm run build:dist.');
     ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpcs -q'), 'package.json lint:php should run PHPCS.');
     ensure(rootPackage.scripts['lint:php'].includes('vendor/bin/phpstan analyse --no-progress'), 'package.json lint:php should run PHPStan.');
@@ -865,6 +870,8 @@ function runStaticChecks() {
     ensure(starterInitSmoke.includes('*/ echo 1; /*'), 'Starter init smoke should cover hostile source-comment labels.');
     ensure(starterInitSmoke.includes('node_modules') && starterInitSmoke.includes('dist'), 'Starter init smoke should validate copied build and dependency output is absent.');
     ensure(starterInitSmoke.includes("['--prefix', 'whisk', 'run', 'test']"), 'Starter init smoke should verify the starter npm test script works after Whisk dependencies are installed.');
+    ensure(starterInitSmoke.includes("['run', 'inspect:components', '--', '--json']"), 'Starter init smoke should run the component inspector JSON command from the generated theme root.');
+    ensure(starterInitSmoke.includes('JSON.parse') && starterInitSmoke.includes('Array.isArray(report.components)'), 'Starter init smoke should validate the component inspector JSON report, including an empty components array.');
     ensure(fs.existsSync(path.join(repoRoot, 'whisk/src/components/.gitkeep')), 'whisk/src/components should remain as an empty optional component placeholder.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/theme.json')), 'Whisk should not ship an empty child theme.json by default.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/components')), 'whisk/components should not remain as an unused starter placeholder.');
@@ -880,7 +887,9 @@ function runStaticChecks() {
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/whisk.info.yml')), 'Whisk should not add Drupal-style .info.yml metadata.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/scripts/vite-if-inputs.mjs')), 'Whisk should not wrap Emulsify Core Vite build errors.');
     ensure(whiskPackage.dependencies && whiskPackage.dependencies['@emulsify/core'], 'whisk/package.json must declare @emulsify/core.');
-    ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.2.0', 'whisk/package.json should target Emulsify Core ^4.2.0.');
+    ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.3.0', 'whisk/package.json should target Emulsify Core ^4.3.0 or newer within Core 4.');
+    ensure(scripts['inspect:components'] === 'emulsify-inspect-components', 'whisk/package.json should expose the published Emulsify Core component inspector binary.');
+    ensure(!scripts['inspect:components'].includes('node_modules/'), 'whisk/package.json should not deep-link to the component inspector implementation.');
     ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config directly.');
     ensure(scripts.vite && scripts.vite.includes('vite build --watch --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json should expose the Emulsify Core Vite watch script directly.');
     ensure(scripts.a11y === 'npm run storybook-build && node config/emulsify-core/run-a11y.js', 'whisk/package.json should run the project accessibility runner after building Storybook.');
@@ -1138,6 +1147,7 @@ function runStaticChecks() {
     ensure(whiskA11yStory.includes("title: 'CI/Readiness fixture'") && whiskA11yStory.includes("import template from './ci-readiness.twig'"), 'CI-only Whisk fixture should provide a discoverable Twig story.');
     ensure(whiskA11yTemplate.includes('<main>') && whiskA11yTemplate.includes('<article') && whiskA11yTemplate.includes('<h2') && whiskA11yTemplate.includes('<a href='), 'CI-only Whisk story should use native semantic landmarks, headings, and links.');
     ensure(prValidationScript.includes('composer') && prValidationScript.includes('validate'), 'PR validation should validate Composer metadata.');
+    ensure(prValidationScript.includes('docs:check-commands'), 'PR validation should validate documented npm commands.');
     ensure(prValidationScript.includes('composer') && prValidationScript.includes('install'), 'PR validation should install Composer dependencies for Twig smoke coverage.');
     ensure(!prValidationScript.includes("'lint:php'"), 'PR validation should leave PHP analysis to its dedicated status check.');
     ensure(prValidationScript.includes('smoke:acf-json'), 'PR validation should run the ACF Local JSON smoke test.');
@@ -1234,6 +1244,7 @@ function runStaticChecks() {
     ensure(docs.parity.includes('Frontend rendering uses Timber'), 'Sister-project parity doc should document Timber as a WordPress difference.');
     ensure(docs.twig.includes('## Switch statements') && docs.twig.includes("{% case 'primary' or 'secondary' %}"), 'Twig authoring docs should document switch tags and multiple case values.');
     ensure(docs.release.includes('Twig switch tag smoke test'), 'Release documentation should list Twig switch smoke coverage.');
+    ensure(docs.release.includes('npm run docs:check-commands'), 'Release documentation should include the documentation command validator in local checks.');
     ensure(docs.parity.includes('WordPress theme identity lives in `style.css` headers'), 'Sister-project parity doc should document WordPress theme headers.');
     ensure(docs.parity.includes('`theme.json` is the WordPress site and editor configuration surface'), 'Sister-project parity doc should document theme.json.');
     ensure(docs.parity.includes('Whisk does not include a child `theme.json` by default'), 'Sister-project parity doc should explain why Whisk does not ship an empty child theme.json.');
@@ -1255,6 +1266,9 @@ function runStaticChecks() {
     ensure(docs.twig.includes('[Component recipes](component-recipes.md)'), 'Twig doc should link to component recipes.');
     ensure(docs.twig.includes('emulsify_theme_context'), 'Twig doc should document context extension.');
     ensure(docs.workflow.includes('Core 4, Vite, and Storybook commands'), 'Workflow doc should use the expected command heading.');
+    ensure(docs.workflow.includes('npm run inspect:components -- --json') && docs.workflow.includes('npm run inspect:components -- --help'), 'Core 4 workflow doc should include component inspector JSON and help examples.');
+    ensure(docs.workflow.includes('metadata, dependencies, configuration issues, and orphaned files'), 'Core 4 workflow doc should explain the component inspector report.');
+    ensure(/published\s+`emulsify-inspect-components` binary/.test(docs.workflow), 'Core 4 workflow doc should attribute the component inspector implementation to Emulsify Core.');
     ensure(docs.workflow.includes('"platform": "wordpress"'), 'Workflow doc should explain the WordPress platform adapter.');
     ensure(docs.workflow.includes('generatedFrom: "emulsify-wordpress"') && docs.workflow.includes('support diagnostics'), 'Core 4 workflow doc should document generated child theme lineage metadata.');
     ensure(docs.workflow.includes('does not ship a concrete component library'), 'Core 4 workflow doc should describe Whisk as component-system agnostic.');
@@ -1263,6 +1277,11 @@ function runStaticChecks() {
     ensure(docs.workflow.includes('The following shape is an example of a compatible component, not files shipped by Whisk'), 'Core 4 workflow doc should keep component examples documentation-only.');
     ensure(docs.workflow.includes('[Component recipes](component-recipes.md)'), 'Core 4 workflow doc should link to component recipes.');
     ensure(docs.workflow.includes('{% include "project_machine_name:component_name" %}') && docs.workflow.includes('The legacy `@components/component-name/component-name.twig` namespace remains supported'), 'Core 4 workflow doc should promote generic project machine-name component includes while preserving @components compatibility.');
+    ensure(docs.generatedThemeUpgrade.includes('"@emulsify/core": "^4.3.0"'), 'Generated-theme upgrade guide should require Emulsify Core 4.3.0 or newer.');
+    ensure(docs.generatedThemeUpgrade.includes('"inspect:components": "emulsify-inspect-components"'), 'Generated-theme upgrade guide should show how existing themes expose the component inspector binary.');
+    ensure(/Whisk\s+changes only affect themes generated after the new Emulsify Drupal release/.test(docs.generatedThemeUpgrade), 'Generated-theme upgrade guide should explain the Drupal Whisk generation boundary.');
+    ensure(docs.generatedThemeUpgrade.includes('Publish the compatible `@emulsify/core` 4.3.0 release') && docs.generatedThemeUpgrade.includes('Merge and release the consuming Emulsify WordPress or Emulsify Drupal'), 'Generated-theme upgrade guide should preserve the Core-first release order.');
+    ensure(docsCommandCheck.includes("expectedScripts: ['inspect:components']") && docsCommandCheck.includes("packagePath: 'whisk/package.json'"), 'Documentation command validation should check the generated-theme inspector script.');
     ensure(docs.componentRecipes.includes('not files that must ship in every starter'), 'Component recipes doc should keep examples documentation-only.');
     ensure(docs.componentRecipes.includes('Do not add a full component library to `whisk/src/components`'), 'Component recipes doc should avoid adding active starter components to Whisk.');
     ensure(docs.componentRecipes.includes('src/components/card/card.twig'), 'Component recipes doc should include a Twig component example.');
