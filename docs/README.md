@@ -31,4 +31,4 @@
 
 ## Continuous integration
 
-Pull requests run practical smoke coverage, a dedicated PHPCS/PHPStan job, the required MySQL/WP-CLI WordPress rendering fixture, and a CI-seeded Whisk Storybook accessibility audit. Nightly scheduled runs repeat both extended fixtures. Manual readiness runs use the `wordpress_fixture` and `extended_checks` inputs to select those extended jobs. The release process documents commands, route coverage, and merge-gate details.
+Every configured pull request runs practical smoke coverage and a dedicated PHPCS/PHPStan job. Pull requests targeting `main` or `release-2.x` additionally run the required MySQL/WP-CLI WordPress rendering fixture and a CI-seeded Whisk Storybook accessibility audit. Weekly scheduled runs repeat both extended fixtures. Manual readiness runs use the `wordpress_fixture` and `extended_checks` inputs to select those extended jobs. The release process documents commands, route coverage, and merge-gate details.

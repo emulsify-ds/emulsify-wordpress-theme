@@ -53,20 +53,23 @@ The semantic-release publish job sets up PHP 8.3 and Composer, builds this archi
 
 ## CI
 
-The WordPress Theme Readiness workflow runs on pull requests, manual dispatch, and a nightly schedule.
+The WordPress Theme Readiness workflow runs on pull requests, manual dispatch, and a weekly schedule.
 
-Pull requests run four independently visible jobs:
+Every configured pull request runs two independently visible fast jobs:
 
 - `Practical theme readiness`: clean root npm installation, Composer validation, npm audits, the practical `pr:check` suite, and static `release:check` assertions.
 - `PHP coding standards and static analysis`: PHP 8.3, Composer development dependencies, PHPCS, and PHPStan through `npm run lint:php`.
-- `WordPress fixture smoke`: MySQL, WP-CLI, Timber, generated-child activation, block discovery, assets, and home/page/single/archive/search/author/404 rendering with `WP_SMOKE_REQUIRED=1`.
-- `Extended Whisk Storybook and a11y`: a CI-only component seed, the Core 4 Vite and Storybook builds, and an axe audit of the discovered story.
 
-Nightly scheduled runs repeat both extended jobs. Manual dispatch runs the WordPress fixture when `wordpress_fixture` is enabled and the Whisk build/audit when `extended_checks` is enabled. The workflow concurrency group cancels superseded pull-request runs, and both extended jobs have explicit runtime limits.
+Pull requests targeting `main` or `release-2.x` additionally run the two extended jobs:
+
+- `WordPress fixture smoke`: MySQL, WP-CLI, Timber, generated-child activation, block discovery, assets, and home/page/single/archive/search/author/404 rendering with `WP_SMOKE_REQUIRED=1`.
+- `Extended Whisk Storybook and a11y`: an explicit Chrome setup, a CI-only component seed, the Core 4 Vite and Storybook builds, and an axe audit of the discovered story.
+
+Weekly scheduled runs repeat both extended jobs. Manual dispatch runs the WordPress fixture when `wordpress_fixture` is enabled and the Whisk build/audit when `extended_checks` is enabled. The workflow concurrency group cancels superseded pull-request runs, and both extended jobs have explicit runtime limits.
 
 ## 2.0 merge and release gate
 
-The four pull-request jobs run automatically for changes targeting `main`, `release-2.x`, and the other configured integration branches. For an additional final rerun before merging the 2.0 release branch:
+The two fast pull-request jobs run automatically for every configured target branch. All four jobs run for changes targeting `main` or `release-2.x`. For an additional final rerun before merging the 2.0 release branch:
 
 1. Open GitHub Actions for `emulsify-ds/emulsify-wordpress`.
 2. Select the `WordPress Theme Readiness` workflow.

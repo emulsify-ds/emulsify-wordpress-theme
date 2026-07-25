@@ -1,9 +1,10 @@
 name: WordPress Theme Readiness
 
-# Pull requests run practical checks, dedicated PHP analysis, the full
-# WordPress fixture, and a CI-seeded Whisk Storybook accessibility audit.
-# Scheduled runs exercise the same extended coverage, while manual inputs can
-# select either expensive fixture independently.
+# Pull requests always run practical checks and dedicated PHP analysis.
+# Pull requests targeting main or release-2.x also run the full WordPress
+# fixture and a CI-seeded Whisk Storybook accessibility audit. Weekly runs
+# exercise the same extended coverage, while manual inputs select either
+# expensive fixture independently.
 on:
   pull_request:
     branches:
@@ -24,7 +25,7 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: '17 11 * * *'
+    - cron: '17 11 * * 1'
 
 permissions:
   contents: read
@@ -106,7 +107,7 @@ jobs:
   wordpress-fixture:
     name: WordPress fixture smoke
     if: >-
-      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'release-2.x')) ||
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)
     runs-on: ubuntu-latest
@@ -161,7 +162,7 @@ jobs:
   extended-whisk:
     name: Extended Whisk Storybook and a11y
     if: >-
-      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'release-2.x')) ||
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.extended_checks)
     runs-on: ubuntu-latest
@@ -185,7 +186,13 @@ jobs:
       - name: Seed CI-only Whisk component
         run: cp -R .github/fixtures/whisk-a11y/. whisk/src/components/
 
+      - name: Setup Chrome
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+
       - name: Build Storybook and run a11y
         env:
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npm --prefix whisk run a11y

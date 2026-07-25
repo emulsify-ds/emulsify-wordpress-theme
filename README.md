@@ -141,9 +141,9 @@ The `.husky/pre-commit` hook already runs `npm run lint`, which delegates to thi
 | `npm run build:dist` | Build the installable `dist-artifact/emulsify.zip` release archive. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
-Pull requests to the configured release branches run four visible readiness jobs: practical smoke checks, dedicated PHPCS/PHPStan analysis, the MySQL-backed WordPress fixture, and a Whisk Storybook accessibility audit. The WordPress job sets `WP_SMOKE_REQUIRED=1`, so missing WP-CLI/MySQL prerequisites or route render failures fail the job instead of producing a skip. The Whisk job copies an accessible CI-only story and Vite entry into the otherwise component-agnostic starter before building and running axe.
+Every pull request to the configured branches runs two visible fast readiness jobs: practical smoke checks and dedicated PHPCS/PHPStan analysis. Pull requests targeting `main` or `release-2.x` additionally run the MySQL-backed WordPress fixture and Whisk Storybook accessibility audit. The WordPress job sets `WP_SMOKE_REQUIRED=1`, so missing WP-CLI/MySQL prerequisites or route render failures fail the job instead of producing a skip. The Whisk job installs Chrome explicitly, copies an accessible CI-only story and Vite entry into the otherwise component-agnostic starter, and then builds Storybook and runs axe.
 
-Nightly scheduled runs repeat the WordPress fixture and Whisk accessibility audit. Manual GitHub Actions > `WordPress Theme Readiness` runs can select either extended fixture with the `wordpress_fixture` and `extended_checks` inputs. Local `release:check` still skips the database fixture when prerequisites are unavailable unless `WP_SMOKE_REQUIRED=1` is set. Release publishing also requires the full WordPress fixture path before semantic-release can publish.
+Weekly scheduled runs repeat the WordPress fixture and Whisk accessibility audit. Manual GitHub Actions > `WordPress Theme Readiness` runs can select either extended fixture with the `wordpress_fixture` and `extended_checks` inputs. Local `release:check` still skips the database fixture when prerequisites are unavailable unless `WP_SMOKE_REQUIRED=1` is set. Release publishing also requires the full WordPress fixture path before semantic-release can publish.
 
 ## Generate a child theme
 

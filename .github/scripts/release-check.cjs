@@ -882,6 +882,7 @@ function runStaticChecks() {
     ensure(whiskA11yConfig.includes('wait: 1000'), 'Whisk accessibility config should wait for the selected Storybook story to mount.');
     ensure(whiskA11yRunner.includes('resolvePa11yStoryIds') && whiskA11yRunner.includes('storyIds.length === 0'), 'Whisk accessibility runner should discover stories and reject an empty audit.');
     ensure(whiskA11yRunner.includes('http.createServer') && whiskA11yRunner.includes('await pa11y') && whiskA11yRunner.includes('logReport'), 'Whisk accessibility runner should serve the static build over HTTP and report real Pa11y results.');
+    ensure(whiskA11yRunner.includes('if (hasIssues)') && whiskA11yRunner.includes('process.exitCode = 1'), 'Whisk accessibility runner should fail when Pa11y reports a non-ignored violation.');
     ensure(!scriptText.includes('vite-if-inputs'), 'whisk/package.json scripts should not wrap missing-input build errors.');
     ensure(scripts.develop && scripts.develop.includes('npm:vite'), 'whisk/package.json develop script should run the Vite watcher.');
     ensure(!scripts.webpack, 'whisk/package.json should not expose a webpack script.');
@@ -1082,12 +1083,13 @@ function runStaticChecks() {
     const extendedWhiskJob = themeReadinessWorkflow.slice(extendedWhiskStart);
     const runtimeAuditIndex = themeReadinessWorkflow.indexOf('- name: Run runtime npm audit');
     const fullAuditIndex = themeReadinessWorkflow.indexOf('- name: Run full npm audit');
+    const releaseTargetedPrGate = "(github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'release-2.x'))";
 
     ensure(themeReadinessWorkflow.includes('name: WordPress Theme Readiness'), 'theme-readiness.yml should identify the WordPress theme readiness workflow.');
     ensure(themeReadinessWorkflow.includes('pull_request:'), 'theme-readiness.yml should run for pull_request events.');
     ensure(themeReadinessWorkflow.includes('workflow_dispatch:'), 'theme-readiness.yml should support manual dispatch.');
     ensure(themeReadinessWorkflow.includes('schedule:'), 'theme-readiness.yml should run on a schedule.');
-    ensure(themeReadinessWorkflow.includes("cron: '17 11 * * *'"), 'theme-readiness.yml should run extended readiness nightly.');
+    ensure(themeReadinessWorkflow.includes("cron: '17 11 * * 1'"), 'theme-readiness.yml should run extended readiness weekly.');
     ensure(themeReadinessWorkflow.includes('release-2.x'), 'theme-readiness.yml should cover the release-2.x branch.');
     ensure(themeReadinessWorkflow.includes('node-version-file: .nvmrc'), 'theme-readiness.yml should set up Node from .nvmrc.');
     ensure(themeReadinessWorkflow.includes("php-version: '8.3'"), 'theme-readiness.yml should set up PHP 8.3.');
@@ -1103,19 +1105,21 @@ function runStaticChecks() {
     ensure(phpLintJob.includes("php-version: '8.3'") && phpLintJob.includes('tools: composer:v2'), 'Dedicated PHP analysis job should set up PHP 8.3 and Composer.');
     ensure(phpLintJob.includes('composer install --no-interaction --no-progress --prefer-dist'), 'Dedicated PHP analysis job should install Composer development dependencies.');
     ensure(phpLintJob.includes('npm run lint:php'), 'Dedicated PHP analysis job should run PHPCS and PHPStan.');
-    ensure(wordpressFixtureJob.includes("github.event_name == 'pull_request'"), 'WordPress fixture job should run on pull requests.');
+    ensure(wordpressFixtureJob.includes(releaseTargetedPrGate), 'WordPress fixture job should run on release-targeted pull requests.');
     ensure(wordpressFixtureJob.includes("github.event_name == 'schedule'"), 'WordPress fixture job should run on the schedule.');
-    ensure(wordpressFixtureJob.includes('inputs.wordpress_fixture'), 'WordPress fixture job should honor its manual input.');
+    ensure(wordpressFixtureJob.includes("(github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)"), 'WordPress fixture job should honor its manual input.');
     ensure(wordpressFixtureJob.includes('mysql:'), 'WordPress fixture job should provide MySQL.');
     ensure(wordpressFixtureJob.includes('wp-cli'), 'WordPress fixture job should install WP-CLI.');
     ensure(wordpressFixtureJob.includes("WP_SMOKE_REQUIRED: '1'"), 'WordPress fixture job should require the fixture instead of allowing a skip.');
     ensure(themeReadinessWorkflow.includes('extended_checks'), 'theme-readiness.yml should expose optional extended checks.');
-    ensure(extendedWhiskJob.includes("github.event_name == 'pull_request'"), 'Whisk accessibility job should run on pull requests.');
+    ensure(extendedWhiskJob.includes(releaseTargetedPrGate), 'Whisk accessibility job should run on release-targeted pull requests.');
     ensure(extendedWhiskJob.includes("github.event_name == 'schedule'"), 'Whisk accessibility job should run on the schedule.');
-    ensure(extendedWhiskJob.includes('inputs.extended_checks'), 'Whisk accessibility job should honor its manual input.');
+    ensure(extendedWhiskJob.includes("(github.event_name == 'workflow_dispatch' && inputs.extended_checks)"), 'Whisk accessibility job should honor its manual input.');
     ensure(extendedWhiskJob.includes('cp -R .github/fixtures/whisk-a11y/. whisk/src/components/'), 'Whisk accessibility job should seed the CI-only component fixture.');
-    ensure(extendedWhiskJob.includes('PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome'), 'Whisk accessibility job should use the runner Chrome installation.');
+    ensure(extendedWhiskJob.includes('id: setup-chrome') && extendedWhiskJob.includes('uses: browser-actions/setup-chrome@v2'), 'Whisk accessibility job should install Chrome explicitly.');
+    ensure(extendedWhiskJob.includes('PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}'), 'Whisk accessibility job should use the Chrome path provided by setup-chrome.');
     ensure(extendedWhiskJob.includes('npm --prefix whisk run a11y'), 'Whisk accessibility job should build Storybook and run the real audit.');
+    ensure(!extendedWhiskJob.includes('continue-on-error: true'), 'Whisk accessibility violations should fail the job.');
     ensure(whiskA11yEntry.includes('ciReadinessFixture'), 'CI-only Whisk fixture should provide a Vite entry.');
     ensure(whiskA11yStory.includes("title: 'CI/Readiness fixture'") && whiskA11yStory.includes("import template from './ci-readiness.twig'"), 'CI-only Whisk fixture should provide a discoverable Twig story.');
     ensure(whiskA11yTemplate.includes('<main>') && whiskA11yTemplate.includes('<article') && whiskA11yTemplate.includes('<h2') && whiskA11yTemplate.includes('<a href='), 'CI-only Whisk story should use native semantic landmarks, headings, and links.');
@@ -1141,7 +1145,7 @@ function runStaticChecks() {
     ensure(prValidationScript.includes('whisk:install'), 'PR validation should install Whisk dependencies.');
     ensure(prValidationScript.indexOf('whisk:install') < prValidationScript.indexOf('smoke:starter-init'), 'PR validation should install Whisk dependencies before checking the starter npm test script.');
     ensure(!prValidationScript.includes('whisk:build'), 'PR validation should not require a Whisk build before a component system is installed.');
-    return 'Theme readiness runs practical, PHP analysis, WordPress fixture, and CI-seeded Whisk accessibility jobs on pull requests.';
+    return 'Theme readiness runs fast checks on every configured pull request and extended checks for release targets, schedules, and manual dispatches.';
   });
 
   runStaticCheck('Release documentation', () => {
@@ -1191,7 +1195,8 @@ function runStaticChecks() {
     ensure(readme.includes('### Linting and static analysis'), 'README.md should document local PHP analysis.');
     ensure(readme.includes('`lint:php` runs PHPCS') && readme.includes('PHPStan'), 'README.md should explain the combined PHPCS and PHPStan command.');
     ensure(readme.includes('npm run lint:php:fix') && readme.includes('.husky/pre-commit'), 'README.md should document PHPCBF fixes and the pre-commit PHP gate.');
-    ensure(readme.includes('Pull requests to the configured release branches run four visible readiness jobs'), 'README.md should describe the complete pull-request readiness gate.');
+    ensure(readme.includes('Every pull request to the configured branches runs two visible fast readiness jobs') && readme.includes('Pull requests targeting `main` or `release-2.x` additionally run'), 'README.md should distinguish fast pull-request checks from release-targeted extended checks.');
+    ensure(readme.includes('Weekly scheduled runs repeat the WordPress fixture and Whisk accessibility audit'), 'README.md should document the weekly extended readiness cadence.');
     ensure(readme.includes('GitHub Actions > `WordPress Theme Readiness`'), 'README.md should tell maintainers where to run the manual fixture workflow.');
     ensure(readme.includes('WP_SMOKE_REQUIRED=1'), 'README.md should document required WordPress fixture smoke behavior.');
 
@@ -1288,9 +1293,9 @@ function runStaticChecks() {
     ensure(docs.cli.includes('Ignored dependency, cache, Storybook, and Vite output directories are not copied'), 'WP-CLI doc should explain that generated themes do not inherit build output.');
     ensure(docs.release.includes('release-2.x') && docs.release.includes('2.0.0'), 'Release process doc should document the release-2.x target release.');
     ensure(docs.release.includes('WordPress Theme Readiness workflow'), 'Release process doc should document the theme readiness workflow.');
-    ensure(docs.index.includes('## Continuous integration') && docs.index.includes('dedicated PHPCS/PHPStan job'), 'Docs index should summarize pull-request readiness coverage.');
-    ensure(docs.release.includes('Pull requests run four independently visible jobs'), 'Release process doc should describe pull-request job coverage.');
-    ensure(docs.release.includes('Nightly scheduled runs repeat both extended jobs'), 'Release process doc should explain scheduled extended coverage.');
+    ensure(docs.index.includes('## Continuous integration') && docs.index.includes('dedicated PHPCS/PHPStan job') && docs.index.includes('Pull requests targeting `main` or `release-2.x` additionally run'), 'Docs index should summarize fast and release-targeted pull-request readiness coverage.');
+    ensure(docs.release.includes('Every configured pull request runs two independently visible fast jobs') && docs.release.includes('Pull requests targeting `main` or `release-2.x` additionally run the two extended jobs'), 'Release process doc should distinguish fast pull-request checks from release-targeted extended checks.');
+    ensure(docs.release.includes('Weekly scheduled runs repeat both extended jobs'), 'Release process doc should explain scheduled extended coverage.');
     ensure(docs.release.includes('Open GitHub Actions for `emulsify-ds/emulsify-wordpress`'), 'Release process doc should tell maintainers where to trigger the manual workflow.');
     ensure(docs.release.includes('Keep `wordpress_fixture` enabled'), 'Release process doc should document the manual workflow fixture input.');
     ensure(docs.release.includes('`PHP coding standards and static analysis`') && docs.release.includes('`Extended Whisk Storybook and a11y`'), 'Release process doc should name the dedicated PHP and Whisk jobs.');
