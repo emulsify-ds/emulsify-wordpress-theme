@@ -43,7 +43,7 @@ function commandExists(command) {
 }
 
 function appendLog(file, contents) {
-  if (!logDir || !contents) {
+  if (!logDir || !contents || !fs.existsSync(logDir)) {
     return;
   }
 
@@ -547,7 +547,7 @@ function createFixtureContent(wpPath) {
   ]);
 
   wp(wpPath, ['post', 'update', postId, `--post_author=${authorId}`]);
-  wp(wpPath, ['post', 'term', 'add', postId, 'category', categoryId]);
+  wp(wpPath, ['post', 'term', 'add', postId, 'category', categoryId, '--by=id']);
   wp(wpPath, [
     'comment',
     'create',
