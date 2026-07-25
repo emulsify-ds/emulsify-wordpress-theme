@@ -880,7 +880,7 @@ function runStaticChecks() {
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/whisk.info.yml')), 'Whisk should not add Drupal-style .info.yml metadata.');
     ensure(!fs.existsSync(path.join(repoRoot, 'whisk/scripts/vite-if-inputs.mjs')), 'Whisk should not wrap Emulsify Core Vite build errors.');
     ensure(whiskPackage.dependencies && whiskPackage.dependencies['@emulsify/core'], 'whisk/package.json must declare @emulsify/core.');
-    ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.1.0', 'whisk/package.json should target Emulsify Core ^4.1.0.');
+    ensure(whiskPackage.dependencies['@emulsify/core'] === '^4.2.0', 'whisk/package.json should target Emulsify Core ^4.2.0.');
     ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config directly.');
     ensure(scripts.vite && scripts.vite.includes('vite build --watch --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json should expose the Emulsify Core Vite watch script directly.');
     ensure(scripts.a11y === 'npm run storybook-build && node config/emulsify-core/run-a11y.js', 'whisk/package.json should run the project accessibility runner after building Storybook.');

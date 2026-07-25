@@ -150,7 +150,7 @@ try {
         name: 'whisk',
         version: '2.0.0',
         dependencies: {
-          '@emulsify/core': '^4.1.0',
+          '@emulsify/core': '^4.2.0',
         },
       },
     },
