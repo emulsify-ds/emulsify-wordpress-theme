@@ -1080,6 +1080,8 @@ function runStaticChecks() {
     const phpLintJob = themeReadinessWorkflow.slice(phpLintStart, wordpressFixtureStart);
     const wordpressFixtureJob = themeReadinessWorkflow.slice(wordpressFixtureStart, extendedWhiskStart);
     const extendedWhiskJob = themeReadinessWorkflow.slice(extendedWhiskStart);
+    const runtimeAuditIndex = themeReadinessWorkflow.indexOf('- name: Run runtime npm audit');
+    const fullAuditIndex = themeReadinessWorkflow.indexOf('- name: Run full npm audit');
 
     ensure(themeReadinessWorkflow.includes('name: WordPress Theme Readiness'), 'theme-readiness.yml should identify the WordPress theme readiness workflow.');
     ensure(themeReadinessWorkflow.includes('pull_request:'), 'theme-readiness.yml should run for pull_request events.');
