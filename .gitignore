@@ -21,3 +21,9 @@ vendor
 
 # Storybook
 .out
+
+# Local AI/release working notes
+/*-PROMPTS.md
+/PROMPTS-*.md
+/RELEASE-REVIEW-PR*.md
+/STATUS-UPDATE-*.md
