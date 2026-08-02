@@ -105,8 +105,8 @@ function generateWithWpCli(themeRoot, scenario) {
   const parentDir = path.join(themeRoot, 'emulsify');
   copyStarter(starterRoot, path.join(parentDir, 'whisk'));
   fs.copyFileSync(
-    path.join(repoRoot, 'package.json'),
-    path.join(parentDir, 'package.json'),
+    path.join(repoRoot, 'style.css'),
+    path.join(parentDir, 'style.css'),
   );
 
   const result = childProcess.spawnSync(

@@ -1156,6 +1156,7 @@ function runStaticChecks() {
     // their output. This is that something.
     ensure(generationParitySmoke.includes('generateWithWpCli') && generationParitySmoke.includes('generateWithStarterInit'), 'generation-parity-smoke.cjs should exercise both supported generation paths.');
     ensure(generationParitySmoke.includes('compareTrees'), 'generation-parity-smoke.cjs should require both generation paths to produce the same file tree.');
+    ensure(generationParitySmoke.includes("path.join(repoRoot, 'style.css')") && generationParitySmoke.includes("path.join(parentDir, 'style.css')"), 'Generation parity should model installed parent runtime metadata without root npm tooling.');
     ensure(generationParitySmoke.includes('EMULSIFY_PARITY_REQUIRED'), 'generation-parity-smoke.cjs should support requiring the PHP generation path in CI.');
     ensure(themeReadinessWorkflow.includes('smoke:generation-parity'), 'Theme readiness should run the generation parity smoke.');
     ensure(themeReadinessWorkflow.includes('EMULSIFY_PARITY_REQUIRED'), 'Theme readiness should require the PHP generation path during generation parity.');
