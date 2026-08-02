@@ -87,12 +87,12 @@ const expectedStableReleaseGuard = {
       // The 2.x release branch prepares the stable 2.0.0 baseline. After that
       // baseline exists, normal semantic-release versioning can continue.
       if (branch.name !== 'main' || isAtLeastVersion(lastRelease.version, expectedStableRelease)) {
-	return;
+        return;
       }
 
       if (nextRelease.version !== expectedStableRelease) {
-	const message = `Expected semantic-release to prepare ${expectedStableRelease} on main, but computed ${nextRelease.version}. Confirm stable baseline tags and breaking-change commits before publishing.`;
-	throw new Error(message);
+        const message = `Expected semantic-release to prepare ${expectedStableRelease} on main, but computed ${nextRelease.version}. Confirm stable baseline tags and breaking-change commits before publishing.`;
+        throw new Error(message);
       }
     }
     finally {
@@ -136,14 +136,16 @@ module.exports = {
   repositoryUrl: 'git@github.com:emulsify-ds/emulsify-wordpress.git',
   plugins: [
     expectedStableReleaseAnalyzer,
-    ['@semantic-release/commit-analyzer', { parserOpts }],
+    ['@semantic-release/commit-analyzer', { preset: 'angular', parserOpts }],
     [
       '@semantic-release/release-notes-generator',
       {
-	parserOpts,
-	writerOpts: {
-	  finalizeContext: finalizeReleaseNotesContext,
-	},
+        preset: 'angular',
+        parserOpts,
+        writerOpts: {
+          commitsSort: ['subject', 'scope'],
+          finalizeContext: finalizeReleaseNotesContext,
+        },
       },
     ],
     expectedStableReleaseGuard,
