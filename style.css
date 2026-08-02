@@ -1,15 +1,12 @@
 /*
-Theme Name: Emulsify WordPress Theme
-Theme URI: https://github.com/emulsify-ds/emulsify-wordpress-theme
-Author: Four Kitchens
-Author URI: https://www.emulsify.info/
-Description: Starter theme for Emulsify in WordPress.
-Version: 1.0
-License: GNU General Public License v2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
-Tags: emulsify, design system, components
-Text Domain: emulsify
-
-This theme, like WordPress, is licensed under the GPL.
-Use it to make something cool, have fun, and share what you've learned with others.
+ * Theme Name: Emulsify
+ * Author: Callin Mullaney & Mike Goulding
+ * Description: Timber-first WordPress parent theme for generated child themes with Emulsify Core 4, Vite, Storybook, and Twig.
+ * Text Domain: emulsify
+ * Requires at least: 6.7
+ * Tested up to: 6.7
+ * Requires PHP: 8.3
+ * Version: 2.0.0
+ * License: GPL-2.0-only
+ * License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */

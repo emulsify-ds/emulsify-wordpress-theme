@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<ruleset name="Emulsify WordPress">
+	<description>PHPCS rules for the Emulsify WordPress parent theme runtime.</description>
+
+	<file>includes</file>
+	<file>404.php</file>
+	<file>archive.php</file>
+	<file>author.php</file>
+	<file>functions.php</file>
+	<file>index.php</file>
+	<file>page.php</file>
+	<file>search.php</file>
+	<file>single.php</file>
+
+	<exclude-pattern>vendor/*</exclude-pattern>
+	<exclude-pattern>node_modules/*</exclude-pattern>
+	<exclude-pattern>whisk/*</exclude-pattern>
+	<exclude-pattern>.github/*</exclude-pattern>
+
+	<arg name="parallel" value="8"/>
+	<arg value="ps"/>
+
+	<config name="testVersion" value="8.3-"/>
+
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="emulsify"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The 2.0 runtime uses Composer PSR-4 class files instead of legacy class-*.php names. -->
+	<rule ref="WordPress.Files.FileName">
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<!-- The parent runtime intentionally reads local theme files and JSON manifests. -->
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude name="WordPress.WP.AlternativeFunctions"/>
+	</rule>
+
+	<!-- Debug-only duplicate diagnostics are part of the parent runtime contract. -->
+	<rule ref="WordPress.PHP.DevelopmentFunctions">
+		<exclude name="WordPress.PHP.DevelopmentFunctions"/>
+	</rule>
+
+	<!-- Cache keys serialize trusted scalar arrays only when JSON encoding is unavailable. -->
+	<rule ref="WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize">
+		<exclude name="WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize"/>
+	</rule>
+
+	<!-- WordPress, Twig, and callback signatures occasionally use reserved parameter names. -->
+	<rule ref="Universal.NamingConventions.NoReservedKeywordParameterNames">
+		<exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames"/>
+	</rule>
+
+	<!-- Some callback signatures intentionally retain unused positional parameters. -->
+	<rule ref="Generic.CodeAnalysis.UnusedFunctionParameter">
+		<exclude name="Generic.CodeAnalysis.UnusedFunctionParameter"/>
+	</rule>
+</ruleset>

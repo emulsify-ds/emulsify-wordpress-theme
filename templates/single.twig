@@ -1,45 +1,96 @@
-{% extends "@templates/_default.twig" %}
+{# Generic single content fallback. single.php can prepend single-{post_type}.twig
+   for child themes that need post-type-specific markup. #}
+{% extends '@templates/layouts/base.twig' %}
+
+{% set entry_attributes = {
+    class: bem('entry', [post.type|default('post')]),
+    id: post.id|default(null) ? 'post-' ~ post.id : null
+} %}
+{% set entry_media_attributes = {
+    class: bem('media', [], 'entry')
+} %}
+{% set entry_header_attributes = {
+    class: bem('header', [], 'entry')
+} %}
+{% set entry_title_attributes = {
+    class: bem('title', [], 'entry')
+} %}
+{% set entry_meta_attributes = {
+    class: bem('meta', [], 'entry')
+} %}
+{% set entry_author_attributes = {
+    class: bem('author', [], 'entry')
+} %}
+{% set entry_date_attributes = {
+    class: bem('date', [], 'entry'),
+    datetime: post.date|default(null) ? post.date|date('Y-m-d H:i:s') : null
+} %}
+{% set entry_content_attributes = {
+    class: bem('content', [], 'entry')
+} %}
+{% set comments_attributes = {
+    class: bem('comments'),
+    'aria-label': function('__', 'Comments', 'emulsify')
+} %}
+{% set comments_title_attributes = {
+    class: bem('title', [], 'comments')
+} %}
 
 {% block content %}
-	<div class="content-wrapper">
-		<article class="post-type-{{ post.post_type }}" id="post-{{ post.ID }}">
-			<img src="{{ post.thumbnail.src|resize(1200, 300) }}">
-			<section class="article-content">
-				<h1 class="article-h1">{{ post.title }}</h1>
-        {% if user.can('edit_posts') %}
-        {% include "@atoms/links/link/link.twig" with {
-          link_base_class: 'button',
-          link_url: site.url ~ '/wp-admin/post.php?post=' ~ post.id ~ '&action=edit',
-          link_content: "Edit Post",
-        } %}
-        {% endif %}
-				<p class="blog-author">
-					<span>By</span><a href="{{post.author.path}}"> {{ post.author.name }} </a><span>&bull;</span> <time datetime="{{ post.date|date('Y-m-d H:i:s') }}">{{ post.date }}</time>
-				</p>
-				<div class="article-body">
-					{{post.content}}
-				</div>
-			</section>
+    {% if post|default(null) %}
+        <article {{ add_attributes(entry_attributes) }}>
+            {% if post.thumbnail|default(null) and post.thumbnail.src|default(null) %}
+                <figure {{ add_attributes(entry_media_attributes) }}>
+                    <img src="{{ post.thumbnail.src|resize(1200, 675) }}" alt="{{ post.thumbnail.alt|default(post.title) }}" />
+                </figure>
+            {% endif %}
 
-			<!-- comment box -->
-			<section class="comment-box">
-				<!-- comments -->
-				<div class="comments">
-				    {% if post.comments %}
-					<h3> comments </h3>
-					{% for cmt in post.comments %}
-					    {% include "comment.twig" with {comment:cmt} %}
-					{% endfor %}
-				    {% endif %}
-				</div>
+            <header {{ add_attributes(entry_header_attributes) }}>
+                <h1 {{ add_attributes(entry_title_attributes) }}>{{ post.title }}</h1>
 
-				{% if post.comment_status == "closed" %}
-					<p> comments for this post are closed </p>
-				{% else %}
-				    <!-- comment form -->
-				    {% include "comment-form.twig" %}
-				{% endif %}
-			</section>
-		</article>
-	</div><!-- /content-wrapper -->
+                {% if post.author|default(null) or post.date|default(null) %}
+                    <div {{ add_attributes(entry_meta_attributes) }}>
+                        {% if post.author|default(null) %}
+                            <span {{ add_attributes(entry_author_attributes) }}>
+                                <a href="{{ post.author.path|default('#') }}">{{ post.author.name }}</a>
+                            </span>
+                        {% endif %}
+
+                        {% if post.date|default(null) %}
+                            <time {{ add_attributes(entry_date_attributes) }}>{{ post.date }}</time>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </header>
+
+            <div {{ add_attributes(entry_content_attributes) }}>
+                {{ post.content|raw }}
+            </div>
+
+            {% set comments = post.comments|default([]) %}
+            {% if comments is not empty or post.comment_status|default('closed') != 'closed' %}
+                <section {{ add_attributes(comments_attributes) }}>
+                    {% if comments is not empty %}
+                        <h2 {{ add_attributes(comments_title_attributes) }}>{{ function('__', 'Comments', 'emulsify') }}</h2>
+
+                        {% for comment in comments %}
+                            {% include '@templates/partials/comment.twig' with {
+                                comment: comment
+                            } only %}
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if post.comment_status|default('closed') != 'closed' %}
+                        {% include '@templates/partials/comment-form.twig' with {
+                            post: post,
+                            user: user|default(wp.user|default(null)),
+                            site: site
+                        } only %}
+                    {% endif %}
+                </section>
+            {% endif %}
+        </article>
+    {% else %}
+        <p>{{ function('__', 'No post content was found.', 'emulsify') }}</p>
+    {% endif %}
 {% endblock %}

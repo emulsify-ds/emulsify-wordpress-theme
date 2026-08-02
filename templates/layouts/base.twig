@@ -1,0 +1,84 @@
+{# Shared document shell. Keep structural WordPress hooks here so child page
+   templates can focus on content blocks and component composition. #}
+{% set body_attributes = {
+    class: body_class|default('')
+} %}
+{% set skip_link_attributes = {
+    class: ['skip-link', 'screen-reader-text'],
+    href: '#content'
+} %}
+{% set site_header_attributes = {
+    class: bem('site-header'),
+    role: 'banner'
+} %}
+{% set site_header_inner_attributes = {
+    class: bem('inner', [], 'site-header')
+} %}
+{% set site_header_brand_attributes = {
+    class: bem('brand', [], 'site-header'),
+    href: site.url|default('/'),
+    rel: 'home'
+} %}
+{% set site_header_navigation_attributes = {
+    class: bem('navigation', [], 'site-header'),
+    'aria-label': function('__', 'Primary navigation', 'emulsify')
+} %}
+{% set site_main_attributes = {
+    class: bem('site-main'),
+    id: 'content',
+    tabindex: '-1'
+} %}
+{% set page_header_attributes = {
+    class: bem('page-header')
+} %}
+{% set page_header_title_attributes = {
+    class: bem('title', [], 'page-header')
+} %}
+{% set menu_items = menu|default(null) ? menu.get_items : [] %}
+<!doctype html>
+<html {{ site.language_attributes|default('') }}>
+    {% block head %}
+        {% include '@templates/partials/head.twig' %}
+    {% endblock %}
+
+    <body {{ add_attributes(body_attributes) }}>
+        {{ function('wp_body_open') }}
+        <a {{ add_attributes(skip_link_attributes) }}>{{ function('__', 'Skip to content', 'emulsify') }}</a>
+
+        <header {{ add_attributes(site_header_attributes) }}>
+            <div {{ add_attributes(site_header_inner_attributes) }}>
+                {% block header %}
+                    <a {{ add_attributes(site_header_brand_attributes) }}>
+                        {{ site.name|default('') }}
+                    </a>
+
+                    {% if menu_items is not empty %}
+                        <nav {{ add_attributes(site_header_navigation_attributes) }}>
+                            {% include '@templates/partials/menu.twig' with {
+                                items: menu_items,
+                                menu_class: 'menu menu--primary'
+                            } only %}
+                        </nav>
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </header>
+
+        <main {{ add_attributes(site_main_attributes) }}>
+            {% if title|default(null) %}
+                <header {{ add_attributes(page_header_attributes) }}>
+                    <h1 {{ add_attributes(page_header_title_attributes) }}>{{ title }}</h1>
+                </header>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        {% block footer %}
+            {% include '@templates/partials/footer.twig' %}
+        {% endblock %}
+
+        {{ function('wp_footer') }}
+        {% do action('get_footer') %}
+    </body>
+</html>

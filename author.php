@@ -1,21 +1,26 @@
 <?php
 /**
- * The template for displaying Author Archive pages
+ * Author template.
  *
- * Methods for TimberHelper can be found in the /lib sub-directory
- *
- * @package  WordPress
- * @subpackage  Timber
- * @since    Timber 0.1
+ * @package Emulsify
  */
 
-global $wp_query;
+use Timber\Timber;
 
-$context          = Timber::context();
-$context['posts'] = new Timber\PostQuery();
-if ( isset( $wp_query->query_vars['author'] ) ) {
-	$author            = new Timber\User( $wp_query->query_vars['author'] );
-	$context['author'] = $author;
-	$context['title']  = 'Author Archives: ' . $author->name();
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
-Timber::render( array( 'author.twig', 'archive.twig' ), $context );
+
+// Author archives use the normal archive Twig fallback after adding an
+// author-specific title to the shared Timber context.
+$context = Timber::context();
+
+if ( isset( $context['author'] ) ) {
+	/* translators: %s is the author's display name. */
+	$context['title'] = sprintf( __( 'Archive of %s', 'emulsify' ), $context['author']->name() );
+}
+
+Timber::render(
+	array( '@templates/author.twig', '@templates/archive.twig' ),
+	$context
+);

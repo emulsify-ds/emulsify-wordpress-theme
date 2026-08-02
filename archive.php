@@ -1,40 +1,45 @@
 <?php
 /**
- * The template for displaying Archive pages.
+ * Archive template.
  *
- * Used to display archive-type pages if nothing more specific matches a query.
- * For example, puts together date-based pages if no date.php file exists.
- *
- * Learn more: http://codex.wordpress.org/Template_Hierarchy
- *
- * Methods for TimberHelper can be found in the /lib sub-directory
- *
- * @package  WordPress
- * @subpackage  Timber
- * @since   Timber 0.2
+ * @package Emulsify
  */
 
-$templates = array( 'archive.twig', 'index.twig' );
+use Timber\Timber;
 
-$context = Timber::context();
-
-$context['title'] = 'Archive';
-if ( is_day() ) {
-	$context['title'] = 'Archive: ' . get_the_date( 'D M Y' );
-} elseif ( is_month() ) {
-	$context['title'] = 'Archive: ' . get_the_date( 'M Y' );
-} elseif ( is_year() ) {
-	$context['title'] = 'Archive: ' . get_the_date( 'Y' );
-} elseif ( is_tag() ) {
-	$context['title'] = single_tag_title( '', false );
-} elseif ( is_category() ) {
-	$context['title'] = single_cat_title( '', false );
-	array_unshift( $templates, 'archive-' . get_query_var( 'cat' ) . '.twig' );
-} elseif ( is_post_type_archive() ) {
-	$context['title'] = post_type_archive_title( '', false );
-	array_unshift( $templates, 'archive-' . get_post_type() . '.twig' );
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
-$context['posts'] = new Timber\PostQuery();
+// Keep WordPress route controllers in the global namespace. Services that need
+// namespacing live under includes/ and feed data into these Timber templates.
+$templates = array( '@templates/archive.twig', '@templates/index.twig' );
+
+$page_title = __( 'Archive', 'emulsify' );
+if ( is_day() ) {
+	/* translators: %s is the archive date. */
+	$page_title = sprintf( __( 'Archive: %s', 'emulsify' ), get_the_date( 'D M Y' ) );
+} elseif ( is_month() ) {
+	/* translators: %s is the archive month and year. */
+	$page_title = sprintf( __( 'Archive: %s', 'emulsify' ), get_the_date( 'M Y' ) );
+} elseif ( is_year() ) {
+	/* translators: %s is the archive year. */
+	$page_title = sprintf( __( 'Archive: %s', 'emulsify' ), get_the_date( 'Y' ) );
+} elseif ( is_tag() ) {
+	$page_title = single_tag_title( '', false );
+} elseif ( is_category() ) {
+	$page_title = single_cat_title( '', false );
+} elseif ( is_post_type_archive() ) {
+	$page_title = post_type_archive_title( '', false );
+	// Allow child themes to provide archive-{post_type}.twig before the generic
+	// archive fallback without adding more PHP template files.
+	array_unshift( $templates, '@templates/archive-' . get_post_type() . '.twig' );
+}
+
+$context = Timber::context(
+	array(
+		'title' => $page_title,
+	)
+);
 
 Timber::render( $templates, $context );

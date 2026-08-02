@@ -1,0 +1,20 @@
+{# Post-specific teaser extension. Other post types can add tease-{type}.twig
+   without duplicating the generic teaser partial. #}
+{% extends '@templates/partials/tease.twig' %}
+
+{% set teaser_summary_attributes = {
+    class: bem('summary', [], 'teaser')
+} %}
+
+{% block summary %}
+    {% if post.excerpt|default(null) %}
+        <div {{ add_attributes(teaser_summary_attributes) }}>
+            {{
+                post.excerpt({
+                    words: 20,
+                    read_more: function('__', 'Continue reading', 'emulsify')
+                })
+            }}
+        </div>
+    {% endif %}
+{% endblock %}

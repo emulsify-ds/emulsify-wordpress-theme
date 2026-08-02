@@ -1,5 +1,0 @@
-dist
-.out
-.coverage
-node_modules
-*.min.js

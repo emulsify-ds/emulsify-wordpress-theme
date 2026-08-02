@@ -1,0 +1,153 @@
+# Release process
+
+This repository uses semantic-release with Conventional Commits. Releases are prepared from `main`, and Git tags use non-prefixed SemVer such as `2.0.0`.
+
+## Release branch target
+
+The `release-2.x` branch prepares the next stable release as `2.0.0`. Until that stable tag exists, the semantic-release config forces the first `main` publish to use a major release type and then verifies the computed release is exactly `2.0.0`. After the `2.0.0` tag exists, normal Conventional Commit analysis drives later releases.
+
+Semantic-release excludes prerelease tags when it determines the previous release on a stable branch. The repository publish scripts therefore use a guarded runner that temporarily aliases the latest merged `1.0.0` alpha tag as a local `1.0.0` baseline. The release guard removes that temporary tag before semantic-release can push tags, so only the computed `2.0.0` tag is published. The runner verifies the tag target and also removes the alias on failure.
+
+## Commit messages
+
+Use commit messages that describe the public change:
+
+- `fix: correct timber attribute helpers` creates a patch release.
+- `feat: add native block registration` creates a minor release.
+- `feat!: change generated child theme structure` or a `BREAKING CHANGE:` footer creates a major release.
+
+## Version strategy
+
+| Commit type | Release impact | Example |
+|---|---|---|
+| `fix:` | patch | `fix: correct timber attribute helpers` |
+| `perf:` | patch | `perf: memoize component discovery` |
+| `feat:` | minor | `feat: add native block registration` |
+| `<type>!:` or `BREAKING CHANGE:` footer | major | `feat!: change generated child theme structure` |
+| `docs:`, `test:`, `ci:`, `chore:`, `refactor:`, `style:` | none | `docs: clarify asset loading` |
+
+Root `package.json` is the single source of truth for the release version. Every
+other version surface is compared against it rather than restating a literal:
+
+- `style.css` `Version`
+- `whisk/package.json` version
+- `whisk/style.css` `Version`
+- `whisk/project.emulsify.json` `project.generatedFromVersion`
+- both generators, which read the version at generation time rather than
+  embedding it
+
+`release:check` fails when any of these disagree, so a missed bump cannot ship
+inconsistent generated-theme lineage metadata.
+
+Before publishing a release, update root `package.json`, then run
+`npm run release:check -- --skip-smoke` and fix any surface it reports.
+
+## Release checks
+
+Confirm each of the following before publishing:
+
+- Root `package.json`, `style.css`, `whisk/package.json`, `whisk/style.css`, and
+  `whisk/project.emulsify.json` all describe the same release version.
+- `LICENSE`, `package.json`, `composer.json`, `style.css`, and
+  `whisk/package.json` all identify the project as `GPL-2.0-only`.
+- Packagist lists `emulsify-ds/emulsify-wordpress-theme` as maintained, the
+  release tag is indexed, and a clean Composer install lands at `emulsify/`.
+- README and `UPGRADE.md` describe the current parent theme workflow, the
+  WordPress and PHP baselines, Node.js expectations, and the Vite build workflow.
+- The [sister-project parity contract](./sister-project-parity.md) stays linked
+  from the README and still reflects the shared Emulsify Drupal/WordPress model.
+- Whisk remains a generation-only starter and generated child themes keep
+  `Template: emulsify`. Review the
+  [generated child theme contract](./generated-child-theme-contract.md).
+- Generated child themes include a project-specific `README.md` plus
+  `docs/development.md`, `docs/upgrading.md`, and `docs/support-information.md`,
+  and the documentation checker validates their npm commands in both the Whisk
+  source and real generated output.
+- Both generation paths produce the same child theme file tree.
+- `docs/release-notes-next.md` describes the release being published.
+
+## Local checks
+
+Run:
+
+```sh
+npm run docs:check-commands
+npm run lint:php
+npm run test:generated-theme
+npm run smoke:generation-parity
+npm run pr:check
+npm run release:check
+npm run publish-test -- --no-ci
+```
+
+`docs:check-commands` verifies that documented generated-theme and maintainer
+commands still exist in the package where readers are instructed to run them.
+
+`lint:php` is the local PHPCS and PHPStan entry point. Install Composer development dependencies first; use `npm run lint:php:fix` for PHPCBF auto-fixes.
+
+`test:generated-theme` runs focused Node tests that generate a throwaway child theme and then mutate it to prove each class of contract failure is detected.
+
+`smoke:generation-parity` generates the same identities through the WP-CLI command and the standalone starter hook, validates both against the generated child theme contract, and requires their file trees to match. It needs a PHP binary and skips with a warning when none is available; set `EMULSIFY_PARITY_REQUIRED=1` in CI so a skip fails instead.
+
+`pr:check` runs the practical, stubbed pull request suite:
+
+- Composer metadata validation.
+- Composer dependency install for Twig smoke coverage.
+- ACF Local JSON smoke test.
+- Twig attribute helper smoke test.
+- Twig switch tag smoke test.
+- Child theme generator smoke test.
+- Component locator smoke test.
+- Parent theme filter smoke test.
+- Whisk dependency installation.
+
+`pr:check` does not build the empty Whisk starter. The dedicated extended CI job copies `.github/fixtures/whisk-a11y` into `whisk/src/components` before building, so a real Twig story and Vite entry exercise Core without adding a component system to the committed starter.
+
+`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. In CI, the fixture extracts the built `emulsify.zip` into an isolated WordPress site, confirms the packaged `wp emulsify` command, generates and activates a child theme from the packaged Whisk source, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
+
+## Installable release artifact
+
+Run `npm run build:dist` to create `dist-artifact/emulsify.zip`. The build stages an explicit parent-theme runtime file list under a top-level `emulsify/` directory, copies only tracked Whisk generator files, and installs the versions pinned in `composer.lock` with `--no-dev --optimize-autoloader` directly into that staged tree. The ZIP therefore bundles `vendor/` and can be installed without running Composer after download.
+
+The archive includes the runtime PHP entry points, `includes/`, `templates/`, `src/`, `style.css`, `theme.json`, the screenshot, license, README, linked user documentation, production Composer dependencies, and the tracked `whisk/` child starter required by `wp emulsify`. It excludes repository metadata, `.github/`, root npm and Composer metadata, `node_modules/`, development configuration, smoke tests, and Whisk's standalone `.cli` hook, caches, dependencies, and build output.
+
+Composer/GitHub distributions are a separate channel. They retain `composer.json` so the consuming application can resolve dependencies, and `.gitattributes` removes repository-only CI, release scripts, and root npm tooling while retaining user documentation. A direct Git clone remains a full development checkout. For a manual WordPress upload, always use the named `emulsify.zip` release asset rather than GitHub's automatic **Source code** archive.
+
+The semantic-release publish job sets up PHP 8.3 and Composer, builds this archive, and lets `@semantic-release/github` attach it to the GitHub release as **Emulsify WordPress theme (with dependencies)**. WordPress.org SVN deployment remains a future step after the project has a WordPress.org profile; it is not performed by this workflow.
+
+For pre-release client testing, the PHP 8.3 `Practical theme readiness` lane also builds the archive and uploads `emulsify.zip` directly for 14 days. This provides the packaged theme before a public GitHub Release exists without publishing an untagged stable release or wrapping the installable ZIP inside another archive.
+
+## CI
+
+The WordPress Theme Readiness workflow runs on pull requests, manual dispatch, and a weekly schedule.
+
+Every configured pull request runs two independently visible fast jobs:
+
+- `Practical theme readiness`: clean root npm installation, Composer validation, npm audits, the practical `pr:check` suite, and static `release:check` assertions.
+- `PHP coding standards and static analysis`: PHP 8.3, Composer development dependencies, PHPCS, and PHPStan through `npm run lint:php`.
+
+Pull requests targeting `main` or `release-2.x` additionally run the two extended jobs:
+
+- `WordPress fixture smoke`: the built installable ZIP, MySQL, WP-CLI, Timber, packaged generator/Whisk coverage, generated-child activation, block discovery, assets, and home/page/single/archive/search/author/404 rendering with `WP_SMOKE_REQUIRED=1`.
+- `Extended Whisk Storybook and a11y`: an explicit Chrome setup, a CI-only component seed, the Core 4 Vite and Storybook builds, and an axe audit of the discovered story.
+
+Weekly scheduled runs repeat both extended jobs. Manual dispatch runs the WordPress fixture when `wordpress_fixture` is enabled and the Whisk build/audit when `extended_checks` is enabled. The workflow concurrency group cancels superseded pull-request runs, and both extended jobs have explicit runtime limits.
+
+## 2.0 merge and release gate
+
+The two fast pull-request jobs run automatically for every configured target branch. All four jobs run for changes targeting `main` or `release-2.x`. For an additional final rerun before merging the 2.0 release branch:
+
+1. Open GitHub Actions for `emulsify-ds/emulsify-wordpress`.
+2. Select the `WordPress Theme Readiness` workflow.
+3. Choose `Run workflow`.
+4. Select the `release-2.x` branch.
+5. Keep `wordpress_fixture` enabled. It defaults to enabled for manual runs.
+6. Enable `extended_checks` to rerun the CI-seeded Storybook and accessibility audit.
+
+Success means `Practical theme readiness`, `PHP coding standards and static analysis`, `WordPress fixture smoke`, and `Extended Whisk Storybook and a11y` pass. The fixture job installs WP-CLI, starts MySQL, sets `WP_SMOKE_REQUIRED=1`, and runs `npm run release:check` against the isolated WordPress fixture. Record the successful workflow run in the 2.0 release PR before merging.
+
+The semantic-release workflow remains release-gated. It runs release readiness, requires the full WordPress fixture smoke path with WP-CLI and MySQL, runs a semantic-release dry run, and then allows the final publish job only after the readiness job succeeds. Release publishing must not proceed when the full fixture path is skipped or failed.
+
+## License
+
+The 2.x branch uses GPL-2.0-only metadata across npm, Composer, WordPress theme headers, and repository license files.

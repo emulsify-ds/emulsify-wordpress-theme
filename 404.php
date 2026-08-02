@@ -1,13 +1,17 @@
 <?php
 /**
- * The template for displaying 404 pages (Not Found)
+ * Page 404 template.
  *
- * Methods for TimberHelper can be found in the /functions sub-directory
- *
- * @package  WordPress
- * @subpackage  Timber
- * @since    Timber 0.1
+ * @package Emulsify
  */
 
+use Timber\Timber;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// WordPress loads this file directly from the template hierarchy; keep route
+// controllers in the global namespace and put reusable logic in includes/.
 $context = Timber::context();
-Timber::render( '404.twig', $context );
+Timber::render( '@templates/404.twig', $context );

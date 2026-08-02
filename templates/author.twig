@@ -1,7 +1,24 @@
-{% extends "@templates/_default.twig" %}
+{# Author archive fallback. The author route controller sets the title and this
+   template reuses the same teaser pattern as other archives. #}
+{% extends '@templates/layouts/base.twig' %}
+
+{% set entry_list_attributes = {
+    class: bem('entry-list')
+} %}
 
 {% block content %}
-	{% for post in posts %}
-		{% include ["tease-"~post.post_type~".twig", "tease.twig"] %}
-	{% endfor %}
+    {% set entries = posts|default([]) %}
+
+    {% if entries is not empty %}
+        <div {{ add_attributes(entry_list_attributes) }}>
+            {% for post in entries %}
+                {# Use the same post-type teaser fallback chain as archive.twig. #}
+                {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
+                    post: post
+                } only %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>{{ function('__', 'No posts were found for this author.', 'emulsify') }}</p>
+    {% endif %}
 {% endblock %}

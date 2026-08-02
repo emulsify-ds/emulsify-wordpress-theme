@@ -1,5 +1,20 @@
-{% extends "@templates/_default.twig" %}
+{# Generic 404 fallback rendered by 404.php. Child themes can override this file
+   without changing PHP route logic. #}
+{% extends '@templates/layouts/base.twig' %}
+
+{% set not_found_attributes = {
+    class: bem('not-found')
+} %}
+{% set not_found_title_attributes = {
+    class: bem('title', [], 'not-found')
+} %}
+{% set not_found_message_attributes = {
+    class: bem('message', [], 'not-found')
+} %}
 
 {% block content %}
-	Sorry, we couldn't find what you're looking for.
+    <section {{ add_attributes(not_found_attributes) }}>
+        <h1 {{ add_attributes(not_found_title_attributes) }}>{{ function('__', 'Page not found', 'emulsify') }}</h1>
+        <p {{ add_attributes(not_found_message_attributes) }}>{{ function('__', 'The requested page could not be found.', 'emulsify') }}</p>
+    </section>
 {% endblock %}

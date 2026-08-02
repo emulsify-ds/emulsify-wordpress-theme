@@ -1,20 +1,29 @@
 <?php
 /**
- * The Template for displaying all single posts
+ * The Template for displaying all single posts.
  *
- * Methods for TimberHelper can be found in the /lib sub-directory
- *
- * @package  WordPress
- * @subpackage  Timber
- * @since    Timber 0.1
+ * @package Emulsify
  */
 
-$context         = Timber::context();
-$timber_post     = Timber::query_post();
-$context['post'] = $timber_post;
+use Timber\Timber;
 
-if ( post_password_required( $timber_post->ID ) ) {
-	Timber::render( 'single-password.twig', $context );
-} else {
-	Timber::render( array( 'single-' . $timber_post->ID . '.twig', 'single-' . $timber_post->post_type . '.twig', 'single-' . $timber_post->slug . '.twig', 'single.twig' ), $context );
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
+
+$context        = Timber::context();
+$wp_post        = $context['post'] ?? null;
+$post_type_slug = $wp_post->post_type ?? get_post_type();
+$templates      = array( '@templates/single.twig' );
+
+if ( $post_type_slug ) {
+	// Child themes can add single-{post_type}.twig to override one post type
+	// without duplicating the generic single.twig fallback.
+	array_unshift( $templates, '@templates/single-' . $post_type_slug . '.twig' );
+}
+
+if ( $wp_post && post_password_required( $wp_post->ID ) ) {
+	$templates = '@templates/single-password.twig';
+}
+
+Timber::render( $templates, $context );

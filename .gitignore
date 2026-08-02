@@ -1,27 +1,29 @@
-wp-content
-
 # Ignore compiled files.
 dist
+/dist-artifact/
 
-# Yarn/NPM
-node_modules/
-yarn.lock
-yarn-error.log
-
-# Storybook
-.out
-
-# Gatsby
-.gatsby-context.js
-public
-.cache/
+# npm
+node_modules
 
 # System
 .DS_Store
+.idea
+.vscode
 
 # Git deploy
 .publish
 
 # Composer
-composer.lock
-/vendor/
+vendor
+
+# Jest
+.coverage
+
+# Storybook
+.out
+
+# Local AI/release working notes
+/*-PROMPTS.md
+/PROMPTS-*.md
+/RELEASE-REVIEW-PR*.md
+/STATUS-UPDATE-*.md

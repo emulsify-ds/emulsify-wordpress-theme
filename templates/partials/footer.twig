@@ -1,0 +1,15 @@
+{# Shared footer fallback. Child themes normally override this partial rather
+   than editing the base layout. #}
+{% set site_footer_attributes = {
+    class: bem('site-footer'),
+    role: 'contentinfo'
+} %}
+{% set site_footer_copyright_attributes = {
+    class: bem('copyright', [], 'site-footer')
+} %}
+
+<footer {{ add_attributes(site_footer_attributes) }}>
+    <p {{ add_attributes(site_footer_copyright_attributes) }}>
+        &copy; {{ 'now'|date('Y') }} {{ site.name|default('') }}
+    </p>
+</footer>

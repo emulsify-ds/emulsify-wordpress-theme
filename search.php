@@ -1,18 +1,23 @@
 <?php
 /**
- * Search results page
+ * Search results template.
  *
- * Methods for TimberHelper can be found in the /lib sub-directory
- *
- * @package  WordPress
- * @subpackage  Timber
- * @since   Timber 0.1
+ * @package Emulsify
  */
 
-$templates = array( 'search.twig', 'archive.twig', 'index.twig' );
+use Timber\Timber;
 
-$context          = Timber::context();
-$context['title'] = 'Search results for ' . get_search_query();
-$context['posts'] = new Timber\PostQuery();
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+$templates = array( '@templates/search.twig', '@templates/archive.twig', '@templates/index.twig' );
+
+$context = Timber::context(
+	array(
+		/* translators: %s is the search query. */
+		'title' => sprintf( __( 'Search results for %s', 'emulsify' ), get_search_query() ),
+	)
+);
 
 Timber::render( $templates, $context );

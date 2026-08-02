@@ -1,0 +1,44 @@
+{# Recursive comment partial. It renders a comment and then reuses itself for
+   any nested children supplied by Timber. #}
+{% set comment_attributes = {
+    class: bem('comment'),
+    id: 'comment-' ~ (comment.id|default(''))
+} %}
+{% set comment_header_attributes = {
+    class: bem('header', [], 'comment')
+} %}
+{% set comment_author_attributes = {
+    class: bem('author', [], 'comment')
+} %}
+{% set comment_content_attributes = {
+    class: bem('content', [], 'comment')
+} %}
+{% set comment_children_attributes = {
+    class: bem('children', [], 'comment')
+} %}
+
+{% if comment|default(null) %}
+    <article {{ add_attributes(comment_attributes) }}>
+        {% if comment.author.name|default(null) %}
+            <header {{ add_attributes(comment_header_attributes) }}>
+                <h3 {{ add_attributes(comment_author_attributes) }}>{{ comment.author.name }}</h3>
+            </header>
+        {% endif %}
+
+        {% if comment.content|default(null) %}
+            <div {{ add_attributes(comment_content_attributes) }}>{{ comment.content|wpautop|raw }}</div>
+        {% endif %}
+
+        {% set children = comment.children|default([]) %}
+        {% if children is not empty %}
+            <div {{ add_attributes(comment_children_attributes) }}>
+                {% for child in children %}
+                    {# Re-enter this same partial for threaded comments. #}
+                    {% include '@templates/partials/comment.twig' with {
+                        comment: child
+                    } only %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </article>
+{% endif %}

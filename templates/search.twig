@@ -1,13 +1,31 @@
-{# see `archive.twig` for an alternative strategy of extending templates #}
-{% extends "@templates/_default.twig" %}
+{# Search results fallback. search.php sets the translated search title. #}
+{% extends '@templates/layouts/base.twig' %}
+
+{% set entry_list_attributes = {
+    class: bem('entry-list')
+} %}
 
 {% block content %}
-  {# see `base.twig:27` for where this block's content will be inserted #}
-  <div class="content-wrapper">
-    {% for post in posts %}
-      {% include ['tease-'~post.post_type~'.twig', 'tease.twig'] %}
-    {% endfor %}
+    {% set entries = posts|default([]) %}
 
-    {% include 'partial/pagination.twig' with { pagination: posts.pagination({show_all: false, mid_size: 3, end_size: 2}) } %}
-  </div>
+    {% if entries is not empty %}
+        <div {{ add_attributes(entry_list_attributes) }}>
+            {% for post in entries %}
+                {# Reuse archive teaser fallbacks for each result type. #}
+                {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
+                    post: post
+                } only %}
+            {% endfor %}
+        </div>
+
+        {% include '@templates/partials/pagination.twig' with {
+            pagination: posts.pagination({
+                show_all: false,
+                mid_size: 3,
+                end_size: 2
+            })
+        } only %}
+    {% else %}
+        <p>{{ function('__', 'No results were found.', 'emulsify') }}</p>
+    {% endif %}
 {% endblock %}

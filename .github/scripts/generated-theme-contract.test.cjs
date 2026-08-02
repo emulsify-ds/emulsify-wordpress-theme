@@ -1,0 +1,260 @@
+#!/usr/bin/env node
+
+// Focused tests for the generated child theme contract. These build a real
+// generated theme with the standalone starter hook, then mutate it to prove each
+// class of contract failure is actually detected.
+
+const assert = require('node:assert/strict');
+const childProcess = require('node:child_process');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { test } = require('node:test');
+
+const { validateGeneratedTheme } = require('./generated-theme-contract.cjs');
+
+const repoRoot = path.resolve(__dirname, '../..');
+const starterRoot = path.join(repoRoot, 'whisk');
+const excludedCopySegments = new Set([
+  '.coverage',
+  '.git',
+  '.out',
+  '.cache',
+  'dist',
+  'node_modules',
+]);
+
+const machineName = 'acme-site';
+const displayName = 'Acme Site';
+const description = 'Marketing site for Acme, Inc. (rebuild).';
+
+function copyStarter(source, destination) {
+  fs.mkdirSync(destination, { recursive: true });
+
+  for (const entry of fs.readdirSync(source, { withFileTypes: true })) {
+    if (excludedCopySegments.has(entry.name)) {
+      continue;
+    }
+
+    const sourcePath = path.join(source, entry.name);
+    const destinationPath = path.join(destination, entry.name);
+
+    if (entry.isDirectory()) {
+      copyStarter(sourcePath, destinationPath);
+      continue;
+    }
+
+    if (entry.isFile()) {
+      fs.copyFileSync(sourcePath, destinationPath);
+    }
+  }
+}
+
+function writeJson(filePath, data) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`);
+}
+
+function readJson(filePath) {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+}
+
+/**
+ * Generates a throwaway child theme and returns its directory.
+ */
+function generateTheme() {
+  const workRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'emulsify-contract-'));
+  const target = path.join(workRoot, machineName);
+
+  copyStarter(starterRoot, target);
+
+  const project = readJson(path.join(target, 'project.emulsify.json'));
+  project.project.name = displayName;
+  project.project.machineName = machineName;
+  project.project.description = description;
+  writeJson(path.join(target, 'project.emulsify.json'), project);
+
+  childProcess.execFileSync(process.execPath, [path.join(target, '.cli/init.js')], {
+    cwd: target,
+    stdio: 'pipe',
+  });
+
+  return { workRoot, target };
+}
+
+function validate(target) {
+  return validateGeneratedTheme({
+    themeDir: target,
+    machineName,
+    displayName,
+    description,
+    sourceDir: starterRoot,
+  });
+}
+
+function withGeneratedTheme(callback) {
+  const { workRoot, target } = generateTheme();
+
+  try {
+    return callback(target);
+  } finally {
+    fs.rmSync(workRoot, { recursive: true, force: true });
+  }
+}
+
+test('accepts a freshly generated child theme', () => {
+  withGeneratedTheme((target) => {
+    const result = validate(target);
+    assert.equal(
+      result.errors.length,
+      0,
+      `Expected a clean generated theme:\n${result.format()}`,
+    );
+    assert.match(result.format(), /PASS documentation/);
+    assert.match(result.format(), /PASS placeholder replacement/);
+  });
+});
+
+test('requires the generated documentation set', () => {
+  withGeneratedTheme((target) => {
+    fs.rmSync(path.join(target, 'README.md'));
+    fs.rmSync(path.join(target, 'docs'), { recursive: true, force: true });
+
+    const result = validate(target);
+    assert.ok(result.errors.length > 0);
+    assert.match(result.format(), /FAIL generation/);
+    assert.match(result.format(), /missing required generated file "README\.md"/);
+  });
+});
+
+test('reports leftover documentation tokens', () => {
+  withGeneratedTheme((target) => {
+    const readmePath = path.join(target, 'README.md');
+    fs.writeFileSync(
+      readmePath,
+      `${fs.readFileSync(readmePath, 'utf8')}\n%%EMULSIFY_THEME_NAME%%\n`,
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL placeholder replacement/);
+    assert.match(result.format(), /documentation token/);
+  });
+});
+
+test('reports a stale starter machine name', () => {
+  withGeneratedTheme((target) => {
+    const templatePath = path.join(target, 'templates/page.twig');
+    fs.writeFileSync(
+      templatePath,
+      fs.readFileSync(templatePath, 'utf8').replace(`${machineName}-page`, 'whisk-page'),
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL placeholder replacement/);
+    assert.match(result.format(), /stale starter machine name "whisk"/);
+  });
+});
+
+test('reports a documented npm command that package.json does not expose', () => {
+  withGeneratedTheme((target) => {
+    const docPath = path.join(target, 'docs/support-information.md');
+    fs.writeFileSync(
+      docPath,
+      `${fs.readFileSync(docPath, 'utf8')}\n\`\`\`bash\nnpm run does-not-exist\n\`\`\`\n`,
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL documentation/);
+    assert.match(result.format(), /has no "does-not-exist" script/);
+  });
+});
+
+test('reports documentation links that escape the generated theme', () => {
+  withGeneratedTheme((target) => {
+    const readmePath = path.join(target, 'README.md');
+    fs.writeFileSync(
+      readmePath,
+      `${fs.readFileSync(readmePath, 'utf8')}\n[Escape](../../secrets.md)\n`,
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL file references/);
+    assert.match(result.format(), /resolves outside the generated child theme/);
+  });
+});
+
+test('requires WordPress theme identity to match the request', () => {
+  withGeneratedTheme((target) => {
+    const stylePath = path.join(target, 'style.css');
+    fs.writeFileSync(
+      stylePath,
+      fs.readFileSync(stylePath, 'utf8').replace('Template: emulsify', 'Template: twentytwentyfive'),
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL WordPress metadata/);
+    assert.match(result.format(), /Template/);
+  });
+});
+
+test('requires generated project lineage metadata', () => {
+  withGeneratedTheme((target) => {
+    const projectPath = path.join(target, 'project.emulsify.json');
+    const project = readJson(projectPath);
+    project.project.generatedFromVersion = '0.0.0';
+    writeJson(projectPath, project);
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL frontend metadata/);
+    assert.match(result.format(), /project\.generatedFromVersion/);
+  });
+});
+
+test('requires generated project description metadata', () => {
+  withGeneratedTheme((target) => {
+    const projectPath = path.join(target, 'project.emulsify.json');
+    const project = readJson(projectPath);
+    delete project.project.description;
+    writeJson(projectPath, project);
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL frontend metadata/);
+    assert.match(result.format(), /project\.description/);
+  });
+});
+
+test('rejects generation-only tooling left in the generated theme', () => {
+  withGeneratedTheme((target) => {
+    fs.mkdirSync(path.join(target, '.cli'), { recursive: true });
+    fs.writeFileSync(path.join(target, '.cli/init.js'), '// leftover\n');
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL generation/);
+    assert.match(result.format(), /generation-only or build path "\.cli"/);
+  });
+});
+
+test('rejects symbolic links in generated output', () => {
+  withGeneratedTheme((target) => {
+    fs.symlinkSync(path.join(target, 'style.css'), path.join(target, 'linked.css'));
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL generation/);
+    assert.match(result.format(), /contains symbolic link/);
+  });
+});
+
+test('rejects retired terminology in generated markdown', () => {
+  withGeneratedTheme((target) => {
+    const docPath = path.join(target, 'docs/development.md');
+    fs.writeFileSync(
+      docPath,
+      `${fs.readFileSync(docPath, 'utf8')}\nBuild the subtheme with Webpack.\n`,
+    );
+
+    const result = validate(target);
+    assert.match(result.format(), /FAIL placeholder replacement/);
+    assert.match(result.format(), /retired frontend tooling/);
+    assert.match(result.format(), /retired theme terminology/);
+  });
+});

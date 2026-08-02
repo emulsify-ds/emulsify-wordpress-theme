@@ -1,0 +1,61 @@
+{# Minimal comment form fallback. Projects that need full core comment_form()
+   behavior should override this partial in the child theme. #}
+{% set comment_form_attributes = {
+    class: bem('comment-form')
+} %}
+{% set comment_form_title_attributes = {
+    class: bem('title', [], 'comment-form')
+} %}
+{% set comment_form_form_attributes = {
+    class: bem('form', [], 'comment-form'),
+    method: 'post',
+    action: site.link|default('') ~ '/wp-comments-post.php'
+} %}
+{% set comment_form_field_attributes = {
+    class: bem('field', [], 'comment-form')
+} %}
+{% set comment_form_submit_attributes = {
+    class: bem('submit', [], 'comment-form'),
+    type: 'submit',
+    name: 'Submit'
+} %}
+
+{% if post|default(null) and post.id|default(null) %}
+    {% set current_user = user|default(null) %}
+
+    <div {{ add_attributes(comment_form_attributes) }}>
+        <h2 {{ add_attributes(comment_form_title_attributes) }}>{{ function('__', 'Leave a comment', 'emulsify') }}</h2>
+
+        <form {{ add_attributes(comment_form_form_attributes) }}>
+            {% if current_user %}
+                {# Logged-in users already have identity fields in WordPress; keep
+                   hidden values for compatibility with wp-comments-post.php. #}
+                <input type="hidden" name="email" value="{{ current_user.email|default('') }}" />
+                <input type="hidden" name="author" value="{{ current_user.name|default('') }}" />
+                <input type="hidden" name="url" value="{{ current_user.link|default('') }}" />
+            {% else %}
+                <p {{ add_attributes(comment_form_field_attributes) }}>
+                    <label for="comment-email">{{ function('__', 'Email', 'emulsify') }}</label>
+                    <input required name="email" type="email" id="comment-email" />
+                </p>
+                <p {{ add_attributes(comment_form_field_attributes) }}>
+                    <label for="comment-author">{{ function('__', 'Name', 'emulsify') }}</label>
+                    <input required name="author" type="text" id="comment-author" />
+                </p>
+                <p {{ add_attributes(comment_form_field_attributes) }}>
+                    <label for="comment-url">{{ function('__', 'Website', 'emulsify') }}</label>
+                    <input name="url" type="url" id="comment-url" />
+                </p>
+            {% endif %}
+
+            <p {{ add_attributes(comment_form_field_attributes) }}>
+                <label for="comment-message">{{ function('__', 'Comment', 'emulsify') }}</label>
+                <textarea required name="comment" id="comment-message" rows="5"></textarea>
+            </p>
+
+            <input name="comment_post_ID" value="{{ post.id }}" type="hidden" />
+            <input name="comment_parent" value="{{ comment.id|default('0') }}" type="hidden" />
+            <button {{ add_attributes(comment_form_submit_attributes) }}>{{ function('__', 'Submit', 'emulsify') }}</button>
+        </form>
+    </div>
+{% endif %}

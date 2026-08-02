@@ -7,6 +7,7 @@ on:
   pull_request:
     types:
       - opened
+  workflow_dispatch:
 
 jobs:
   add-to-project:
@@ -18,4 +19,4 @@ jobs:
           # You can target a repository in a different organization
           # to the issue
           project-url: https://github.com/orgs/emulsify-ds/projects/6
-          github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
+          token: ${{ secrets.ADD_TO_PROJECT_PAT }}

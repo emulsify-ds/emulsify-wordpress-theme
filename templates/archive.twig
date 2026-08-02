@@ -1,9 +1,33 @@
-{# This file demonstrates using most of the index.twig template and modifying 
-   just a small part. See `search.twig` for an example of another approach #}
+{# Generic archive fallback. PHP route files set the page title; this template
+   only decides how archive entries and pagination render. #}
+{% extends '@templates/layouts/base.twig' %}
 
-{% extends "index.twig" %}
+{% set entry_list_attributes = {
+    class: bem('entry-list')
+} %}
 
 {% block content %}
-  <h3>This is my archive</h3>
-  {{ parent() }}
+    {% set entries = posts|default([]) %}
+
+    {% if entries is not empty %}
+        <div {{ add_attributes(entry_list_attributes) }}>
+            {% for post in entries %}
+                {# Prefer a post-type-specific teaser partial, then fall back to
+                   the generic teaser so child themes can override narrowly. #}
+                {% include ['@templates/partials/tease-' ~ post.type ~ '.twig', '@templates/partials/tease.twig'] with {
+                    post: post
+                } only %}
+            {% endfor %}
+        </div>
+
+        {% include '@templates/partials/pagination.twig' with {
+            pagination: posts.pagination({
+                show_all: false,
+                mid_size: 3,
+                end_size: 2
+            })
+        } only %}
+    {% else %}
+        <p>{{ function('__', 'No posts were found.', 'emulsify') }}</p>
+    {% endif %}
 {% endblock %}
