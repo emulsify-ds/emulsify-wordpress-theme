@@ -23,9 +23,22 @@ final class GenerateChildThemeCommand {
 	private const GENERATED_FROM = 'emulsify-wordpress';
 
 	/**
-	 * Fallback generated child theme source version.
+	 * Fallback generated child theme description.
 	 */
-	private const GENERATED_FROM_VERSION = '2.0.0';
+	private const FALLBACK_DESCRIPTION = 'No description was supplied during generation.';
+
+	/**
+	 * Project documentation files that receive generated token replacement.
+	 *
+	 * These files are copied verbatim and are the only files that may contain
+	 * `%%EMULSIFY_*%%` tokens. Generation fails when a token survives.
+	 */
+	private const DOCUMENTATION_FILES = array(
+		'README.md',
+		'docs/development.md',
+		'docs/support-information.md',
+		'docs/upgrading.md',
+	);
 
 	/**
 	 * Dependency/cache/build paths that should never be copied into a generated
@@ -33,6 +46,7 @@ final class GenerateChildThemeCommand {
 	 */
 	private const EXCLUDED_COPY_PATHS = array(
 		'.git',
+		'.cli',
 		'.coverage',
 		'.out',
 		'dist',
@@ -66,6 +80,11 @@ final class GenerateChildThemeCommand {
 	 *
 	 * [--parent=<slug>]
 	 * : Parent theme directory slug. Defaults to emulsify.
+	 *
+	 * [--description=<text>]
+	 * : Human-readable child theme description used in the style.css Description
+	 * header, package metadata, and generated project documentation. Defaults to
+	 * the starter description.
 	 *
 	 * [--dry-run]
 	 * : Show what would be created or changed without writing files.
@@ -102,7 +121,6 @@ final class GenerateChildThemeCommand {
 		$source             = $this->join_path( get_theme_root(), $parent, self::STARTER_SLUG );
 		$destination        = $this->join_path( get_theme_root(), $machine_name );
 		$destination_exists = file_exists( $destination );
-		$version            = $this->get_generated_from_version( $source );
 
 		\WP_CLI::log( sprintf( 'Generating child theme "%s" (%s) from Emulsify.', $label, $machine_name ) );
 		\WP_CLI::log( sprintf( 'Source: %s', $source ) );
@@ -110,6 +128,16 @@ final class GenerateChildThemeCommand {
 
 		if ( ! is_dir( $source ) ) {
 			\WP_CLI::error( sprintf( 'Source directory not found: %s', $source ) );
+			return;
+		}
+
+		try {
+			$version     = $this->get_generated_from_version( $source );
+			$description = $this->get_description( $assoc_args, $source );
+			$core_range  = $this->get_core_range( $source );
+		} catch ( \Throwable $exception ) {
+			\WP_CLI::error( sprintf( 'Could not read generation metadata: %s', $exception->getMessage() ) );
+			return;
 		}
 
 		if ( $machine_name === $parent ) {
@@ -125,6 +153,8 @@ final class GenerateChildThemeCommand {
 			'machine_name' => $machine_name,
 			'parent'       => $parent,
 			'version'      => $version,
+			'description'  => $description,
+			'core_range'   => $core_range,
 		);
 
 		if ( $destination_exists ) {
@@ -142,7 +172,13 @@ final class GenerateChildThemeCommand {
 		}
 
 		if ( $dry_run ) {
-			$metadata_updates = $this->collect_metadata_updates( $source, $config );
+			try {
+				$metadata_updates = $this->collect_metadata_updates( $source, $config );
+			} catch ( \Throwable $exception ) {
+				\WP_CLI::error( sprintf( 'Could not plan the child theme: %s', $exception->getMessage() ) );
+				return;
+			}
+
 			$this->report_dry_run( $source, $destination, $metadata_updates, $force, $activate, $machine_name );
 			return;
 		}
@@ -244,6 +280,8 @@ final class GenerateChildThemeCommand {
 	 * @param string $root   Theme root to read.
 	 * @param array  $config Generation config.
 	 * @return array<int, array{file:string,contents:string}>
+	 *
+	 * @throws \RuntimeException When generated documentation cannot be resolved.
 	 */
 	private function collect_metadata_updates( string $root, array $config ): array {
 		$updates      = array();
@@ -252,6 +290,8 @@ final class GenerateChildThemeCommand {
 		$machine_name = $config['machine_name'];
 		$parent       = $config['parent'];
 		$version      = $config['version'];
+		$description  = $config['description'];
+		$core_range   = $config['core_range'];
 
 		// Update known metadata surfaces deliberately. Avoid blind recursive text
 		// replacement so example prose, generated assets, and project content are
@@ -260,9 +300,10 @@ final class GenerateChildThemeCommand {
 			$updates,
 			$root,
 			'style.css',
-			function ( string $contents ) use ( $source_label, $machine_name, $parent ): string {
+			function ( string $contents ) use ( $source_label, $machine_name, $parent, $description ): string {
 				$contents = $this->replace_theme_header( $contents, 'Theme Name', $source_label );
 				$contents = $this->replace_theme_header( $contents, 'Text Domain', $machine_name );
+				$contents = $this->replace_theme_header( $contents, 'Description', $this->one_line( $description ) );
 				return $this->replace_theme_header( $contents, 'Template', $parent );
 			}
 		);
@@ -271,8 +312,9 @@ final class GenerateChildThemeCommand {
 			$updates,
 			$root,
 			'package.json',
-			function ( array $data ) use ( $machine_name ): array {
-				$data['name'] = $machine_name;
+			function ( array $data ) use ( $machine_name, $description ): array {
+				$data['name']        = $machine_name;
+				$data['description'] = $this->one_line( $description );
 				return $data;
 			}
 		);
@@ -281,7 +323,7 @@ final class GenerateChildThemeCommand {
 			$updates,
 			$root,
 			'project.emulsify.json',
-			function ( array $data ) use ( $theme_label, $machine_name, $version ): array {
+			function ( array $data ) use ( $theme_label, $machine_name, $version, $description ): array {
 				if ( ! isset( $data['project'] ) || ! is_array( $data['project'] ) ) {
 					$data['project'] = array();
 				}
@@ -292,6 +334,7 @@ final class GenerateChildThemeCommand {
 				$data['project']['machineName']          = $machine_name;
 				$data['project']['generatedFrom']        = self::GENERATED_FROM;
 				$data['project']['generatedFromVersion'] = $version;
+				$data['project']['description']          = $this->one_line( $description );
 
 				return $data;
 			}
@@ -317,7 +360,68 @@ final class GenerateChildThemeCommand {
 
 		$this->collect_pattern_updates( $updates, $root, $machine_name );
 
+		$this->collect_documentation_updates(
+			$updates,
+			$root,
+			array(
+				'%%EMULSIFY_THEME_NAME%%'     => $this->one_line( $theme_label ),
+				'%%EMULSIFY_MACHINE_NAME%%'   => $this->one_line( $machine_name ),
+				'%%EMULSIFY_DESCRIPTION%%'    => $this->one_line( $description ),
+				'%%EMULSIFY_SOURCE_PROJECT%%' => self::GENERATED_FROM,
+				'%%EMULSIFY_SOURCE_VERSION%%' => $this->one_line( $version ),
+				'%%EMULSIFY_CORE_RANGE%%'     => $this->one_line( $core_range ),
+			)
+		);
+
 		return $updates;
+	}
+
+	/**
+	 * Adds generated project documentation updates.
+	 *
+	 * Documentation files are copied verbatim, so this is the only place their
+	 * `%%EMULSIFY_*%%` tokens are resolved. A surviving token is a generation
+	 * failure rather than a silent leak into a project repository.
+	 *
+	 * @param array  $updates      Update accumulator.
+	 * @param string $root         Theme root.
+	 * @param array  $replacements Token replacement map.
+	 * @return void
+	 *
+	 * @throws \RuntimeException When a documentation file is missing, unreadable, or retains a token.
+	 */
+	private function collect_documentation_updates( array &$updates, string $root, array $replacements ): void {
+		foreach ( self::DOCUMENTATION_FILES as $relative ) {
+			$path = $this->join_path( $root, $relative );
+
+			if ( ! is_readable( $path ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal generator path, not rendered HTML.
+				throw new \RuntimeException( sprintf( 'Expected starter documentation file is missing: %s', $relative ) );
+			}
+
+			$contents = file_get_contents( $path );
+
+			if ( ! is_string( $contents ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal generator path, not rendered HTML.
+				throw new \RuntimeException( sprintf( 'Could not read starter documentation file: %s', $relative ) );
+			}
+
+			$updated = strtr( $contents, $replacements );
+
+			if ( preg_match( '/%%EMULSIFY_[A-Z_]+%%/', $updated, $matches ) ) {
+				throw new \RuntimeException(
+					// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Internal token and path, not rendered HTML.
+					sprintf( 'Unable to replace documentation token %s in %s.', $matches[0], $relative )
+				);
+			}
+
+			if ( $updated !== $contents ) {
+				$updates[] = array(
+					'file'     => $relative,
+					'contents' => $updated,
+				);
+			}
+		}
 	}
 
 	/**
@@ -429,7 +533,7 @@ final class GenerateChildThemeCommand {
 		}
 
 		$updated_data = $callback( $data );
-		$updated      = json_encode( $updated_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		$updated      = $this->encode_json( $updated_data );
 
 		if ( ! is_string( $updated ) ) {
 			\WP_CLI::warning( sprintf( 'Could not encode starter JSON file: %s', $path ) );
@@ -526,16 +630,20 @@ final class GenerateChildThemeCommand {
 	 */
 	private function replace_theme_header( string $contents, string $field, string $value ): string {
 		$pattern = '/^(\s*\*\s*' . preg_quote( $field, '/' ) . ':\s*).*$/mi';
+		$found   = false;
 		$updated = preg_replace_callback(
 			$pattern,
-			static function ( array $matches ) use ( $value ): string {
+			static function ( array $matches ) use ( $value, &$found ): string {
+				$found = true;
 				return $matches[1] . $value;
 			},
 			$contents,
 			1
 		);
 
-		if ( ! is_string( $updated ) || $updated === $contents ) {
+		// Distinguish a missing header from a header that already holds the
+		// requested value. Only the former is a problem worth reporting.
+		if ( ! is_string( $updated ) || ! $found ) {
 			\WP_CLI::warning( sprintf( 'Could not update "%s" in style.css.', $field ) );
 			return $contents;
 		}
@@ -579,8 +687,15 @@ final class GenerateChildThemeCommand {
 	/**
 	 * Gets the version to record in generated child theme metadata.
 	 *
+	 * The in-site path reads the installed parent theme's package.json; the
+	 * standalone starter reads its own. Release checks require both to match the
+	 * root release version, so the two generation paths agree. Failing loudly is
+	 * better than recording a stale fallback that would misreport lineage.
+	 *
 	 * @param string $source Starter source path.
 	 * @return string Version string.
+	 *
+	 * @throws \RuntimeException When the parent theme declares no version.
 	 */
 	private function get_generated_from_version( string $source ): string {
 		$package = $this->read_json_file( $this->join_path( dirname( $source ), 'package.json' ) );
@@ -589,7 +704,108 @@ final class GenerateChildThemeCommand {
 			return trim( $package['version'] );
 		}
 
-		return self::GENERATED_FROM_VERSION;
+		throw new \RuntimeException( 'Could not read the parent theme release version from package.json.' );
+	}
+
+	/**
+	 * Gets the description to record in generated theme metadata and docs.
+	 *
+	 * @param array  $assoc_args Named CLI arguments.
+	 * @param string $source     Starter source path.
+	 * @return string Description string.
+	 */
+	private function get_description( array $assoc_args, string $source ): string {
+		$supplied = isset( $assoc_args['description'] ) && is_string( $assoc_args['description'] )
+			? $assoc_args['description']
+			: '';
+
+		if ( '' !== trim( $supplied ) ) {
+			$supplied = function_exists( 'sanitize_text_field' )
+				? sanitize_text_field( $supplied )
+				: trim( strip_tags( $supplied ) );
+
+			if ( '' !== trim( $supplied ) ) {
+				return $this->one_line( $supplied );
+			}
+		}
+
+		$starter = $this->read_theme_header_value( $this->join_path( $source, 'style.css' ), 'Description' );
+
+		if ( is_string( $starter ) && '' !== trim( $starter ) ) {
+			return $this->one_line( $starter );
+		}
+
+		return self::FALLBACK_DESCRIPTION;
+	}
+
+	/**
+	 * Gets the Emulsify Core range declared by the starter.
+	 *
+	 * @param string $source Starter source path.
+	 * @return string Semver range.
+	 *
+	 * @throws \RuntimeException When the starter declares no Emulsify Core range.
+	 */
+	private function get_core_range( string $source ): string {
+		$package = $this->read_json_file( $this->join_path( $source, 'package.json' ) );
+		$range   = $package['dependencies']['@emulsify/core'] ?? null;
+
+		if ( ! is_string( $range ) || '' === trim( $range ) ) {
+			throw new \RuntimeException( 'Starter package.json is missing dependencies.@emulsify/core.' );
+		}
+
+		return $this->one_line( $range );
+	}
+
+	/**
+	 * Encodes generated JSON with two-space indentation.
+	 *
+	 * PHP's JSON_PRETTY_PRINT is fixed at four spaces, while npm, Node, and the
+	 * Whisk sources all use two. Re-indenting here keeps generated JSON identical
+	 * no matter which generation path a project used.
+	 *
+	 * @param array $data Data to encode.
+	 * @return string|null Encoded JSON, or NULL on failure.
+	 */
+	private function encode_json( array $data ): ?string {
+		// JSON_UNESCAPED_UNICODE matches JSON.stringify, which never escapes
+		// non-ASCII. Without it a non-ASCII theme name or description would make
+		// the two generation paths emit different bytes. Do not add
+		// JSON_UNESCAPED_LINE_TERMINATORS: U+2028/U+2029 must stay escaped so the
+		// re-indent below can never see a raw line break inside a string value.
+		$encoded = json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+		if ( ! is_string( $encoded ) ) {
+			return null;
+		}
+
+		$reindented = preg_replace_callback(
+			'/^(?: {4})+/m',
+			static function ( array $matches ): string {
+				return str_repeat( ' ', (int) ( strlen( $matches[0] ) / 2 ) );
+			},
+			$encoded
+		);
+
+		return is_string( $reindented ) ? $reindented : $encoded;
+	}
+
+	/**
+	 * Collapses whitespace so generated metadata stays readable in Markdown.
+	 *
+	 * Generated values are injected into Markdown table cells and prose, where a
+	 * newline would break the surrounding structure.
+	 *
+	 * @param string $value Raw value.
+	 * @return string Single-line value.
+	 */
+	private function one_line( string $value ): string {
+		// The /u flag keeps this aligned with JavaScript's \s, which also matches
+		// non-breaking and other Unicode spaces, so both generation paths collapse
+		// the same characters.
+		$collapsed = preg_replace( '/\s+/u', ' ', $value );
+
+		return trim( is_string( $collapsed ) ? $collapsed : $value );
 	}
 
 	/**
