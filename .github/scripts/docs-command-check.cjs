@@ -5,7 +5,9 @@ const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '../..');
 
-const CHECKS = [
+// Documentation that describes the repository itself. Each entry is scoped to a
+// heading so unrelated prose in the same file cannot satisfy the check.
+const ROOT_CHECKS = [
   {
     relativePath: 'README.md',
     heading: 'Working inside a generated child theme',
@@ -55,6 +57,14 @@ const CHECKS = [
     expectedScripts: ['inspect:components'],
   },
   {
+    relativePath: 'UPGRADE.md',
+    heading: 'Project audit',
+    packagePath: 'whisk/package.json',
+    packageLabel: 'existing generated child themes',
+    includeInlineCode: true,
+    expectedScripts: ['audit', 'audit:twig-stories'],
+  },
+  {
     relativePath: 'docs/upgrading-1x-to-2x.md',
     heading: 'Validation',
     packagePath: 'package.json',
@@ -72,24 +82,89 @@ const CHECKS = [
       'pr:check',
       'publish-test',
       'release:check',
+      'test:generated-theme',
     ],
+  },
+  {
+    relativePath: 'docs/generated-child-theme-contract.md',
+    heading: 'Run the checks',
+    packagePath: 'package.json',
+    packageLabel: 'the root project',
+    expectedScripts: ['test:generated-theme', 'release:check'],
   },
 ];
 
-function readFile(relativePath) {
-  return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
+// Documentation that ships inside a generated child theme. These run twice: once
+// against the Whisk source and once against real generated output, so a command
+// cannot drift between the template and the theme a project actually receives.
+const THEME_DOC_CHECKS = [
+  {
+    relativePath: 'README.md',
+    packagePath: 'package.json',
+    packageLabel: 'the generated child theme',
+    includeInlineCode: true,
+    requireNpmInstall: true,
+  },
+  {
+    relativePath: 'docs/development.md',
+    packagePath: 'package.json',
+    packageLabel: 'the generated child theme',
+    includeInlineCode: true,
+    requireNpmInstall: true,
+    expectedScripts: [
+      'a11y',
+      'build',
+      'develop',
+      'inspect:components',
+      'lint',
+      'storybook',
+      'storybook-build',
+      'test',
+    ],
+  },
+  {
+    relativePath: 'docs/upgrading.md',
+    packagePath: 'package.json',
+    packageLabel: 'the generated child theme',
+    includeInlineCode: true,
+    expectedScripts: ['inspect:components'],
+  },
+  {
+    relativePath: 'docs/support-information.md',
+    packagePath: 'package.json',
+    packageLabel: 'the generated child theme',
+    includeInlineCode: true,
+  },
+];
+
+function prefixThemeScope(scope) {
+  return {
+    ...scope,
+    relativePath: path.join('whisk', scope.relativePath),
+    packagePath: path.join('whisk', scope.packagePath),
+  };
 }
 
-function readJson(relativePath) {
-  return JSON.parse(readFile(relativePath));
+function readFile(root, relativePath) {
+  return fs.readFileSync(path.join(root, relativePath), 'utf8');
+}
+
+function readJson(root, relativePath) {
+  return JSON.parse(readFile(root, relativePath));
 }
 
 function normalizeHeadingText(text) {
   return text.replace(/\s+#+\s*$/, '').trim();
 }
 
-function extractMarkdownSection(relativePath, heading) {
-  const lines = readFile(relativePath).split(/\r?\n/);
+function extractMarkdownSection(root, relativePath, heading) {
+  const contents = readFile(root, relativePath);
+
+  if (!heading) {
+    return { text: contents, startLine: 1 };
+  }
+
+  const lines = contents.split(/\r?\n/);
 
   for (let index = 0; index < lines.length; index += 1) {
     const match = lines[index].match(/^(#{1,6})\s+(.+?)\s*$/);
@@ -115,7 +190,7 @@ function extractMarkdownSection(relativePath, heading) {
   }
 
   throw new Error(
-    `${relativePath} is missing the "${heading}" documentation section.`,
+    `${relativePath}:1 is missing the "${heading}" documentation section.`,
   );
 }
 
@@ -196,6 +271,15 @@ function extractNpmRunCommands(text, startLine) {
   return commands;
 }
 
+function hasExactNpmInstall(section) {
+  return (
+    section.text
+      .split(/\r?\n/)
+      .some((line) => line.trim() === 'npm install') ||
+    /`npm install`/.test(section.text)
+  );
+}
+
 function lineOffsetForIndex(text, index) {
   return text.slice(0, index).split(/\r?\n/).length - 1;
 }
@@ -204,9 +288,9 @@ function unique(values) {
   return [...new Set(values)];
 }
 
-function validateScope(scope) {
-  const section = extractMarkdownSection(scope.relativePath, scope.heading);
-  const packageJson = readJson(scope.packagePath);
+function validateScope(root, scope, displayRoot) {
+  const section = extractMarkdownSection(root, scope.relativePath, scope.heading);
+  const packageJson = readJson(root, scope.packagePath);
   const scripts = packageJson.scripts || {};
   const commands = [
     ...extractShellFenceCommands(section),
@@ -215,26 +299,36 @@ function validateScope(scope) {
   const documentedScripts = unique(
     commands.map((command) => command.script),
   ).sort();
+  const displayPath = path.join(displayRoot, scope.relativePath);
+  const scopeLabel = scope.heading ? `${displayPath}#${scope.heading}` : displayPath;
   const errors = [];
 
-  if (commands.length === 0) {
+  // A scope with no expected scripts is documentation that may legitimately
+  // describe setup only, so an empty command list is not a failure there.
+  if (scope.expectedScripts?.length && commands.length === 0) {
     errors.push(
-      `${scope.relativePath}#${scope.heading} does not document any npm run commands for ${scope.packageLabel}.`,
+      `${displayPath}:1 ${scopeLabel} does not document any npm run commands for ${scope.packageLabel}.`,
     );
   }
 
   for (const expectedScript of scope.expectedScripts || []) {
     if (!documentedScripts.includes(expectedScript)) {
       errors.push(
-        `${scope.relativePath}#${scope.heading} should document npm run ${expectedScript} for ${scope.packageLabel}.`,
+        `${displayPath}:1 should document npm run ${expectedScript} for ${scope.packageLabel}.`,
       );
     }
+  }
+
+  if (scope.requireNpmInstall && !hasExactNpmInstall(section)) {
+    errors.push(
+      `${displayPath}:1 should document the exact npm install command for ${scope.packageLabel}.`,
+    );
   }
 
   for (const command of commands) {
     if (!scripts[command.script]) {
       errors.push(
-        `${scope.relativePath}:${command.line} documents npm run ${command.script} for ${scope.packageLabel}, but ${scope.packagePath} has no "${command.script}" script.`,
+        `${displayPath}:${command.line} documents npm run ${command.script} for ${scope.packageLabel}, but ${path.join(displayRoot, scope.packagePath)} has no "${command.script}" script.`,
       );
     }
   }
@@ -242,30 +336,74 @@ function validateScope(scope) {
   return {
     documentedScripts,
     errors,
+    label: `${scopeLabel} -> ${path.join(displayRoot, scope.packagePath)}`,
   };
 }
 
-const errors = [];
-const summaries = [];
+/**
+ * Validates documented npm commands against the package that exposes them.
+ *
+ * With no options this checks the repository's own documentation plus the Whisk
+ * source templates. With `generatedTheme` it checks a real generated child theme
+ * directory, so generated output is held to the same contract as the template.
+ */
+function validateDocumentation(options = {}) {
+  const generatedTheme = options.generatedTheme || null;
+  const root = generatedTheme ? path.resolve(generatedTheme) : repoRoot;
+  const displayRoot = generatedTheme ? path.basename(root) : '';
+  const checks = generatedTheme
+    ? THEME_DOC_CHECKS
+    : [...ROOT_CHECKS, ...THEME_DOC_CHECKS.map(prefixThemeScope)];
 
-for (const scope of CHECKS) {
-  const result = validateScope(scope);
-  errors.push(...result.errors);
-  summaries.push(
-    `${scope.relativePath}#${scope.heading} -> ${scope.packagePath}: ${result.documentedScripts.join(', ')}`,
-  );
-}
+  const errors = [];
+  const summaries = [];
 
-if (errors.length > 0) {
-  for (const error of errors) {
-    console.error(error);
+  for (const scope of checks) {
+    let result;
+
+    try {
+      result = validateScope(root, scope, displayRoot);
+    } catch (error) {
+      errors.push(error.message);
+      continue;
+    }
+
+    errors.push(...result.errors);
+    summaries.push(`${result.label}: ${result.documentedScripts.join(', ')}`);
   }
-  process.exit(1);
+
+  return { errors, summaries, count: checks.length };
 }
 
-console.log(
-  `Validated documented npm scripts in ${CHECKS.length} documentation sections.`,
-);
-for (const summary of summaries) {
-  console.log(`- ${summary}`);
+function parseArgs(argv) {
+  const options = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === '--generated-theme') {
+      options.generatedTheme = argv[index + 1];
+      index += 1;
+    }
+  }
+
+  return options;
 }
+
+if (require.main === module) {
+  const result = validateDocumentation(parseArgs(process.argv.slice(2)));
+
+  if (result.errors.length > 0) {
+    for (const error of result.errors) {
+      console.error(error);
+    }
+    process.exit(1);
+  }
+
+  console.log(
+    `Validated documented npm scripts in ${result.count} documentation sections.`,
+  );
+  for (const summary of result.summaries) {
+    console.log(`- ${summary}`);
+  }
+}
+
+module.exports = { validateDocumentation };

@@ -11,6 +11,10 @@ const os = require('os');
 const path = require('path');
 
 const repoRoot = path.resolve(__dirname, '../..');
+// Root package.json is the single source of truth for the release version.
+const expectedGeneratedFromVersion = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
+).version;
 const required = process.env.WP_SMOKE_REQUIRED === '1';
 const keepFixture = process.env.WP_SMOKE_KEEP === '1';
 const host = process.env.WP_SMOKE_HOST || '127.0.0.1';
@@ -253,7 +257,7 @@ function assertGeneratedChildTheme(themePath, slug) {
     project.project?.name !== 'Smoke Generated' ||
     project.project?.machineName !== slug ||
     project.project?.generatedFrom !== 'emulsify-wordpress' ||
-    project.project?.generatedFromVersion !== '2.0.0'
+    project.project?.generatedFromVersion !== expectedGeneratedFromVersion
   ) {
     throw new Error('Generated child theme project.emulsify.json metadata is incorrect.');
   }

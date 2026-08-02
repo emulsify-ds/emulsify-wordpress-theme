@@ -9,8 +9,14 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const { validateGeneratedTheme } = require('./generated-theme-contract.cjs');
+
 const repoRoot = path.resolve(__dirname, '../..');
 const starterRoot = path.join(repoRoot, 'whisk');
+// Root package.json is the single source of truth for the release version.
+const expectedVersion = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'),
+).version;
 const excludedCopySegments = new Set([
   '.coverage',
   '.git',
@@ -256,6 +262,11 @@ try {
     },
   });
 
+  assert(
+    fs.existsSync(path.join(target, '.cli/init.js')),
+    'Starter should include the emulsify-cli init hook before generation.',
+  );
+
   runNodeScript(path.join(target, '.cli/init.js'));
 
   const style = parseThemeHeader(fs.readFileSync(path.join(target, 'style.css'), 'utf8'));
@@ -277,7 +288,7 @@ try {
   assert(project.project.name === hostileName, 'project.emulsify.json should preserve the richer project.name.');
   assert(project.project.machineName === 'acme-theme', 'project.emulsify.json should update project.machineName.');
   assert(project.project.generatedFrom === 'emulsify-wordpress', 'project.emulsify.json should identify the generated child theme source.');
-  assert(project.project.generatedFromVersion === '2.0.0', 'project.emulsify.json should record the generated child theme source version.');
+  assert(project.project.generatedFromVersion === expectedVersion, 'project.emulsify.json should record the generated child theme source version.');
   assert(
     project.starter.repository === 'https://github.com/emulsify-ds/emulsify-wordpress-starter',
     'project.emulsify.json should keep the standalone starter repository.',
@@ -287,7 +298,10 @@ try {
   assert(pageTwig.includes('acme-theme-page'), 'templates/page.twig should update the page class.');
   assert(!pageTwig.includes('whisk-page'), 'templates/page.twig should not keep the starter page class.');
   assert(pattern.name === 'acme-theme/smoke-pattern', 'JSON pattern names should update the whisk namespace.');
-  assert(fs.existsSync(path.join(target, '.cli/init.js')), 'Starter should include the emulsify-cli init hook.');
+  assert(
+    !fs.existsSync(path.join(target, '.cli')),
+    'Generation-only tooling should be removed from the generated child theme.',
+  );
   assert(fs.existsSync(path.join(target, '.gitignore')), 'Starter should include standalone ignore rules.');
   assert(fs.existsSync(path.join(target, '.nvmrc')), 'Starter should use .nvmrc for Node tooling.');
   assert(!fs.existsSync(path.join(target, '.nvm')), 'Starter should not keep the legacy .nvm file.');
@@ -298,6 +312,42 @@ try {
       `Cloned starter fixture should not contain copied ${generatedPath} output.`,
     );
   }
+
+  const readme = fs.readFileSync(path.join(target, 'README.md'), 'utf8');
+  assert(
+    !/%%EMULSIFY_[A-Z_]+%%/.test(readme),
+    'README.md should not keep unreplaced documentation tokens.',
+  );
+  assert(readme.includes('acme-theme'), 'README.md should record the generated machine name.');
+  assert(
+    readme.includes('emulsify-wordpress') && readme.includes(expectedVersion),
+    'README.md should record the generated source lineage.',
+  );
+  for (const generatedDoc of [
+    'docs/development.md',
+    'docs/support-information.md',
+    'docs/upgrading.md',
+  ]) {
+    const contents = fs.readFileSync(path.join(target, generatedDoc), 'utf8');
+    assert(
+      !/%%EMULSIFY_[A-Z_]+%%/.test(contents),
+      `${generatedDoc} should not keep unreplaced documentation tokens.`,
+    );
+  }
+
+  const contract = validateGeneratedTheme({
+    themeDir: target,
+    machineName: 'acme-theme',
+    displayName: hostileName,
+    description: parseThemeHeader(
+      fs.readFileSync(path.join(starterRoot, 'style.css'), 'utf8'),
+    ).Description,
+    sourceDir: starterRoot,
+  });
+  assert(
+    contract.errors.length === 0,
+    `Generated child theme contract failed:\n${contract.format()}`,
+  );
 
   const inspectorReport = runGeneratedComponentInspector(target);
   assert(

@@ -1,0 +1,91 @@
+<?php
+/**
+ * Generates a child theme through the WP-CLI generator without WordPress.
+ *
+ * The cross-path parity check needs the PHP generation path to run in the same
+ * fast job as the Node path, so this harness supplies the minimal WordPress and
+ * WP-CLI surface the command touches.
+ *
+ * Usage: php generation-parity-harness.php <theme-root> <label> <machine-name> <description>
+ *
+ * @package Emulsify
+ */
+
+if ( PHP_SAPI !== 'cli' ) {
+	fwrite( STDERR, "This script must be run from the command line.\n" );
+	exit( 1 );
+}
+
+if ( $argc < 5 ) {
+	fwrite( STDERR, "Usage: generation-parity-harness.php <theme-root> <label> <machine-name> <description>\n" );
+	exit( 2 );
+}
+
+$GLOBALS['emulsify_theme_root'] = $argv[1];
+$label                          = $argv[2];
+$machine_name                   = $argv[3];
+$description                    = $argv[4];
+
+if ( ! class_exists( 'WP_CLI' ) ) {
+	class WP_CLI {
+
+		public static function add_command( $name, $callable ): void {}
+
+		public static function log( string $message ): void {}
+
+		public static function warning( string $message ): void {
+			fwrite( STDERR, sprintf( "warning: %s\n", $message ) );
+		}
+
+		public static function success( string $message ): void {}
+
+		public static function error( string $message ): void {
+			throw new RuntimeException( $message );
+		}
+	}
+}
+
+if ( ! function_exists( 'get_theme_root' ) ) {
+	function get_theme_root(): string {
+		return (string) $GLOBALS['emulsify_theme_root'];
+	}
+}
+
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+	function sanitize_text_field( string $value ): string {
+		return trim( strip_tags( $value ) );
+	}
+}
+
+if ( ! function_exists( 'sanitize_key' ) ) {
+	function sanitize_key( string $key ): string {
+		return (string) preg_replace( '/[^a-z0-9_-]/', '', strtolower( $key ) );
+	}
+}
+
+if ( ! function_exists( 'switch_theme' ) ) {
+	function switch_theme( string $stylesheet ): void {}
+}
+
+if ( ! function_exists( 'wp_mkdir_p' ) ) {
+	function wp_mkdir_p( string $target ): bool {
+		return is_dir( $target ) || mkdir( $target, 0777, true );
+	}
+}
+
+require_once dirname( __DIR__, 2 ) . '/includes/Cli/GenerateChildThemeCommand.php';
+
+$command = new \Emulsify\Theme\Cli\GenerateChildThemeCommand();
+
+try {
+	$command(
+		array( $label ),
+		array(
+			'machine-name' => $machine_name,
+			'description'  => $description,
+		)
+	);
+} catch ( \Throwable $exception ) {
+	fwrite( STDERR, sprintf( "Generation failed: %s\n", $exception->getMessage() ) );
+	exit( 1 );
+}

@@ -85,6 +85,33 @@ if ( ! function_exists( 'switch_theme' ) ) {
 }
 
 /**
+ * Reads the expected generated source version from root package metadata.
+ *
+ * Root package.json is the single source of truth for the release version, so
+ * this smoke derives the value instead of restating it.
+ *
+ * @return string Expected generatedFromVersion.
+ */
+function emulsify_cli_smoke_expected_version(): string {
+	static $version = null;
+
+	if ( null !== $version ) {
+		return $version;
+	}
+
+	$contents = file_get_contents( dirname( __DIR__, 2 ) . '/package.json' );
+	$data     = is_string( $contents ) ? json_decode( $contents, true ) : null;
+
+	if ( ! is_array( $data ) || ! isset( $data['version'] ) || ! is_string( $data['version'] ) || '' === trim( $data['version'] ) ) {
+		throw new RuntimeException( 'Could not read the release version from root package.json.' );
+	}
+
+	$version = trim( $data['version'] );
+
+	return $version;
+}
+
+/**
  * Fails the smoke script when an assertion is false.
  *
  * @param bool   $condition Assertion condition.
@@ -216,6 +243,13 @@ try {
 	}
 
 	emulsify_cli_smoke_copy( $repo_root . '/whisk', $parent_root . '/whisk' );
+
+	// The generator reads the release version from the parent theme package
+	// metadata, so the fixture parent theme needs it too.
+	if ( ! copy( $repo_root . '/package.json', $parent_root . '/package.json' ) ) {
+		throw new RuntimeException( 'Could not copy the parent theme package.json fixture.' );
+	}
+
 	file_put_contents(
 		$parent_root . '/whisk/patterns/smoke-pattern.json',
 		json_encode(
@@ -257,7 +291,7 @@ try {
 	emulsify_cli_smoke_assert( 'Acme Theme' === $project['project']['name'], 'project.emulsify.json should update project name.' );
 	emulsify_cli_smoke_assert( 'acme-child' === $project['project']['machineName'], 'project.emulsify.json should update machineName.' );
 	emulsify_cli_smoke_assert( 'emulsify-wordpress' === $project['project']['generatedFrom'], 'project.emulsify.json should identify the generated child theme source.' );
-	emulsify_cli_smoke_assert( '2.0.0' === $project['project']['generatedFromVersion'], 'project.emulsify.json should record the generated child theme source version.' );
+	emulsify_cli_smoke_assert( emulsify_cli_smoke_expected_version() === $project['project']['generatedFromVersion'], 'project.emulsify.json should record the generated child theme source version.' );
 	emulsify_cli_smoke_assert( false !== strpos( $page, 'acme-child-page' ), 'Example template should update slug class.' );
 	emulsify_cli_smoke_assert( false === strpos( $page, 'whisk-page' ), 'Example template should not keep the whisk slug class.' );
 	emulsify_cli_smoke_assert( false !== strpos( $functions, 'Acme Theme child theme hooks.' ), 'functions.php should update visible Whisk label.' );
@@ -313,7 +347,7 @@ try {
 	emulsify_cli_smoke_assert( ! file_exists( $destination . '/remove-me.txt' ), '--force should replace the existing destination.' );
 	emulsify_cli_smoke_assert( is_file( $destination . '/project.emulsify.json' ), '--force should replace a generated Emulsify child theme with fresh project metadata.' );
 	emulsify_cli_smoke_assert( 'emulsify-wordpress' === $replaced_project['project']['generatedFrom'], '--force should keep generated child theme source metadata.' );
-	emulsify_cli_smoke_assert( '2.0.0' === $replaced_project['project']['generatedFromVersion'], '--force should keep generated child theme source version metadata.' );
+	emulsify_cli_smoke_assert( emulsify_cli_smoke_expected_version() === $replaced_project['project']['generatedFromVersion'], '--force should keep generated child theme source version metadata.' );
 
 	$unrelated_destination = $theme_root . '/unrelated-theme';
 	$unrelated_refused     = false;
@@ -450,7 +484,7 @@ try {
 					'name'                 => 'Mismatch Theme',
 					'machineName'          => 'different-machine-name',
 					'generatedFrom'        => 'emulsify-wordpress',
-					'generatedFromVersion' => '2.0.0',
+					'generatedFromVersion' => emulsify_cli_smoke_expected_version(),
 				),
 			),
 			JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
