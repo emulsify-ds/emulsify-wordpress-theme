@@ -12,6 +12,10 @@ on:
       - develop
       - release-2.x
       - emulsify-core-integration
+  push:
+    branches:
+      - main
+      - release-2.x
   workflow_dispatch:
     inputs:
       wordpress_fixture:
@@ -36,8 +40,21 @@ concurrency:
 
 jobs:
   practical:
-    name: Practical theme readiness
+    name: Practical theme readiness (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 8.3 is the supported baseline. 8.4 proves the runtime stays clean on
+        # the current release, and 8.5 is an advisory forward-compatibility lane.
+        include:
+          - php-version: '8.3'
+            experimental: false
+          - php-version: '8.4'
+            experimental: false
+          - php-version: '8.5'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -51,7 +68,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: ${{ matrix.php-version }}
           tools: composer:v2
           coverage: none
 
@@ -62,7 +79,7 @@ jobs:
         run: composer validate --no-check-publish --strict
 
       - name: Install Composer dependencies for runtime smoke coverage
-        run: composer install --no-interaction --no-progress --prefer-dist
+        run: composer install --no-interaction --no-progress --prefer-dist ${{ matrix.experimental && '--ignore-platform-req=php+' || '' }}
 
       - name: Run runtime npm audit
         run: npm audit --omit=dev
@@ -71,11 +88,30 @@ jobs:
         continue-on-error: true
         run: npm audit
 
+      - name: Run generated child theme contract tests
+        run: npm run test:generated-theme
+
+      - name: Run generation parity smoke
+        env:
+          EMULSIFY_PARITY_REQUIRED: '1'
+        run: npm run smoke:generation-parity
+
       - name: Run PR validation checks
         run: npm run pr:check
 
       - name: Run release readiness checks
         run: npm run release:check
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: practical-readiness-php-${{ matrix.php-version }}
+          path: |
+            npm-debug.log*
+            .out/
+          if-no-files-found: ignore
+          retention-days: 7
 
   php-lint:
     name: PHP coding standards and static analysis
@@ -105,13 +141,26 @@ jobs:
         run: npm run lint:php
 
   wordpress-fixture:
-    name: WordPress fixture smoke
+    name: WordPress fixture smoke (WordPress ${{ matrix.wordpress-version }})
     if: >-
       (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'release-2.x')) ||
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.wordpress_fixture)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # 6.7 is the declared baseline in style.css. `latest` is an advisory
+        # forward-compatibility lane so a WordPress release cannot break the
+        # theme silently between scheduled runs.
+        include:
+          - wordpress-version: '6.7'
+            experimental: false
+          - wordpress-version: latest
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
     services:
       mysql:
         image: mysql:8.0
@@ -152,6 +201,7 @@ jobs:
       - name: Run WordPress fixture smoke
         env:
           WP_SMOKE_REQUIRED: '1'
+          WP_SMOKE_WORDPRESS_VERSION: ${{ matrix.wordpress-version }}
           WP_SMOKE_DB_HOST: 127.0.0.1
           WP_SMOKE_DB_PORT: '3306'
           WP_SMOKE_DB_NAME: wordpress_smoke
@@ -159,10 +209,22 @@ jobs:
           WP_SMOKE_DB_PASSWORD: root
         run: npm run release:check
 
+      - name: Upload fixture diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordpress-fixture-${{ matrix.wordpress-version }}
+          path: |
+            /tmp/emulsify-wp-smoke*/**/*.log
+            npm-debug.log*
+          if-no-files-found: ignore
+          retention-days: 7
+
   extended-whisk:
     name: Extended Whisk Storybook and a11y
     if: >-
       (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'release-2.x')) ||
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.extended_checks)
     runs-on: ubuntu-latest
@@ -196,3 +258,14 @@ jobs:
         env:
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
         run: npm --prefix whisk run a11y
+
+      - name: Upload Storybook diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extended-whisk-storybook
+          path: |
+            whisk/.out/
+            npm-debug.log*
+          if-no-files-found: ignore
+          retention-days: 7
