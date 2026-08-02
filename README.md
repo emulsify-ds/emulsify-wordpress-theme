@@ -180,9 +180,11 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 - [Generated-theme upgrade guide](UPGRADE.md)
 - [Upgrading from 1.x to 2.x](docs/upgrading-1x-to-2x.md)
 - [Sister-project parity contract](docs/sister-project-parity.md)
+- [Generated child theme contract](docs/generated-child-theme-contract.md)
 - [Parent and child theme architecture](docs/parent-child-architecture.md)
 - [Timber and Twig authoring](docs/timber-and-twig-authoring.md)
 - [Emulsify Core 4 and Vite workflow](docs/core-4-vite-workflow.md)
+- [Design token integration](docs/design-token-integration.md)
 - [Component recipes](docs/component-recipes.md)
 - [ACF Local JSON](docs/acf-local-json.md)
 - [ACF/Twig blocks](docs/acf-twig-blocks.md)
@@ -194,6 +196,7 @@ For Emulsify CLI integration, the standalone starter repository is `https://gith
 - [Asset loading](docs/asset-loading.md)
 - [WP-CLI child theme generation](docs/wp-cli-child-theme-generation.md)
 - [Release process](docs/release-process.md)
+- [Next release notes draft](docs/release-notes-next.md)
 - [Post-2.x optimization roadmap](docs/post-2x-optimization-roadmap.md)
 
 ## License
@@ -202,8 +205,36 @@ Emulsify WordPress is licensed under GPL-2.0-only. See [LICENSE](LICENSE).
 
 ## Contributing
 
+### Code of conduct
+
 Read the [Code of Conduct](https://github.com/emulsify-ds/emulsify-wordpress/blob/main/CODE_OF_CONDUCT.md) before contributing. File bugs and feature requests at [emulsify-ds/emulsify-wordpress](https://github.com/emulsify-ds/emulsify-wordpress/issues).
+
+### Committing changes
+
+This repository uses [Conventional Commits](https://www.conventionalcommits.org/). Commit messages drive semantic-release, so the type determines the next version:
+
+- `fix:` produces a patch release.
+- `feat:` produces a minor release.
+- `feat!:` or a `BREAKING CHANGE:` footer produces a major release.
+- `docs:`, `test:`, `ci:`, and `chore:` produce no release.
+
+A commit-msg hook validates the format with commitlint. See [docs/release-process.md](docs/release-process.md) for the full version strategy.
+
+### Release readiness
+
+Before opening a release pull request, run the local checks:
+
+```sh
+npm run lint:php
+npm run docs:check-commands
+npm run test:generated-theme
+npm run release:check
+```
+
+[docs/release-process.md](docs/release-process.md) documents the release checks, CI coverage, and the publish gate.
 
 ## Author
 
 Emulsify&reg; is a product of [Four Kitchens &mdash; We make BIG websites](https://fourkitchens.com).
+
+### Contributors

@@ -16,6 +16,54 @@ Use commit messages that describe the public change:
 - `feat: add native block registration` creates a minor release.
 - `feat!: change generated child theme structure` or a `BREAKING CHANGE:` footer creates a major release.
 
+## Version strategy
+
+| Commit type | Release impact | Example |
+|---|---|---|
+| `fix:` | patch | `fix: correct timber attribute helpers` |
+| `perf:` | patch | `perf: memoize component discovery` |
+| `feat:` | minor | `feat: add native block registration` |
+| `<type>!:` or `BREAKING CHANGE:` footer | major | `feat!: change generated child theme structure` |
+| `docs:`, `test:`, `ci:`, `chore:`, `refactor:`, `style:` | none | `docs: clarify asset loading` |
+
+Root `package.json` is the single source of truth for the release version. Every
+other version surface is compared against it rather than restating a literal:
+
+- `style.css` `Version`
+- `whisk/package.json` version
+- `whisk/style.css` `Version`
+- `whisk/project.emulsify.json` `project.generatedFromVersion`
+- both generators, which read the version at generation time rather than
+  embedding it
+
+`release:check` fails when any of these disagree, so a missed bump cannot ship
+inconsistent generated-theme lineage metadata.
+
+Before publishing a release, update root `package.json`, then run
+`npm run release:check -- --skip-smoke` and fix any surface it reports.
+
+## Release checks
+
+Confirm each of the following before publishing:
+
+- Root `package.json`, `style.css`, `whisk/package.json`, `whisk/style.css`, and
+  `whisk/project.emulsify.json` all describe the same release version.
+- `LICENSE`, `package.json`, `composer.json`, `style.css`, and
+  `whisk/package.json` all identify the project as `GPL-2.0-only`.
+- README and `UPGRADE.md` describe the current parent theme workflow, the
+  WordPress and PHP baselines, Node.js expectations, and the Vite build workflow.
+- The [sister-project parity contract](./sister-project-parity.md) stays linked
+  from the README and still reflects the shared Emulsify Drupal/WordPress model.
+- Whisk remains a generation-only starter and generated child themes keep
+  `Template: emulsify`. Review the
+  [generated child theme contract](./generated-child-theme-contract.md).
+- Generated child themes include a project-specific `README.md` plus
+  `docs/development.md`, `docs/upgrading.md`, and `docs/support-information.md`,
+  and the documentation checker validates their npm commands in both the Whisk
+  source and real generated output.
+- Both generation paths produce the same child theme file tree.
+- `docs/release-notes-next.md` describes the release being published.
+
 ## Local checks
 
 Run:
@@ -23,6 +71,8 @@ Run:
 ```sh
 npm run docs:check-commands
 npm run lint:php
+npm run test:generated-theme
+npm run smoke:generation-parity
 npm run pr:check
 npm run release:check
 npm run publish-test -- --no-ci
@@ -32,6 +82,10 @@ npm run publish-test -- --no-ci
 commands still exist in the package where readers are instructed to run them.
 
 `lint:php` is the local PHPCS and PHPStan entry point. Install Composer development dependencies first; use `npm run lint:php:fix` for PHPCBF auto-fixes.
+
+`test:generated-theme` runs focused Node tests that generate a throwaway child theme and then mutate it to prove each class of contract failure is detected.
+
+`smoke:generation-parity` generates the same identities through the WP-CLI command and the standalone starter hook, validates both against the generated child theme contract, and requires their file trees to match. It needs a PHP binary and skips with a warning when none is available; set `EMULSIFY_PARITY_REQUIRED=1` in CI so a skip fails instead.
 
 `pr:check` runs the practical, stubbed pull request suite:
 

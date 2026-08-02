@@ -6,12 +6,14 @@
 - [Upgrading from 1.x to 2.x](upgrading-1x-to-2x.md)
 - [Parent and child theme architecture](parent-child-architecture.md)
 - [WP-CLI child theme generation](wp-cli-child-theme-generation.md)
+- [Generated child theme contract](generated-child-theme-contract.md)
 
 ## Authoring
 
 - [Timber and Twig authoring](timber-and-twig-authoring.md)
 - [Component recipes](component-recipes.md)
 - [Emulsify Core 4 and Vite workflow](core-4-vite-workflow.md)
+- [Design token integration](design-token-integration.md)
 
 ## Blocks and editor
 
@@ -27,6 +29,7 @@
 
 - [Asset loading](asset-loading.md)
 - [Release process](release-process.md)
+- [Next release notes draft](release-notes-next.md)
 - [Sister-project parity contract](sister-project-parity.md)
 - [Post-2.x optimization roadmap](post-2x-optimization-roadmap.md)
 
