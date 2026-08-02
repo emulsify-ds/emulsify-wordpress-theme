@@ -688,10 +688,10 @@ final class GenerateChildThemeCommand {
 	/**
 	 * Gets the version to record in generated child theme metadata.
 	 *
-	 * The in-site path reads the installed parent theme's package.json; the
-	 * standalone starter reads its own. Release checks require both to match the
-	 * root release version, so the two generation paths agree. Failing loudly is
-	 * better than recording a stale fallback that would misreport lineage.
+	 * The installed parent theme's style.css is runtime metadata and is included
+	 * in every distribution. Release checks require it to match the repository
+	 * package version, so both generation paths agree without shipping root npm
+	 * tooling in the installable WordPress archive.
 	 *
 	 * @param string $source Starter source path.
 	 * @return string Version string.
@@ -699,13 +699,13 @@ final class GenerateChildThemeCommand {
 	 * @throws \RuntimeException When the parent theme declares no version.
 	 */
 	private function get_generated_from_version( string $source ): string {
-		$package = $this->read_json_file( $this->join_path( dirname( $source ), 'package.json' ) );
+		$version = $this->read_theme_header_value( $this->join_path( dirname( $source ), 'style.css' ), 'Version' );
 
-		if ( isset( $package['version'] ) && is_string( $package['version'] ) && '' !== trim( $package['version'] ) ) {
-			return trim( $package['version'] );
+		if ( is_string( $version ) && '' !== trim( $version ) ) {
+			return trim( $version );
 		}
 
-		throw new \RuntimeException( 'Could not read the parent theme release version from package.json.' );
+		throw new \RuntimeException( 'Could not read the parent theme release version from style.css.' );
 	}
 
 	/**

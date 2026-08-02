@@ -244,10 +244,10 @@ try {
 
 	emulsify_cli_smoke_copy( $repo_root . '/whisk', $parent_root . '/whisk' );
 
-	// The generator reads the release version from the parent theme package
-	// metadata, so the fixture parent theme needs it too.
-	if ( ! copy( $repo_root . '/package.json', $parent_root . '/package.json' ) ) {
-		throw new RuntimeException( 'Could not copy the parent theme package.json fixture.' );
+	// The installable archive omits root npm tooling, so the generator reads the
+	// synchronized release version from the parent theme's runtime metadata.
+	if ( ! copy( $repo_root . '/style.css', $parent_root . '/style.css' ) ) {
+		throw new RuntimeException( 'Could not copy the parent theme style.css fixture.' );
 	}
 
 	file_put_contents(

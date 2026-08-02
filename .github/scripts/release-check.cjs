@@ -620,6 +620,7 @@ function runStaticChecks() {
     ensure(cli.includes("data['project']['machineName']"), 'Child theme generator should update project.emulsify.json project.machineName.');
     ensure(cli.includes("data['project']['generatedFrom']"), 'Child theme generator should update project.emulsify.json generatedFrom.');
     ensure(cli.includes("data['project']['generatedFromVersion']"), 'Child theme generator should update project.emulsify.json generatedFromVersion.');
+    ensure(cli.includes("$this->join_path( dirname( $source ), 'style.css' ), 'Version'"), 'Child theme generator should read release lineage from installed WordPress theme metadata.');
     ensure(cli.includes("data['name'] = $machine_name"), 'Child theme generator should update package.json name.');
     ensure(cli.includes('collect_pattern_updates'), 'Child theme generator should update starter pattern namespaces.');
     ensure(cli.includes('sanitize_label_for_source'), 'Child theme generator should sanitize human labels before writing source comments.');
@@ -648,6 +649,7 @@ function runStaticChecks() {
     ensure(smoke.includes("'wordpress' === $project['project']['platform']"), 'Child theme generator smoke should validate the WordPress platform adapter.');
     ensure(smoke.includes("'emulsify-wordpress' === $project['project']['generatedFrom']"), 'Child theme generator smoke should validate generatedFrom metadata.');
     ensure(smoke.includes('emulsify_cli_smoke_expected_version()'), 'Child theme generator smoke should derive the expected generatedFromVersion from root package metadata instead of a literal.');
+    ensure(smoke.includes("copy( $repo_root . '/style.css', $parent_root . '/style.css' )"), 'Child theme generator smoke should exercise an installable parent without root npm tooling.');
     ensure(!/'\d+\.\d+\.\d+' === \$project\['project'\]\['generatedFromVersion'\]/.test(smoke), 'Child theme generator smoke should not hardcode the generated source version.');
     ensure(smoke.includes('foreign-generator'), 'Child theme generator smoke should reject conflicting generatedFrom metadata.');
     ensure(smoke.includes('missing-lineage'), 'Child theme generator smoke should reject destinations without generatedFrom metadata.');
