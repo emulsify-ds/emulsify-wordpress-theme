@@ -50,6 +50,8 @@ Confirm each of the following before publishing:
   `whisk/project.emulsify.json` all describe the same release version.
 - `LICENSE`, `package.json`, `composer.json`, `style.css`, and
   `whisk/package.json` all identify the project as `GPL-2.0-only`.
+- Packagist lists `emulsify-ds/emulsify-wordpress-theme` as maintained, the
+  release tag is indexed, and a clean Composer install lands at `emulsify/`.
 - README and `UPGRADE.md` describe the current parent theme workflow, the
   WordPress and PHP baselines, Node.js expectations, and the Vite build workflow.
 - The [sister-project parity contract](./sister-project-parity.md) stays linked
@@ -101,15 +103,19 @@ commands still exist in the package where readers are instructed to run them.
 
 `pr:check` does not build the empty Whisk starter. The dedicated extended CI job copies `.github/fixtures/whisk-a11y` into `whisk/src/components` before building, so a real Twig story and Vite entry exercise Core without adding a component system to the committed starter.
 
-`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. The fixture installs the parent theme in an isolated WordPress site, generates and activates a child theme from Whisk, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
+`release:check` adds static release-readiness checks and the full WordPress fixture smoke path. In CI, the fixture extracts the built `emulsify.zip` into an isolated WordPress site, confirms the packaged `wp emulsify` command, generates and activates a child theme from the packaged Whisk source, adds neutral built asset and block fixtures, renders frontend routes through Timber, fetches those built child assets, and checks ACF/Twig and native `block.json` discovery. It requires WP-CLI and MySQL. It skips gracefully when WP-CLI or database settings are unavailable unless `WP_SMOKE_REQUIRED=1` is set.
 
 ## Installable release artifact
 
-Run `npm run build:dist` to create `dist-artifact/emulsify.zip`. The build stages an explicit parent-theme runtime file list under a top-level `emulsify/` directory and installs the versions pinned in `composer.lock` with `--no-dev --optimize-autoloader` directly into that staged tree. The ZIP therefore bundles `vendor/` and can be installed without running Composer after download.
+Run `npm run build:dist` to create `dist-artifact/emulsify.zip`. The build stages an explicit parent-theme runtime file list under a top-level `emulsify/` directory, copies only tracked Whisk generator files, and installs the versions pinned in `composer.lock` with `--no-dev --optimize-autoloader` directly into that staged tree. The ZIP therefore bundles `vendor/` and can be installed without running Composer after download.
 
-The archive includes the runtime PHP entry points, `includes/`, `templates/`, `src/`, `style.css`, `theme.json`, the screenshot, license, README, and production Composer dependencies. It excludes repository metadata, `.github/`, `docs/`, root npm and Composer metadata, `node_modules/`, development configuration, smoke tests, and the separate `whisk/` child starter.
+The archive includes the runtime PHP entry points, `includes/`, `templates/`, `src/`, `style.css`, `theme.json`, the screenshot, license, README, linked user documentation, production Composer dependencies, and the tracked `whisk/` child starter required by `wp emulsify`. It excludes repository metadata, `.github/`, root npm and Composer metadata, `node_modules/`, development configuration, smoke tests, and Whisk's standalone `.cli` hook, caches, dependencies, and build output.
+
+Composer/GitHub distributions are a separate channel. They retain `composer.json` so the consuming application can resolve dependencies, and `.gitattributes` removes repository-only CI, release scripts, and root npm tooling while retaining user documentation. A direct Git clone remains a full development checkout. For a manual WordPress upload, always use the named `emulsify.zip` release asset rather than GitHub's automatic **Source code** archive.
 
 The semantic-release publish job sets up PHP 8.3 and Composer, builds this archive, and lets `@semantic-release/github` attach it to the GitHub release as **Emulsify WordPress theme (with dependencies)**. WordPress.org SVN deployment remains a future step after the project has a WordPress.org profile; it is not performed by this workflow.
+
+For pre-release client testing, the PHP 8.3 `Practical theme readiness` lane also builds the archive and uploads `emulsify.zip` directly for 14 days. This provides the packaged theme before a public GitHub Release exists without publishing an untagged stable release or wrapping the installable ZIP inside another archive.
 
 ## CI
 
@@ -122,7 +128,7 @@ Every configured pull request runs two independently visible fast jobs:
 
 Pull requests targeting `main` or `release-2.x` additionally run the two extended jobs:
 
-- `WordPress fixture smoke`: MySQL, WP-CLI, Timber, generated-child activation, block discovery, assets, and home/page/single/archive/search/author/404 rendering with `WP_SMOKE_REQUIRED=1`.
+- `WordPress fixture smoke`: the built installable ZIP, MySQL, WP-CLI, Timber, packaged generator/Whisk coverage, generated-child activation, block discovery, assets, and home/page/single/archive/search/author/404 rendering with `WP_SMOKE_REQUIRED=1`.
 - `Extended Whisk Storybook and a11y`: an explicit Chrome setup, a CI-only component seed, the Core 4 Vite and Storybook builds, and an axe audit of the discovered story.
 
 Weekly scheduled runs repeat both extended jobs. Manual dispatch runs the WordPress fixture when `wordpress_fixture` is enabled and the Whisk build/audit when `extended_checks` is enabled. The workflow concurrency group cancels superseded pull-request runs, and both extended jobs have explicit runtime limits.

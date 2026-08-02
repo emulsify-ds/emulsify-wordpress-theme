@@ -76,9 +76,13 @@ jobs:
       - name: Check release config syntax
         run: node --check release.config.js
 
+      - name: Build tested installable theme archive
+        run: npm run build:dist
+
       - name: Run release readiness checks
         env:
           WP_SMOKE_REQUIRED: '1'
+          WP_SMOKE_THEME_ARCHIVE: dist-artifact/emulsify.zip
           WP_SMOKE_DB_HOST: 127.0.0.1
           WP_SMOKE_DB_PORT: '3306'
           WP_SMOKE_DB_NAME: wordpress_smoke

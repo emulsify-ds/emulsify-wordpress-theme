@@ -13,16 +13,21 @@ The parent theme provides the WordPress runtime: theme setup, Timber bootstrappi
 Track the parent theme through the site project's Composer configuration and install it as `emulsify`:
 
 ```sh
-composer require emulsify-ds/emulsify-wordpress
+composer config allow-plugins.composer/installers true
+composer require emulsify-ds/emulsify-wordpress-theme:^2.0
 ```
 
-Composer-based applications should also require `timber/timber` from the application-level Composer project so Timber loads before WordPress activates the theme. If the parent theme owns its dependencies instead, run `composer install` inside the installed `emulsify` directory.
+The Composer package uses `installer-name: emulsify`, so Composer Installers places it under the required parent-theme slug. Composer-based applications should also require `timber/timber` from the application-level Composer project so Timber loads before WordPress activates the theme. If the parent theme owns its dependencies instead, run `composer install` inside the installed `emulsify` directory.
 
 ### Manual release ZIP
 
-Download `emulsify.zip` from the matching [GitHub release](https://github.com/emulsify-ds/emulsify-wordpress/releases), then upload it through Appearance > Themes > Add New > Upload Theme. The release ZIP already includes production Composer dependencies under `vendor/`, so a manual installation does not need to run Composer.
+Download the `emulsify.zip` asset from the matching [GitHub release](https://github.com/emulsify-ds/emulsify-wordpress/releases), then upload it through Appearance > Themes > Add New > Upload Theme. The release ZIP already includes production Composer dependencies under `vendor/` and the bundled Whisk generator source, so a manual installation does not need to run Composer.
 
 The archive installs into the required `emulsify/` directory. A WordPress.org listing and SVN deployment are planned as a future release step; they are not part of the current release workflow.
+
+Before a public release is available, the PHP 8.3 `Practical theme readiness` job uploads the built `emulsify.zip` directly as a short-lived workflow artifact for client testing.
+
+Use the named `emulsify.zip` asset, not GitHub's automatically generated **Source code** archives, for a manual WordPress upload. Composer distributions retain `composer.json` and let the site project resolve PHP dependencies; the manual asset bundles those dependencies. A direct Git clone is a maintainer checkout and intentionally contains CI and release tooling. Tagged Composer/GitHub distributions exclude that repository-only material through `.gitattributes` while retaining the user documentation linked below.
 
 ## Requirements
 
@@ -152,7 +157,7 @@ The `.husky/pre-commit` hook already runs `npm run lint`, which delegates to thi
 | `npm run build:dist` | Build the installable `dist-artifact/emulsify.zip` release archive. |
 | `npm run publish-test -- --no-ci` | Run a local semantic-release dry run. |
 
-Every pull request to the configured branches runs two visible fast readiness jobs: practical smoke checks and dedicated PHPCS/PHPStan analysis. Pull requests targeting `main` or `release-2.x` additionally run the MySQL-backed WordPress fixture and Whisk Storybook accessibility audit. The WordPress job sets `WP_SMOKE_REQUIRED=1`, so missing WP-CLI/MySQL prerequisites or route render failures fail the job instead of producing a skip. The Whisk job installs Chrome explicitly, copies an accessible CI-only story and Vite entry into the otherwise component-agnostic starter, and then builds Storybook and runs axe.
+Every pull request to the configured branches runs two visible fast readiness jobs: practical smoke checks and dedicated PHPCS/PHPStan analysis. Pull requests targeting `main` or `release-2.x` additionally run the MySQL-backed WordPress fixture and Whisk Storybook accessibility audit. The WordPress job builds and extracts `emulsify.zip`, confirms its packaged generator and Whisk source, and sets `WP_SMOKE_REQUIRED=1`, so missing WP-CLI/MySQL prerequisites or route render failures fail the job instead of producing a skip. The Whisk job installs Chrome explicitly, copies an accessible CI-only story and Vite entry into the otherwise component-agnostic starter, and then builds Storybook and runs axe.
 
 Weekly scheduled runs repeat the WordPress fixture and Whisk accessibility audit. Manual GitHub Actions > `WordPress Theme Readiness` runs can select either extended fixture with the `wordpress_fixture` and `extended_checks` inputs. Local `release:check` still skips the database fixture when prerequisites are unavailable unless `WP_SMOKE_REQUIRED=1` is set. Release publishing also requires the full WordPress fixture path before semantic-release can publish.
 
@@ -167,6 +172,8 @@ wp emulsify "Acme Site" --machine-name=acme-site --parent=emulsify
 wp emulsify "Acme Site" --machine-name=acme-site --force
 wp emulsify "Acme Site" --machine-name=acme-site --activate
 ```
+
+WP-CLI must point at the actual WordPress core directory so WordPress can load the active theme and register the command. In a Bedrock/DDEV project with core at `web/wp`, add `path: web/wp` to the project's `wp-cli.yml`, or run `ddev wp --path=web/wp emulsify "Acme Site" --dry-run`. See the [WP-CLI guide](docs/wp-cli-child-theme-generation.md#bedrock-and-ddev) for the complete configuration and troubleshooting steps.
 
 The generator copies `<parent>/whisk` to a sibling child theme directory, updates WordPress theme headers, package metadata, Emulsify project metadata, and visible starter labels, then optionally activates the generated child theme. `--parent=<slug>` selects a different installed parent theme directory; it defaults to `emulsify`.
 

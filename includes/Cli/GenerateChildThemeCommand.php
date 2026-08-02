@@ -45,6 +45,7 @@ final class GenerateChildThemeCommand {
 	 * child theme.
 	 */
 	private const EXCLUDED_COPY_PATHS = array(
+		'.cache',
 		'.git',
 		'.cli',
 		'.coverage',

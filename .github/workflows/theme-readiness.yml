@@ -102,6 +102,20 @@ jobs:
       - name: Run release readiness checks
         run: npm run release:check
 
+      - name: Build installable theme archive
+        if: matrix.php-version == '8.3'
+        run: npm run build:dist
+
+      - name: Upload installable theme archive
+        if: matrix.php-version == '8.3'
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist-artifact/emulsify.zip
+          archive: false
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload failure diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -198,9 +212,13 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-dev --no-interaction --no-progress --prefer-dist
 
+      - name: Build installable theme archive
+        run: npm run build:dist
+
       - name: Run WordPress fixture smoke
         env:
           WP_SMOKE_REQUIRED: '1'
+          WP_SMOKE_THEME_ARCHIVE: dist-artifact/emulsify.zip
           WP_SMOKE_WORDPRESS_VERSION: ${{ matrix.wordpress-version }}
           WP_SMOKE_DB_HOST: 127.0.0.1
           WP_SMOKE_DB_PORT: '3306'

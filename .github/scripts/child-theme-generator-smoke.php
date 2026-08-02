@@ -264,6 +264,11 @@ try {
 		) . "\n"
 	);
 
+	if ( ! mkdir( $parent_root . '/whisk/.cache', 0777, true ) ) {
+		throw new RuntimeException( 'Could not create ignored cache fixture.' );
+	}
+	file_put_contents( $parent_root . '/whisk/.cache/sentinel.txt', 'ignored' );
+
 	require_once $repo_root . '/includes/Cli/GenerateChildThemeCommand.php';
 
 	$cli = new Emulsify\Theme\Cli\GenerateChildThemeCommand();
@@ -307,6 +312,7 @@ try {
 	emulsify_cli_smoke_assert( ! is_file( $destination . '/theme.json' ), 'Generated child theme should not include an empty child theme.json by default.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/dist' ), 'Generated child theme should not copy ignored build output directories.' );
 	emulsify_cli_smoke_assert( ! is_dir( $destination . '/.out' ), 'Generated child theme should not copy ignored Storybook output directories.' );
+	emulsify_cli_smoke_assert( ! is_dir( $destination . '/.cache' ), 'Generated child theme should not copy ignored cache directories.' );
 	emulsify_cli_smoke_assert( 'acme-child/smoke-pattern' === $smoke_pattern['name'], 'Generated child theme should update copied pattern namespaces when patterns exist.' );
 	emulsify_cli_smoke_assert( false !== strpos( $smoke_pattern['content'], 'Smoke pattern content' ), 'Generated child theme should copy optional pattern content when patterns exist.' );
 

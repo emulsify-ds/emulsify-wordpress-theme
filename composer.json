@@ -1,5 +1,5 @@
 {
-  "name": "emulsify-ds/emulsify-wordpress",
+  "name": "emulsify-ds/emulsify-wordpress-theme",
   "description": "Timber-first WordPress parent theme for Emulsify that generates child themes with Emulsify Core 4, Vite, Storybook, and Twig",
   "type": "wordpress-theme",
   "homepage": "https://www.emulsify.info",
@@ -15,6 +15,7 @@
     }
   ],
   "require": {
+      "composer/installers": "^2.3",
       "php": ">=8.3",
       "timber/timber": "^2.3"
   },
@@ -30,6 +31,9 @@
       "dealerdirect/phpcodesniffer-composer-installer": true,
       "composer/installers": true
     }
+  },
+  "extra": {
+    "installer-name": "emulsify"
   },
   "require-dev": {
     "dealerdirect/phpcodesniffer-composer-installer": "^1.2",

@@ -2,6 +2,8 @@
 
 The parent theme includes a WP-CLI command for generating a project child theme from the bundled Whisk starter.
 
+WordPress must bootstrap the parent theme before the command can register. Keep Emulsify active directly, or installed as the parent of the active child theme, and point WP-CLI at the directory containing WordPress core.
+
 ## Basic usage
 
 ```sh
@@ -10,6 +12,37 @@ wp emulsify "Acme Site" --machine-name=acme-site
 wp emulsify "Acme Site" --machine-name=acme-site --parent=emulsify
 wp emulsify "Acme Site" --machine-name=acme-site --force
 wp emulsify "Acme Site" --machine-name=acme-site --activate
+```
+
+## Bedrock and DDEV
+
+Bedrock commonly keeps WordPress core in `web/wp` while the HTTP document root is `web`. Add a project-level `wp-cli.yml` so WP-CLI targets core rather than only the document root:
+
+```yaml
+path: web/wp
+server:
+  docroot: web
+```
+
+With that file in place, the normal DDEV command works:
+
+```sh
+ddev wp emulsify "Acme Site" --dry-run
+```
+
+You can also pass the path explicitly:
+
+```sh
+ddev wp --path=web/wp emulsify "Acme Site" --dry-run
+```
+
+For new DDEV projects, use the `wp-bedrock` project type rather than the standard `wordpress` type.
+
+If WP-CLI reports both `No WordPress installation found` and `emulsify is not a registered wp command`, fix the WordPress path first. The registration error is a consequence of WordPress and the active theme never loading. Confirm the target and registration independently:
+
+```sh
+ddev wp --path=web/wp core is-installed
+ddev wp --path=web/wp cli has-command emulsify
 ```
 
 ## Options

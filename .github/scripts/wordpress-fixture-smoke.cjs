@@ -187,6 +187,34 @@ function copyDirectory(source, destination, filter) {
 function copyThemes(themesDir) {
   const parentTheme = path.join(themesDir, 'emulsify');
   const childTheme = path.join(themesDir, 'whisk');
+  const configuredArchive = process.env.WP_SMOKE_THEME_ARCHIVE;
+
+  if (configuredArchive) {
+    const archivePath = path.resolve(repoRoot, configuredArchive);
+    if (!fs.existsSync(archivePath)) {
+      throw new Error(`Configured theme archive does not exist: ${archivePath}`);
+    }
+
+    run('Extract installable theme archive', 'unzip', ['-q', archivePath, '-d', themesDir]);
+    if (!fs.existsSync(path.join(parentTheme, 'whisk', 'style.css'))) {
+      throw new Error('Installable theme archive is missing the bundled Whisk starter.');
+    }
+
+    copyDirectory(path.join(parentTheme, 'whisk'), childTheme, (segments) => {
+      const first = segments[0];
+
+      return ![
+        '.cache',
+        '.cli',
+        '.coverage',
+        '.out',
+        'dist',
+        'node_modules',
+      ].includes(first);
+    });
+
+    return { childTheme, parentTheme };
+  }
 
   copyDirectory(repoRoot, parentTheme, (segments) => {
     const first = segments[0];
@@ -225,6 +253,11 @@ function copyThemes(themesDir) {
 }
 
 function installThemeDependencies(parentTheme) {
+  if (fs.existsSync(path.join(parentTheme, 'vendor', 'autoload.php'))) {
+    log('Using production Composer dependencies bundled in the theme archive.');
+    return;
+  }
+
   run('Install Timber with Composer', 'composer', ['install', '--no-interaction', '--no-progress', '--prefer-dist', '--no-dev'], {
     cwd: parentTheme,
   });
@@ -767,6 +800,7 @@ async function main() {
   wp(wpPath, ['theme', 'is-installed', 'emulsify']);
   wp(wpPath, ['theme', 'is-installed', 'whisk']);
   wp(wpPath, ['theme', 'activate', 'whisk']);
+  wp(wpPath, ['cli', 'has-command', 'emulsify']);
   wp(wpPath, ['emulsify', 'Smoke Generated', `--machine-name=${generatedChildSlug}`, '--activate']);
   assertGeneratedChildTheme(generatedChild, generatedChildSlug);
   installGeneratedChildFixtures(generatedChild);
