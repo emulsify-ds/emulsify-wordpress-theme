@@ -915,7 +915,7 @@ function runStaticChecks() {
     ensure(scripts.build && scripts.build.includes('vite build --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json build script should use the Emulsify Core Vite config directly.');
     ensure(scripts.vite && scripts.vite.includes('vite build --watch --config node_modules/@emulsify/core/config/vite/vite.config.js'), 'whisk/package.json should expose the Emulsify Core Vite watch script directly.');
     ensure(scripts.a11y === 'npm run storybook-build && node config/emulsify-core/run-a11y.js', 'whisk/package.json should run the project accessibility runner after building Storybook.');
-    ensure(whiskA11yConfig.includes("storybookBuildDir: '../../../.out'"), 'Whisk accessibility config should target the generated theme Storybook output.');
+    ensure(whiskA11yConfig.includes("storybookBuildDir: '.out'"), 'Whisk accessibility config should target the generated theme Storybook output relative to the consuming project root.');
     ensure(whiskA11yConfig.includes('wait: 1000'), 'Whisk accessibility config should wait for the selected Storybook story to mount.');
     ensure(whiskA11yRunner.includes('resolvePa11yStoryIds') && whiskA11yRunner.includes('storyIds.length === 0'), 'Whisk accessibility runner should discover stories and reject an empty audit.');
     ensure(whiskA11yRunner.includes('http.createServer') && whiskA11yRunner.includes('await pa11y') && whiskA11yRunner.includes('logReport'), 'Whisk accessibility runner should serve the static build over HTTP and report real Pa11y results.');

@@ -1,6 +1,6 @@
 export default {
-  // Resolve from node_modules/@emulsify/core to this generated theme's build.
-  storybookBuildDir: '../../../.out',
+  // Emulsify Core resolves this from the generated theme's working directory.
+  storybookBuildDir: '.out',
   // Let Storybook mount the selected story before axe inspects the iframe.
   pa11y: {
     wait: 1000,
